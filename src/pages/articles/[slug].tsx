@@ -11,14 +11,16 @@ import {
 } from "@chakra-ui/react";
 import { useColorModeValue } from "@/components/ui/color-mode";
 import { GetStaticPaths, GetStaticProps } from "next";
-import { IoChevronBack, IoOpenOutline } from "react-icons/io5";
+import { IoBookOutline, IoChevronBack, IoOpenOutline } from "react-icons/io5";
 import Main from "@/components/layouts/main";
+import Cover from "@/components/cover";
 import { getAllArticles, getArticle } from "@/lib/content";
 
 interface ArticlePageProps {
   title: string;
   date: string;
   tags: string[];
+  cover: string | null;
   sourceUrl: string | null;
   html: string;
 }
@@ -27,6 +29,7 @@ export default function ArticlePage({
   title,
   date,
   tags,
+  cover,
   sourceUrl,
   html,
 }: ArticlePageProps) {
@@ -45,6 +48,11 @@ export default function ArticlePage({
             All Articles
           </Link>
         </Button>
+
+        <Box mb={5}>
+          <Cover src={cover} alt={title} fallbackIcon={IoBookOutline} />
+        </Box>
+
         <HStack fontSize="xs" color={muted} mb={2} flexWrap="wrap" gap={2}>
           <Text>{date}</Text>
           {tags.map((tag) => (
@@ -143,6 +151,7 @@ export const getStaticProps: GetStaticProps<ArticlePageProps> = async ({
       title: article.title,
       date: article.date,
       tags: article.tags,
+      cover: article.cover ?? null,
       sourceUrl: article.sourceUrl ?? null,
       html,
     },

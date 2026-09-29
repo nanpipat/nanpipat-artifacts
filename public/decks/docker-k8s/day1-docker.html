@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 1 — Docker พื้นฐาน</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#191919; --ink2:#37352f; --muted:#787774; --line:#e9e9e7; --bg:#ffffff; --soft:#f7f7f5;
+  --blue:#2383e2; --blue-bg:#e7f3f8; --orange:#d9730d; --orange-bg:#fbecdd;
+  --red:#e03e3e; --red-bg:#fbe4e4; --green:#0f7b6c; --green-bg:#ddedea;
+  --purple:#6940a5; --purple-bg:#eae4f2; --yellow-bg:#fbf3db;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:'IBM Plex Sans Thai',-apple-system,sans-serif;
+  color:var(--ink); background:#f1f1ef;
+  -webkit-font-smoothing:antialiased;
+}
+/* โหมดปกติ (ไม่มี JS): แสดงทุกสไลด์ต่อกันแบบเลื่อนอ่าน */
+#deck{display:flex;flex-direction:column;align-items:center;gap:20px;padding:20px 0}
+/* โหมดพรีเซนต์ (มี JS): ทีละสไลด์เต็มจอ */
+body.js{overflow:hidden}
+body.js #deck{position:relative;width:100vw;height:100vh;flex-direction:row;
+  align-items:center;justify-content:center;gap:0;padding:0}
+body.js .slide{display:none}
+body.js .slide.active{display:flex}
+.slide{
+  display:flex; position:relative;
+  width:min(96vw, calc(100vh * 16 / 9 * 0.96)); aspect-ratio:16/9;
+  background:var(--bg); border:1px solid var(--line); border-radius:6px;
+  padding:4.2% 5.5%; overflow:hidden; flex-direction:column;
+  box-shadow:0 1px 3px rgba(15,15,15,.06),0 6px 24px rgba(15,15,15,.06);
+}
+/* type scale relative to slide height (slide height = min(96vh, 54vw)) */
+.slide{font-size:min(2.5vh, 1.4vw)}
+h1{font-size:3.2em;font-weight:600;line-height:1.15;letter-spacing:-.02em}
+h2{font-size:1.9em;font-weight:600;line-height:1.25;margin-bottom:.5em;letter-spacing:-.01em}
+h3{font-size:1.15em;font-weight:600;margin-bottom:.35em}
+p,li{font-size:1em;line-height:1.65;color:var(--ink2)}
+.lead{font-size:1.15em;color:var(--muted);font-weight:300}
+.eyebrow{font-size:.72em;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:.9em}
+ul{list-style:none;display:flex;flex-direction:column;gap:.5em}
+ul li{position:relative;padding-left:1.3em}
+ul li::before{content:"";position:absolute;left:.25em;top:.72em;width:.34em;height:.34em;border-radius:50%;background:var(--muted)}
+ul.check li::before{content:"✓";background:none;left:0;top:0;color:var(--green);font-weight:600}
+ul.x li::before{content:"✕";background:none;left:0;top:0;color:var(--red);font-weight:600}
+.sub{font-size:.85em;color:var(--muted)}
+b,strong{font-weight:600;color:var(--ink)}
+code{font-family:'IBM Plex Mono',monospace;font-size:.88em;background:var(--soft);border:1px solid var(--line);border-radius:3px;padding:.08em .35em;color:var(--ink)}
+pre{font-family:'IBM Plex Mono',monospace;background:var(--soft);border:1px solid var(--line);border-radius:4px;padding:.9em 1.1em;font-size:.82em;line-height:1.75;overflow:hidden;white-space:pre-wrap}
+pre code{background:none;border:none;padding:0;font-size:1em}
+.cmt{color:var(--muted)}
+.tok{color:var(--blue)}
+.hl{background:var(--yellow-bg);border-radius:3px;padding:0 .2em;box-decoration-break:clone}
+.hl-b{background:var(--blue-bg);color:#0b6e99;border-radius:3px;padding:0 .25em;font-weight:500}
+.hl-r{background:var(--red-bg);color:var(--red);border-radius:3px;padding:0 .25em;font-weight:500}
+.hl-g{background:var(--green-bg);color:var(--green);border-radius:3px;padding:0 .25em;font-weight:500}
+/* layouts */
+.center{justify-content:center;align-items:flex-start}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:1.6em;flex:1;align-content:start}
+.cols3{display:grid;grid-template-columns:repeat(3,1fr);gap:1.1em;flex:1;align-content:start}
+.body{flex:1;display:flex;flex-direction:column;gap:.9em;min-height:0}
+.card{border:1px solid var(--line);border-radius:5px;padding:1em 1.15em;background:#fff}
+.card.soft{background:var(--soft)}
+.card .ico{font-size:1.5em;line-height:1;margin-bottom:.35em;display:block}
+.callout{display:flex;gap:.75em;border-radius:4px;padding:.85em 1.05em;font-size:.95em;align-items:flex-start}
+.callout .ico{font-size:1.15em;line-height:1.4}
+.c-blue{background:var(--blue-bg)}.c-orange{background:var(--orange-bg)}.c-red{background:var(--red-bg)}
+.c-green{background:var(--green-bg)}.c-purple{background:var(--purple-bg)}.c-soft{background:var(--soft)}
+table{border-collapse:collapse;width:100%;font-size:.9em}
+th,td{text-align:left;padding:.5em .7em;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--muted);font-size:.85em;font-weight:500}
+td code{font-size:.92em}
+.divider{display:flex;flex-direction:column;justify-content:center;background:var(--ink);border-color:var(--ink)}
+.divider h1,.divider .lead,.divider .eyebrow{color:#fff}
+.divider .lead{color:#9b9a97}
+.divider .eyebrow{color:#787774}
+.num{font-family:'IBM Plex Mono',monospace;font-size:.8em;color:var(--muted)}
+.steps{display:flex;flex-direction:column;gap:.55em}
+.step{display:flex;gap:.7em;align-items:flex-start}
+.step .n{flex:none;width:1.55em;height:1.55em;border-radius:50%;background:var(--soft);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:.75em;font-weight:600;color:var(--ink)}
+.flow{display:flex;align-items:center;gap:.6em;flex-wrap:wrap}
+.flow .box{border:1px solid var(--line);border-radius:5px;padding:.55em .9em;font-size:.9em;background:#fff;font-weight:500}
+.flow .arr{color:var(--muted)}
+.tag{display:inline-block;font-size:.75em;padding:.15em .55em;border-radius:3px;font-weight:500}
+.analogy-visual{position:relative;flex:1;min-height:0;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fbfaf7}
+.analogy-visual img{width:100%;height:100%;object-fit:cover;display:block}
+.analogy-chip{position:absolute;top:.7em;width:39%;padding:.58em .75em;border-radius:6px;background:rgba(255,255,255,.94);border:1px solid var(--line);box-shadow:0 2px 10px rgba(15,15,15,.08)}
+.analogy-chip.left{left:.7em}.analogy-chip.right{right:.7em}
+.analogy-chip b{display:block;font-size:.92em}.analogy-chip span{display:block;font-size:.72em;color:var(--muted);line-height:1.45;margin-top:.1em}
+.analogy-key{display:flex;gap:.55em;align-items:center;justify-content:center;font-size:.72em;color:var(--muted);margin-top:.55em}
+.analogy-key span{white-space:nowrap}.analogy-key i{font-style:normal;color:#c9c9c7}
+.foot{position:absolute;left:5.5%;right:5.5%;bottom:2.2%;display:flex;justify-content:space-between;font-size:.68em;color:#c9c9c7}
+/* chrome */
+#bar{position:fixed;top:0;left:0;height:2px;background:var(--blue);z-index:10;transition:width .2s}
+#hint{position:fixed;bottom:10px;right:14px;font-size:11px;color:#a5a5a3;z-index:10}
+#nav{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);display:none;gap:6px;
+  align-items:center;background:#fff;border:1px solid var(--line);border-radius:20px;
+  padding:5px 8px;box-shadow:0 2px 8px rgba(15,15,15,.08);z-index:10;font-size:13px}
+body.js #nav{display:flex}
+#nav button{border:none;background:none;cursor:pointer;font-size:15px;color:var(--ink2);
+  padding:2px 8px;border-radius:12px;line-height:1}
+#nav button:hover{background:var(--soft)}
+#pos{font-family:'IBM Plex Mono',monospace;color:var(--muted);min-width:52px;text-align:center}
+@media print{
+  body{overflow:visible;background:#fff}
+  body.js{overflow:visible}
+  #deck,body.js #deck{display:block;height:auto;width:auto;padding:0}
+  .slide,body.js .slide{display:flex!important;page-break-after:always;box-shadow:none;border:none;width:100%;margin:0}
+  #bar,#hint,#nav{display:none!important}
+}
+</style>
+</head>
+<body>
+<div id="bar"></div>
+<div id="deck">
+
+<!-- 1 -->
+<section class="slide center">
+  <div class="eyebrow">Internal Training</div>
+  <h1>Docker พื้นฐาน</h1>
+  <p class="lead" style="margin-top:.6em">Day 1 of 2 — พื้นฐาน Docker &amp; Docker Compose ที่เอาไปใช้กับเคสลูกค้าได้จริง</p>
+  <div class="foot"><span>Docker &amp; Kubernetes Internal Training</span><span>Day 1</span></div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <h2>ทำไมเราต้องรู้เรื่องนี้</h2>
+  <div class="cols">
+    <div class="card soft"><span class="ico">📞</span><h3>สิ่งที่เจอทุกวัน</h3>
+      <ul class="sub"><li>"ระบบเข้าไม่ได้"</li><li>"หลัง deploy แล้วพัง"</li><li>"service ล่มเป็นช่วงๆ"</li></ul></div>
+    <div class="card soft"><span class="ico">🎯</span><h3>สิ่งที่อยากให้ทำได้หลังคอร์ส</h3>
+      <ul class="sub"><li>เปิดดู log เองได้ ไม่ต้องรอ dev</li><li>บอกได้ว่าปัญหาอยู่ตรงไหน</li><li>ส่งเคสต่อพร้อมข้อมูลครบ</li></ul></div>
+  </div>
+  <div class="callout c-blue" style="margin-top:1em"><span class="ico">💡</span><div>เป้าหมายไม่ใช่ให้เป็น DevOps — แต่ให้ <b>ไล่ปัญหาเบื้องต้นได้เอง</b> และ <b>escalate ได้อย่างมีข้อมูล</b></div></div>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <h2>Agenda — Day 1</h2>
+  <div class="steps" style="margin-top:.3em">
+    <div class="step"><span class="n">1</span><div><b>Docker คืออะไร</b> <span class="sub">— container vs VM, ศัพท์ที่ต้องรู้</span></div></div>
+    <div class="step"><span class="n">2</span><div><b>คำสั่งพื้นฐานที่ใช้จริง</b> <span class="sub">— ps, logs, exec, stats, inspect</span></div></div>
+    <div class="step"><span class="n">3</span><div><b>Image &amp; Registry</b> <span class="sub">— tag, pull, อ่าน Dockerfile ให้เป็น</span></div></div>
+    <div class="step"><span class="n">4</span><div><b>Docker Compose</b> <span class="sub">— อ่านไฟล์เป็น, คำสั่งที่ใช้บ่อย</span></div></div>
+    <div class="step"><span class="n">5</span><div><b>เคสจริงที่เจอบ่อย</b> <span class="sub">— checklist การไล่ปัญหา</span></div></div>
+  </div>
+  <div class="callout c-soft" style="margin-top:auto"><span class="ico">⏱️</span><div>มี Lab ให้ลองทำเอง 3 ช่วง · พักเบรกทุกๆ ~90 นาที</div></div>
+</section>
+
+<!-- 4 -->
+<section class="slide divider center">
+  <div class="eyebrow">Part 1</div>
+  <h1>Docker คืออะไร</h1>
+  <p class="lead" style="margin-top:.5em">และทำไมระบบของเราถึงรันอยู่บนมัน</p>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <h2>ปัญหาคลาสสิก: "บนเครื่องผมมันรันได้นะ"</h2>
+  <div class="cols">
+    <div><h3>สาเหตุ</h3>
+      <ul><li>เวอร์ชัน Node/Python/Java ไม่ตรงกัน</li><li>ไลบรารีในเครื่องมี แต่บน server ไม่มี</li><li>ค่า config / env ต่างกัน</li><li>OS คนละแบบ</li></ul></div>
+    <div><h3>ทางแก้แบบ Docker</h3>
+      <p>แพ็ก <b>แอป + ไลบรารี + ค่า config</b> ทั้งหมดไว้ในกล่องเดียว แล้วส่งกล่องนั้นไปรันที่ไหนก็ได้</p>
+      <div class="callout c-green" style="margin-top:.8em"><span class="ico">📦</span><div>กล่องนั้นเรียกว่า <b>Container</b></div></div></div>
+  </div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <h2>Docker คืออะไร</h2>
+  <div class="callout c-blue"><span class="ico">📘</span><div><b>Docker</b> คือเครื่องมือสำหรับแพ็กแอปพร้อมทุกอย่างที่มันต้องใช้ ให้กลายเป็น "กล่อง" ที่ยกไปรันที่เครื่องไหนก็ได้ แล้วได้ผลเหมือนกันทุกที่</div></div>
+  <div class="cols" style="margin-top:1.1em">
+    <div><h3>ที่มาสั้นๆ</h3>
+      <p class="sub">เทคโนโลยีแยกแอปออกจากกันแบบนี้มีอยู่ใน Linux มานานแล้ว แต่ใช้ยากมาก · Docker เปิดตัวปี 2013 แล้วทำให้มันเหลือแค่คำสั่งไม่กี่คำ จนกลายเป็นมาตรฐานที่ทุกที่ใช้กันทุกวันนี้</p></div>
+    <div><h3>Docker ประกอบด้วยอะไร</h3>
+      <ul class="sub"><li><b>Engine</b> — ตัวที่รัน container จริง</li><li><b>CLI</b> — คำสั่ง <code>docker</code> ที่เราพิมพ์</li><li><b>Image</b> — รูปแบบมาตรฐานของการแพ็ก</li><li><b>Registry</b> — คลังเก็บและแจกจ่าย image</li></ul></div>
+  </div>
+  <div class="callout c-soft" style="margin-top:auto"><span class="ico">🚫</span><div><b>สิ่งที่ Docker ไม่ใช่:</b> ไม่ใช่ VM · ไม่ใช่ภาษาโปรแกรม · ไม่ได้เขียนหรือแก้แอปให้ — มันเป็นแค่ "วิธีแพ็ก" กับ "วิธีรัน" เท่านั้น</div></div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <h2>Containerization คืออะไร</h2>
+  <div class="callout c-blue"><span class="ico">📘</span><div><b>Containerization</b> คือการแพ็กแอปพร้อมของที่มันต้องใช้ทั้งหมดไว้ด้วยกัน แล้วให้มันรันแบบ<b>แยกขาดจากแอปอื่น</b>บนเครื่องเดียวกัน</div></div>
+  <div class="cols" style="margin-top:1.1em">
+    <div><h3>แบบเดิม (ติดตั้งลงเครื่องตรงๆ)</h3>
+      <ul class="sub"><li>ลง runtime เช่น Java/Node ลงเครื่องแม่</li><li>ลง library ที่แอปต้องใช้</li><li>ทุกแอปบนเครื่องใช้ของกองเดียวกัน</li><li>อัปเดตให้แอปหนึ่ง อีกแอปพังตาม</li></ul></div>
+    <div><h3>แบบ container</h3>
+      <ul class="sub"><li>แต่ละแอปมี runtime + library ของตัวเองในกล่อง</li><li>แอป 2 ตัวใช้ Java คนละเวอร์ชันบนเครื่องเดียวกันได้</li><li>เลิกใช้ก็ลบกล่องทิ้ง ไม่มีของค้างในเครื่อง</li><li>ย้ายไปเครื่องอื่นได้โดยไม่ต้องลงอะไรใหม่</li></ul></div>
+  </div>
+  <div class="callout c-soft" style="margin-top:auto"><span class="ico">🔧</span><div>เบื้องหลังคือความสามารถของ Linux ที่ชื่อ <b>namespace</b> (แยกให้แต่ละกล่องมองไม่เห็นกัน) และ <b>cgroups</b> (จำกัด CPU/RAM ของแต่ละกล่อง) — ไม่ต้องจำชื่อ แค่รู้ว่าการแยกกันนี้เป็นของจริง ไม่ใช่แค่แยกโฟลเดอร์</div></div>
+</section>
+
+<!-- Analogy: restaurant vs food truck -->
+<section class="slide">
+  <h2>Containerization = ทำแอปให้เป็น “ฟู้ดทรัค”</h2>
+  <div class="analogy-visual">
+    <img src="assets/container-food-truck-analogy.png" alt="เปรียบเทียบร้านอาหารแบบติดตั้งอยู่กับที่ กับฟู้ดทรัคที่มีครัวและอุปกรณ์พร้อมใช้งานในตัว">
+    <div class="analogy-chip left"><b>🏪 แอปแบบติดตั้งตรงบนเครื่อง</b><span>ต้องเตรียม runtime, library และ config ที่ปลายทางให้ครบ</span></div>
+    <div class="analogy-chip right"><b>🚚 Container</b><span>พกแอป + runtime + library ที่ต้องใช้มาด้วย</span></div>
+  </div>
+  <div class="callout c-green" style="margin-top:.7em"><span class="ico">🔌</span><div><b>ขับไปจอด → เสียบปลั๊ก → เปิดขาย</b> — ย้ายไปเครื่องไหนก็เริ่มทำงานได้แบบเดิม</div></div>
+  <div class="analogy-key"><span>ครัวบนรถ = runtime + libraries</span><i>•</i><span>ไฟ/น้ำ = CPU, RAM, network, storage</span><i>•</i><span>Docker = เครื่องมือที่แพ็กและรัน container</span></div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <h2>Container ต่างจาก VM ยังไง</h2>
+  <div class="cols">
+    <div class="card"><span class="ico">🖥️</span><h3>Virtual Machine</h3>
+      <ul class="sub"><li>มี OS เต็มตัวของตัวเอง</li><li>หนัก — หลาย GB</li><li>บูตเป็นนาที</li><li>1 เครื่องรันได้ไม่กี่ตัว</li></ul></div>
+    <div class="card"><span class="ico">📦</span><h3>Container</h3>
+      <ul class="sub"><li>ใช้ kernel ของเครื่องแม่ร่วมกัน</li><li>เบา — หลัก MB</li><li>สตาร์ทเป็นวินาที</li><li>1 เครื่องรันได้เป็นสิบเป็นร้อยตัว</li></ul></div>
+  </div>
+  <div class="callout c-blue" style="margin-top:1em"><span class="ico">💡</span><div>เทียบง่ายๆ: VM = <b>บ้านทั้งหลัง</b> · Container = <b>ห้องในคอนโด</b> ที่ใช้โครงสร้างอาคารร่วมกัน</div></div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <h2>Image → Container</h2>
+  <div class="flow" style="margin:.8em 0 1.2em">
+    <div class="box">📄 Dockerfile</div><span class="arr">→</span>
+    <div class="box">💿 Image</div><span class="arr">→</span>
+    <div class="box">📦 Container</div>
+  </div>
+  <div class="cols3">
+    <div class="card soft"><h3>Dockerfile</h3><p class="sub">สูตรอาหาร — บอกว่าจะประกอบ image ยังไง</p></div>
+    <div class="card soft"><h3>Image</h3><p class="sub">อาหารแช่แข็ง — พร้อมใช้ แก้ไม่ได้ (read-only)</p></div>
+    <div class="card soft"><h3>Container</h3><p class="sub">อาหารที่อุ่นแล้วบนจาน — คือ image ที่กำลังรันอยู่</p></div>
+  </div>
+  <div class="callout c-orange" style="margin-top:1em"><span class="ico">⚠️</span><div>1 image สร้างได้หลาย container — เหมือนอุ่นอาหารแช่แข็งกล่องเดียวกันหลายจาน</div></div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <h2>ศัพท์ที่ต้องรู้จัก</h2>
+  <table>
+    <tr><th style="width:20%">ศัพท์</th><th>คืออะไร</th><th style="width:33%">เจอตอนไหน</th></tr>
+    <tr><td><b>Image</b></td><td>แพ็กเกจแอปที่พร้อมรัน</td><td class="sub">ตอน deploy / pull ไม่ผ่าน</td></tr>
+    <tr><td><b>Container</b></td><td>image ที่กำลังรันอยู่</td><td class="sub">ตอนดูสถานะ/log</td></tr>
+    <tr><td><b>Volume</b></td><td>ที่เก็บข้อมูลถาวร นอก container</td><td class="sub">ตอนข้อมูลหายหลัง restart</td></tr>
+    <tr><td><b>Network</b></td><td>ช่องทางให้ container คุยกัน</td><td class="sub">ตอน service เชื่อมกันไม่ได้</td></tr>
+    <tr><td><b>Registry</b></td><td>คลังเก็บ image (Docker Hub, Harbor, ECR)</td><td class="sub">ตอน ImagePull ไม่ผ่าน</td></tr>
+    <tr><td><b>Port mapping</b></td><td>เปิดประตูจากเครื่องแม่เข้า container</td><td class="sub">ตอนเข้าเว็บไม่ได้</td></tr>
+  </table>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+  <h2>ภาพรวมการทำงาน</h2>
+  <div class="flow" style="margin:1em 0">
+    <div class="box">💻 Docker CLI<br><span class="sub">คำสั่งที่เราพิมพ์</span></div><span class="arr">→</span>
+    <div class="box">⚙️ Docker Daemon<br><span class="sub">คนลงมือทำจริง</span></div><span class="arr">→</span>
+    <div class="box">📦 Containers<br><span class="sub">แอปที่รันอยู่</span></div>
+    <span class="arr">↕</span>
+    <div class="box">☁️ Registry<br><span class="sub">คลัง image</span></div>
+  </div>
+  <ul style="margin-top:1em">
+    <li>เราพิมพ์คำสั่งที่ <b>CLI</b> → daemon เป็นคนลงมือทำจริง</li>
+    <li>ถ้า daemon ไม่ทำงาน จะเจอ error <code class="sub">Cannot connect to the Docker daemon</code></li>
+    <li class="sub">→ เช็คว่า Docker Desktop / docker service เปิดอยู่หรือเปล่า</li>
+  </ul>
+</section>
+
+<!-- 12 -->
+<section class="slide divider center">
+  <div class="eyebrow">Part 2</div>
+  <h1>คำสั่งพื้นฐานที่ใช้จริง</h1>
+  <p class="lead" style="margin-top:.5em">5 คำสั่งนี้ครอบคลุมงานที่เราต้องใช้ 80%</p>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+  <h2>5 คำสั่งที่ใช้บ่อยที่สุด</h2>
+  <table>
+    <tr><th style="width:34%">คำสั่ง</th><th>ใช้ตอน</th></tr>
+    <tr><td><code>docker ps</code></td><td>ดูว่ามีอะไรรันอยู่บ้าง สถานะเป็นยังไง</td></tr>
+    <tr><td><code>docker logs</code></td><td>ดู error ที่แอปพ่นออกมา — <span class="hl">ใช้บ่อยที่สุด</span></td></tr>
+    <tr><td><code>docker exec</code></td><td>เข้าไปข้างใน container เพื่อเช็คของ</td></tr>
+    <tr><td><code>docker restart</code></td><td>ลองรีสตาร์ทดูก่อน</td></tr>
+    <tr><td><code>docker inspect</code></td><td>ดู config, env, network, mount ของ container</td></tr>
+  </table>
+  <div class="callout c-blue" style="margin-top:auto"><span class="ico">💡</span><div>จำ pattern ไว้: <code>docker &lt;คำกริยา&gt; &lt;ชื่อ container&gt;</code> — โครงสร้างเหมือนกันหมด</div></div>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+  <h2><code>docker ps</code> — ดูว่าอะไรรันอยู่</h2>
+  <pre><code><span class="cmt"># ดูเฉพาะที่กำลังรัน</span>
+docker ps
+
+<span class="cmt"># ดูทั้งหมด รวมตัวที่ตายไปแล้ว ← สำคัญมากตอนไล่ปัญหา</span>
+docker ps -a
+
+<span class="cmt"># ดูเฉพาะบางคอลัมน์ ให้อ่านง่าย</span>
+docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"</code></pre>
+  <div class="callout c-orange" style="margin-top:1em"><span class="ico">⚠️</span><div>ลูกค้าบอก "service หาย" แล้ว <code>docker ps</code> ไม่เจอ → ต้องใช้ <code>-a</code> เสมอ เพราะ container ที่ตายแล้วจะไม่โผล่ในลิสต์ปกติ</div></div>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+  <h2>อ่านคอลัมน์ STATUS ให้เป็น</h2>
+  <table>
+    <tr><th style="width:34%">STATUS</th><th>แปลว่า</th></tr>
+    <tr><td><span class="hl-g">Up 3 hours</span></td><td>ปกติ รันมา 3 ชั่วโมงแล้ว</td></tr>
+    <tr><td><span class="hl-g">Up 2 min (healthy)</span></td><td>ปกติ และผ่าน health check ด้วย</td></tr>
+    <tr><td><span class="hl-r">Exited (0)</span></td><td>จบการทำงานปกติ — มักเป็น job ที่รันเสร็จแล้ว</td></tr>
+    <tr><td><span class="hl-r">Exited (1)</span></td><td>แอปพังเอง → ไปดู <code>docker logs</code> ต่อ</td></tr>
+    <tr><td><span class="hl-r">Exited (137)</span></td><td>โดนฆ่าเพราะใช้ RAM เกิน (OOM) → เพิ่ม memory limit</td></tr>
+    <tr><td><span class="hl-r">Restarting (1)</span></td><td>ตายแล้วเกิดใหม่วนไปเรื่อยๆ → แอปพังตั้งแต่ตอนเริ่ม</td></tr>
+  </table>
+  <div class="callout c-blue" style="margin-top:auto"><span class="ico">💡</span><div><b>Exit code 0 = ปกติ · อื่นๆ = มีปัญหา</b> · 137 = OOM · 143 = โดนสั่งหยุด</div></div>
+</section>
+
+<!-- 16 -->
+<section class="slide">
+  <h2><code>docker logs</code> — คำสั่งที่จะใช้บ่อยที่สุด</h2>
+  <pre><code><span class="cmt"># ดู log ล่าสุด 100 บรรทัด พร้อมเวลา</span>
+docker logs --tail 100 -t my-app
+
+<span class="cmt"># ตามดูแบบ real-time (Ctrl+C เพื่อออก)</span>
+docker logs -f my-app
+
+<span class="cmt"># ดูเฉพาะ 30 นาทีล่าสุด</span>
+docker logs --since 30m my-app
+
+<span class="cmt"># กรองเฉพาะบรรทัดที่มีคำว่า error</span>
+docker logs my-app 2&gt;&amp;1 | grep -i error</code></pre>
+  <div class="callout c-green" style="margin-top:auto"><span class="ico">✅</span><div>เวลาส่งเคสต่อให้ dev แนบ <code>docker logs --tail 200 -t</code> ไปด้วยเสมอ จะช่วยได้เยอะมาก</div></div>
+</section>
+
+<!-- 17 -->
+<section class="slide">
+  <h2><code>docker exec</code> — เข้าไปดูข้างใน</h2>
+  <pre><code><span class="cmt"># เข้า shell ข้างใน container</span>
+docker exec -it my-app sh        <span class="cmt"># ลอง sh ก่อน (มีเกือบทุก image)</span>
+docker exec -it my-app bash      <span class="cmt"># ถ้า image มี bash</span>
+
+<span class="cmt"># สั่งทีละคำสั่งโดยไม่ต้องเข้าไป</span>
+docker exec my-app env           <span class="cmt"># ดู environment variables</span>
+docker exec my-app ls /app       <span class="cmt"># ดูไฟล์ข้างใน</span>
+docker exec my-app cat /app/config.json</code></pre>
+  <div class="cols" style="margin-top:1em">
+    <div class="callout c-blue"><span class="ico">💡</span><div><code>-it</code> = interactive + terminal ต้องใส่คู่กันเสมอเวลาเข้า shell</div></div>
+    <div class="callout c-red"><span class="ico">🚫</span><div>อย่าแก้ไฟล์ข้างใน container — พอ restart แล้วหายหมด</div></div>
+  </div>
+</section>
+
+<!-- 18 -->
+<section class="slide">
+  <h2>สั่ง start / stop / restart</h2>
+  <pre><code>docker restart my-app     <span class="cmt"># รีสตาร์ท — ทางแก้เบื้องต้นอันดับแรก</span>
+docker stop my-app        <span class="cmt"># หยุดแบบสุภาพ (รอ 10 วิ)</span>
+docker start my-app       <span class="cmt"># เปิดกลับ</span>
+docker kill my-app        <span class="cmt"># ฆ่าทันที — ใช้เมื่อ stop ไม่ยอมหยุด</span>
+docker rm my-app          <span class="cmt"># ลบ container (ต้อง stop ก่อน)</span></code></pre>
+  <div class="callout c-orange" style="margin-top:1.2em"><span class="ico">⚠️</span><div><b>ก่อนกด restart ให้เก็บ log ไว้ก่อน</b> — restart แล้วอาการหาย แต่หลักฐานก็หายไปด้วย ทำให้หาสาเหตุจริงไม่ได้</div></div>
+</section>
+
+<!-- 19 -->
+<section class="slide">
+  <h2><code>docker stats</code> &amp; <code>inspect</code></h2>
+  <div class="cols">
+    <div><h3>ดูการใช้ทรัพยากร</h3>
+      <pre><code>docker stats
+docker stats my-app --no-stream</code></pre>
+      <p class="sub" style="margin-top:.6em">ใช้ตอนลูกค้าบอก "ระบบช้า" — ดูว่า CPU/MEM ตันหรือเปล่า</p></div>
+    <div><h3>ดู config ของ container</h3>
+      <pre><code>docker inspect my-app
+docker inspect my-app | grep -A5 Env
+docker port my-app</code></pre>
+      <p class="sub" style="margin-top:.6em">ใช้ตอนสงสัยว่า env / port / mount ตั้งค่ามาถูกหรือเปล่า</p></div>
+  </div>
+  <div class="callout c-blue" style="margin-top:auto"><span class="ico">💡</span><div>ใน <code>docker stats</code> ถ้า MEM % แตะ 100% บ่อยๆ → เตรียมเจอ Exit 137 (OOM)</div></div>
+</section>
+
+<!-- 20 -->
+<section class="slide">
+  <h2>Cheat Sheet — Docker</h2>
+  <div class="cols">
+    <div><h3 class="sub">ดูสถานะ</h3>
+      <pre><code>docker ps -a
+docker stats
+docker inspect &lt;name&gt;
+docker port &lt;name&gt;</code></pre>
+      <h3 class="sub" style="margin-top:.8em">ดู log</h3>
+      <pre><code>docker logs --tail 100 -t &lt;name&gt;
+docker logs -f &lt;name&gt;
+docker logs --since 30m &lt;name&gt;</code></pre></div>
+    <div><h3 class="sub">ควบคุม</h3>
+      <pre><code>docker restart &lt;name&gt;
+docker stop / start &lt;name&gt;
+docker exec -it &lt;name&gt; sh</code></pre>
+      <h3 class="sub" style="margin-top:.8em">จัดการพื้นที่</h3>
+      <pre><code>docker system df
+docker image ls
+docker system prune</code></pre></div>
+  </div>
+</section>
+
+<!-- 21 -->
+<section class="slide">
+  <div class="eyebrow">🧪 Lab 1 · 20 นาที</div>
+  <h2>ลองไล่ปัญหาด้วยตัวเอง</h2>
+  <div class="steps">
+    <div class="step"><span class="n">1</span><div>รัน <code>docker run -d --name web -p 8080:80 nginx</code> แล้วเปิด <code>localhost:8080</code></div></div>
+    <div class="step"><span class="n">2</span><div>ดูสถานะด้วย <code>docker ps</code> — ลองอ่านคอลัมน์ STATUS และ PORTS</div></div>
+    <div class="step"><span class="n">3</span><div>เปิด <code>docker logs -f web</code> ไว้ แล้วรีเฟรชหน้าเว็บ ดูว่า log ขึ้นอะไร</div></div>
+    <div class="step"><span class="n">4</span><div><code>docker exec -it web sh</code> แล้วลอง <code>ls /usr/share/nginx/html</code></div></div>
+    <div class="step"><span class="n">5</span><div><code>docker stop web</code> → <code>docker ps</code> (หายไป) → <code>docker ps -a</code> (ยังอยู่ สถานะ Exited)</div></div>
+  </div>
+  <div class="callout c-purple" style="margin-top:auto"><span class="ico">🎯</span><div>เป้าหมาย: คุ้นมือกับ 4 คำสั่งหลัก และเห็นความต่างของ <code>ps</code> กับ <code>ps -a</code></div></div>
+</section>
+
+<!-- 22 -->
+<section class="slide divider center">
+  <div class="eyebrow">Part 3</div>
+  <h1>Image &amp; Registry</h1>
+  <p class="lead" style="margin-top:.5em">เท่าที่ต้องรู้ ไม่ต้องเขียนเป็น</p>
+</section>
+
+<!-- 23 -->
+<section class="slide">
+  <h2>Image และ Tag</h2>
+  <pre><code>registry.company.com/team/my-app:1.4.2
+<span class="cmt">└─── registry ───┘ └─ ชื่อ ─┘ └tag┘</span></code></pre>
+  <ul style="margin-top:1em">
+    <li><b>tag</b> = เวอร์ชันของ image เช่น <code>1.4.2</code>, <code>staging</code>, <code>latest</code></li>
+    <li>ถ้าไม่ใส่ tag Docker จะเติม <code>:latest</code> ให้อัตโนมัติ</li>
+  </ul>
+  <div class="callout c-orange" style="margin-top:1em"><span class="ico">⚠️</span><div><code>latest</code> <b>ไม่ได้แปลว่าใหม่ล่าสุดเสมอ</b> — มันคือแค่ชื่อ tag หนึ่ง ใครจะตั้งก็ได้ เวลาถามลูกค้าให้ถาม tag ที่แน่ชัด</div></div>
+</section>
+
+<!-- 24 -->
+<section class="slide">
+  <h2>คำสั่งเกี่ยวกับ Image</h2>
+  <pre><code>docker images                    <span class="cmt"># ดู image ที่มีในเครื่อง</span>
+docker pull nginx:1.25           <span class="cmt"># ดึง image จาก registry</span>
+docker rmi nginx:1.25            <span class="cmt"># ลบ image</span>
+
+<span class="cmt"># login เข้า private registry ของบริษัท</span>
+docker login registry.company.com
+
+<span class="cmt"># ดูว่า image กินพื้นที่ไปเท่าไหร่</span>
+docker system df</code></pre>
+  <div class="callout c-red" style="margin-top:1em"><span class="ico">🔴</span><div>เจอ <code>pull access denied</code> หรือ <code>unauthorized</code> → ส่วนใหญ่คือ <b>ยังไม่ได้ login</b> หรือ <b>ชื่อ image/tag พิมพ์ผิด</b></div></div>
+</section>
+
+<!-- 25 -->
+<section class="slide">
+  <h2>อ่าน Dockerfile ให้พอเข้าใจ</h2>
+  <pre><code><span class="tok">FROM</span> node:20-alpine          <span class="cmt"># ใช้ base image อะไร</span>
+<span class="tok">WORKDIR</span> /app                  <span class="cmt"># โฟลเดอร์ทำงานข้างใน</span>
+<span class="tok">COPY</span> package*.json ./         <span class="cmt"># ก๊อปไฟล์เข้า image</span>
+<span class="tok">RUN</span> npm install               <span class="cmt"># สั่งรันตอน build</span>
+<span class="tok">COPY</span> . .
+<span class="tok">ENV</span> NODE_ENV=production       <span class="cmt"># ตั้งค่า env</span>
+<span class="tok">EXPOSE</span> 3000                   <span class="cmt"># แอปฟังพอร์ตไหน</span>
+<span class="tok">CMD</span> ["node", "server.js"]     <span class="cmt"># คำสั่งที่รันตอน start ← ดูบรรทัดนี้บ่อย</span></code></pre>
+  <div class="callout c-blue" style="margin-top:auto"><span class="ico">💡</span><div>ในทางปฏิบัติ ดูแค่ <code>FROM</code> (base อะไร), <code>EXPOSE</code> (พอร์ตไหน), <code>CMD</code> (รันอะไร) ก็พอแล้ว</div></div>
+</section>
+
+<!-- 26 -->
+<section class="slide">
+  <h2>Registry — image มาจากไหน</h2>
+  <div class="cols3">
+    <div class="card soft"><span class="ico">🌐</span><h3>Public</h3><p class="sub">Docker Hub — nginx, redis, postgres ดึงได้เลย</p></div>
+    <div class="card soft"><span class="ico">🔒</span><h3>Private</h3><p class="sub">Harbor / GitLab / ECR ของบริษัท — ต้อง login ก่อน</p></div>
+    <div class="card soft"><span class="ico">💻</span><h3>Local</h3><p class="sub">build เองในเครื่อง — ไม่มีใน registry</p></div>
+  </div>
+  <table style="margin-top:1.2em">
+    <tr><th style="width:42%">Error ที่เจอ</th><th>สาเหตุที่พบบ่อย</th></tr>
+    <tr><td><code>manifest unknown</code></td><td>tag ที่ระบุไม่มีอยู่จริง</td></tr>
+    <tr><td><code>unauthorized</code></td><td>ยังไม่ได้ login / token หมดอายุ</td></tr>
+    <tr><td><code>connection timeout</code></td><td>เน็ต/VPN/firewall เข้า registry ไม่ได้</td></tr>
+  </table>
+</section>
+
+<!-- 27 -->
+<section class="slide divider center">
+  <div class="eyebrow">Part 4</div>
+  <h1>Docker Compose</h1>
+  <p class="lead" style="margin-top:.5em">ตัวที่ทีมเราใช้จริงในงานประจำวัน</p>
+</section>
+
+<!-- 28 -->
+<section class="slide">
+  <h2>Docker Compose คืออะไร</h2>
+  <div class="callout c-blue"><span class="ico">📘</span><div><b>Docker Compose</b> คือเครื่องมือสำหรับสั่งรัน container หลายตัวพร้อมกัน โดยเขียนไว้ในไฟล์เดียวชื่อ <code>docker-compose.yml</code></div></div>
+  <ul style="margin-top:1.1em">
+    <li>ระบบจริงมักไม่ได้มีแค่ตัวเดียว — เช่น เว็บ + API + ฐานข้อมูล = 3 container ที่ต้องทำงานร่วมกัน</li>
+    <li>ไฟล์ compose บอกว่า <b>มี service อะไรบ้าง ใช้ image ไหน เปิดพอร์ตอะไร ต่อกันยังไง</b></li>
+    <li>สั่งครั้งเดียวขึ้นทั้งชุด ปิดครั้งเดียวลงทั้งชุด</li>
+  </ul>
+  <table style="margin-top:1em">
+    <tr><th style="width:34%">คำสั่งที่เห็น</th><th>แปลว่า</th></tr>
+    <tr><td><code>docker compose</code> <span class="sub">(ไม่มีขีด)</span></td><td>รุ่นใหม่ (v2) ที่ใช้กันปัจจุบัน</td></tr>
+    <tr><td><code>docker-compose</code> <span class="sub">(มีขีด)</span></td><td>รุ่นเก่า (v1) — ถ้าลูกค้าใช้คำสั่งนี้ แปลว่าเครื่องยังเป็นของเก่า</td></tr>
+  </table>
+  <div class="callout c-orange" style="margin-top:auto"><span class="ico">⚠️</span><div>Compose เหมาะกับการรัน<b>บนเครื่องเดียว</b> — ถ้าต้องรันหลายเครื่องหรืออยากให้มันฟื้นเองเวลาพัง ต้องใช้ Kubernetes (พรุ่งนี้)</div></div>
+</section>
+
+<!-- 29 -->
+<section class="slide">
+  <h2>ทำไมต้องมี Compose</h2>
+  <div class="cols">
+    <div><h3>ถ้าไม่มี Compose</h3>
+      <pre><code>docker run -d --name db \
+  -e POSTGRES_PASSWORD=... \
+  -v pgdata:/var/lib/... postgres
+
+docker run -d --name api \
+  -p 3000:3000 --link db ...
+
+docker run -d --name web ...</code></pre>
+      <p class="sub" style="margin-top:.5em">ยาว จำไม่ได้ พิมพ์ผิดง่าย</p></div>
+    <div><h3>ถ้ามี Compose</h3>
+      <pre><code>docker compose up -d</code></pre>
+      <p class="sub" style="margin-top:.6em">เขียนทุกอย่างไว้ในไฟล์ <code>docker-compose.yml</code> ครั้งเดียว แล้วสั่งทีเดียวจบ</p>
+      <div class="callout c-green" style="margin-top:.8em"><span class="ico">✅</span><div>ไฟล์เดียว = เอกสารที่บอกว่าระบบมี service อะไรบ้าง</div></div></div>
+  </div>
+</section>
+
+<!-- 30 -->
+<section class="slide">
+  <h2>อ่าน docker-compose.yml</h2>
+  <pre><code><span class="tok">services:</span>
+  <span class="tok">api:</span>
+    image: registry.company.com/api:1.4.2
+    <span class="hl">ports: ["8080:3000"]</span>        <span class="cmt"># เครื่องแม่ 8080 → ข้างใน 3000</span>
+    environment:
+      DB_HOST: db                     <span class="cmt"># เรียก service อื่นด้วย "ชื่อ service"</span>
+    depends_on: [db]
+    restart: unless-stopped
+
+  <span class="tok">db:</span>
+    image: postgres:15
+    volumes: ["pgdata:/var/lib/postgresql/data"]   <span class="cmt"># เก็บข้อมูลถาวร</span>
+
+<span class="tok">volumes:</span>
+  pgdata:</code></pre>
+</section>
+
+<!-- 31 -->
+<section class="slide">
+  <h2>4 จุดที่ต้องดูเป็นในไฟล์ Compose</h2>
+  <table>
+    <tr><th style="width:22%">คีย์</th><th>อ่านว่ายังไง</th></tr>
+    <tr><td><code>image</code></td><td>service นี้ใช้ image อะไร tag ไหน — <span class="sub">ตรงกับที่ลูกค้าบอกหรือเปล่า</span></td></tr>
+    <tr><td><code>ports</code></td><td><span class="hl-b">"ข้างนอก:ข้างใน"</span> — เข้าเว็บไม่ได้ให้ดูตรงนี้ก่อน</td></tr>
+    <tr><td><code>environment</code></td><td>ค่า config เช่น host ของ DB, API key — <span class="sub">ผิดบ่อยที่สุด</span></td></tr>
+    <tr><td><code>volumes</code></td><td><span class="hl-b">"ในเครื่อง:ใน container"</span> — ข้อมูลหายหลัง restart ให้ดูตรงนี้</td></tr>
+  </table>
+  <div class="callout c-blue" style="margin-top:auto"><span class="ico">💡</span><div>ทั้ง ports และ volumes อ่านจาก <b>ซ้าย = ฝั่งเครื่องแม่</b>, <b>ขวา = ฝั่งใน container</b> เสมอ</div></div>
+</section>
+
+<!-- 32 -->
+<section class="slide">
+  <h2>คำสั่ง Compose ที่ใช้บ่อย</h2>
+  <pre><code>docker compose up -d              <span class="cmt"># สร้างและรันทั้งหมด (เบื้องหลัง)</span>
+docker compose ps                 <span class="cmt"># ดูสถานะทุก service</span>
+docker compose logs -f api        <span class="cmt"># ดู log เฉพาะ service ← ใช้บ่อยสุด</span>
+docker compose logs --tail 100    <span class="cmt"># ดู log ทุก service</span>
+docker compose restart api        <span class="cmt"># รีสตาร์ทเฉพาะตัวเดียว</span>
+docker compose exec api sh        <span class="cmt"># เข้าไปข้างใน</span>
+docker compose down               <span class="cmt"># หยุดและลบทั้งหมด</span>
+docker compose pull &amp;&amp; docker compose up -d   <span class="cmt"># อัปเดตเป็น image ใหม่</span></code></pre>
+  <div class="callout c-red" style="margin-top:auto"><span class="ico">🚫</span><div><code>docker compose down <b>-v</b></code> จะ<b>ลบ volume ทิ้งด้วย = ข้อมูลหายถาวร</b> — อย่าใช้บนเครื่องลูกค้าเด็ดขาด</div></div>
+</section>
+
+<!-- 33 -->
+<section class="slide">
+  <h2>เรื่องที่พลาดกันบ่อยใน Compose</h2>
+  <div class="cols">
+    <div class="card"><h3>🔌 Service คุยกันไม่ได้</h3><p class="sub">ใน compose ให้เรียกกันด้วย <b>ชื่อ service</b> (<code>db</code>) ไม่ใช่ <code>localhost</code> — เพราะแต่ละ container มี localhost ของตัวเอง</p></div>
+    <div class="card"><h3>🚪 Port ต้องดูฝั่งซ้าย</h3><p class="sub"><code>"8080:3000"</code> เข้าเว็บที่ <b>8080</b> ไม่ใช่ 3000 · แก้ไฟล์แล้วต้อง <code>up -d</code> ใหม่ถึงจะมีผล</p></div>
+    <div class="card"><h3>🔁 restart: always</h3><p class="sub">ทำให้ container ที่พังกลับมาเองเรื่อยๆ อาจเห็น "Up" ทั้งที่จริงมันวน restart อยู่ — ดู log ให้ชัวร์</p></div>
+    <div class="card"><h3>📝 แก้ไฟล์แล้วไม่มีผล</h3><p class="sub">แก้ yml เสร็จต้อง <code>docker compose up -d</code> ซ้ำ · <code>restart</code> เฉยๆ ไม่โหลด config ใหม่</p></div>
+  </div>
+</section>
+
+<!-- 34 -->
+<section class="slide">
+  <div class="eyebrow">🧪 Lab 2 · 25 นาที</div>
+  <h2>Compose: รันสแตกเล็กๆ แล้วทำให้มันพัง</h2>
+  <div class="steps">
+    <div class="step"><span class="n">1</span><div>เปิดไฟล์ <code>lab/docker-compose.yml</code> ที่แจกให้ อ่านว่ามี service อะไรบ้าง</div></div>
+    <div class="step"><span class="n">2</span><div><code>docker compose up -d</code> แล้ว <code>docker compose ps</code> — ครบทุกตัวไหม</div></div>
+    <div class="step"><span class="n">3</span><div>เข้าเว็บตาม port ที่เห็นในไฟล์ · ลองเดาก่อนว่าต้องเข้าพอร์ตอะไร</div></div>
+    <div class="step"><span class="n">4</span><div>แก้ <code>DB_HOST</code> ให้ผิด → <code>up -d</code> ใหม่ → ดู <code>compose logs api</code> ว่าฟ้องว่าอะไร</div></div>
+    <div class="step"><span class="n">5</span><div>แก้กลับให้ถูก แล้วยืนยันว่ากลับมาปกติ</div></div>
+  </div>
+  <div class="callout c-purple" style="margin-top:auto"><span class="ico">🎯</span><div>เป้าหมาย: เห็นว่า "config ผิด" หน้าตาใน log เป็นยังไง — เคสนี้เจอบ่อยที่สุดในงานจริง</div></div>
+</section>
+
+<!-- 35 -->
+<section class="slide divider center">
+  <div class="eyebrow">Part 5</div>
+  <h1>เคสจริงที่เจอบ่อย</h1>
+  <p class="lead" style="margin-top:.5em">อาการ → สาเหตุที่เป็นไปได้ → สิ่งที่ต้องเช็ค</p>
+</section>
+
+<!-- 36 -->
+<section class="slide">
+  <h2>เคส 1 — "เข้าเว็บไม่ได้เลย"</h2>
+  <div class="steps">
+    <div class="step"><span class="n">1</span><div><code>docker compose ps</code> — container ยังรันอยู่ไหม (Up หรือ Exited)</div></div>
+    <div class="step"><span class="n">2</span><div>ถ้า Exited → <code>docker compose logs --tail 100 &lt;service&gt;</code> ดูว่าตายเพราะอะไร</div></div>
+    <div class="step"><span class="n">3</span><div>ถ้า Up → เช็ค port mapping: <code>docker port &lt;name&gt;</code> ตรงกับที่ลูกค้าเข้าไหม</div></div>
+    <div class="step"><span class="n">4</span><div>ลองยิงจากในเครื่อง server เอง: <code>curl localhost:8080</code></div></div>
+    <div class="step"><span class="n">5</span><div>ถ้าในเครื่องได้ แต่ข้างนอกไม่ได้ → <span class="hl">ปัญหาอยู่ที่ firewall / LB / DNS ไม่ใช่ container</span></div></div>
+  </div>
+  <div class="callout c-green" style="margin-top:auto"><span class="ico">✅</span><div>ข้อ 4–5 สำคัญมาก เพราะแยกได้ว่าเป็นปัญหาของ <b>แอป</b> หรือ <b>เน็ตเวิร์ก</b></div></div>
+</section>
+
+<!-- 37 -->
+<section class="slide">
+  <h2>เคส 2 — "หลัง deploy แล้วพัง"</h2>
+  <div class="cols">
+    <div><h3>เช็คตามลำดับ</h3>
+      <ul><li>image tag เปลี่ยนไปเป็นอะไร</li><li><code>logs --since 30m</code> ดู error ช่วงหลัง deploy</li><li>เทียบ env ระหว่างของเดิมกับของใหม่</li><li>ถามว่า deploy เวลาไหน แล้วพังตอนไหน</li></ul></div>
+    <div><h3>อาการที่บอกสาเหตุ</h3>
+      <table><tr><td class="sub">Exited (1) ทันที</td><td class="sub">config/env หาย</td></tr>
+      <tr><td class="sub">ImagePull error</td><td class="sub">tag ผิด/registry</td></tr>
+      <tr><td class="sub">Restarting วน</td><td class="sub">แอป crash ตอน start</td></tr>
+      <tr><td class="sub">Up แต่ 502</td><td class="sub">แอปยังไม่พร้อม/พอร์ตผิด</td></tr></table></div>
+  </div>
+  <div class="callout c-orange" style="margin-top:auto"><span class="ico">⚠️</span><div>คำถามแรกที่ควรถามเสมอ: <b>"เปลี่ยนอะไรไปก่อนหน้านี้ไหม"</b> — 80% ของเคสมีการเปลี่ยนแปลงนำมาก่อน</div></div>
+</section>
+
+<!-- 38 -->
+<section class="slide">
+  <h2>เคส 3 — "ระบบช้า / ค้างเป็นช่วงๆ"</h2>
+  <pre><code>docker stats                     <span class="cmt"># CPU / MEM ตันหรือเปล่า</span>
+df -h                            <span class="cmt"># ดิสก์เต็มไหม ← สาเหตุที่ถูกมองข้ามบ่อย</span>
+docker system df                 <span class="cmt"># docker กินพื้นที่ไปเท่าไหร่</span>
+docker ps -a | grep -i restart   <span class="cmt"># มีตัวไหน restart วนอยู่ไหม</span></code></pre>
+  <div class="cols" style="margin-top:1em">
+    <div class="callout c-red"><span class="ico">🔴</span><div>MEM ใกล้ 100% → เตรียมเจอ <b>Exit 137 (OOM)</b></div></div>
+    <div class="callout c-orange"><span class="ico">🟠</span><div>ดิสก์เต็ม → container เขียน log ไม่ได้ → พังแบบไม่มีเหตุผล</div></div>
+  </div>
+  <div class="callout c-soft" style="margin-top:.8em"><span class="ico">🧹</span><div>ล้างของไม่ใช้: <code>docker system prune</code> · <span class="hl-r">ระวัง</span> <code>-a --volumes</code> ลบ volume ด้วย</div></div>
+</section>
+
+<!-- 39 -->
+<section class="slide">
+  <h2>เคส 4 — "ข้อมูลหายหลัง restart"</h2>
+  <ul>
+    <li>ข้อมูลใน container จะ<b>หายทุกครั้ง</b>ที่มันถูกสร้างใหม่ — ถ้าไม่มี volume</li>
+    <li>เช็คว่ามี volume ผูกไว้ไหม: <code>docker inspect &lt;name&gt; | grep -A10 Mounts</code></li>
+    <li>ในไฟล์ compose ดูว่า service นั้นมี <code>volumes:</code> หรือเปล่า</li>
+  </ul>
+  <div class="callout c-red" style="margin-top:1.2em"><span class="ico">🚫</span><div>ถ้ามีคนเคยรัน <code>docker compose down -v</code> หรือ <code>docker volume rm</code> → <b>ข้อมูลหายถาวร กู้ไม่ได้</b> ต้องไปดู backup</div></div>
+  <div class="callout c-blue" style="margin-top:.8em"><span class="ico">💡</span><div>เคสแบบนี้ให้ escalate ทันที พร้อมข้อมูลว่ามีใครรันคำสั่งอะไรไปบ้าง</div></div>
+</section>
+
+<!-- 40 -->
+<section class="slide">
+  <h2>Checklist — ไล่ปัญหาใน 5 ขั้น</h2>
+  <div class="steps">
+    <div class="step"><span class="n">1</span><div><b>มันรันอยู่ไหม</b> — <code>docker compose ps</code> / <code>docker ps -a</code></div></div>
+    <div class="step"><span class="n">2</span><div><b>มันบ่นว่าอะไร</b> — <code>logs --tail 200 -t</code> อ่านจากบรรทัดล่างขึ้นบน</div></div>
+    <div class="step"><span class="n">3</span><div><b>config ถูกไหม</b> — <code>exec &lt;name&gt; env</code> / เทียบกับไฟล์ compose</div></div>
+    <div class="step"><span class="n">4</span><div><b>ทรัพยากรพอไหม</b> — <code>docker stats</code>, <code>df -h</code></div></div>
+    <div class="step"><span class="n">5</span><div><b>เน็ตเวิร์กถึงกันไหม</b> — <code>curl localhost:&lt;port&gt;</code> จากในเครื่อง</div></div>
+  </div>
+  <div class="callout c-green" style="margin-top:auto"><span class="ico">✅</span><div>ทำครบ 5 ข้อนี้ก่อน escalate — จะบอก dev ได้เลยว่าปัญหาอยู่โซนไหน</div></div>
+</section>
+
+<!-- 41 -->
+<section class="slide">
+  <h2>เมื่อไหร่ควร Escalate — และต้องแนบอะไร</h2>
+  <div class="cols">
+    <div><h3>ควรส่งต่อเมื่อ</h3>
+      <ul><li>ต้องแก้โค้ด หรือแก้ config ระดับ production</li><li>เกี่ยวกับข้อมูลสูญหาย / ต้องกู้ backup</li><li>ทำครบ checklist แล้วยังไม่รู้สาเหตุ</li><li>ต้องรัน<b>คำสั่งที่มีผลถาวร</b> เช่น ลบ volume</li></ul></div>
+    <div><h3>แนบไปด้วยเสมอ</h3>
+      <ul class="check"><li>ชื่อ service / container และ image tag</li><li><code>docker ps -a</code> (ผลลัพธ์)</li><li><code>logs --tail 200 -t</code></li><li>เวลาที่เริ่มมีอาการ + สิ่งที่เปลี่ยนก่อนหน้า</li><li>สิ่งที่ลองแก้ไปแล้ว</li></ul></div>
+  </div>
+</section>
+
+<!-- 42 -->
+<section class="slide">
+  <h2>สรุป Day 1</h2>
+  <ul class="check">
+    <li>Container = แอป + ของที่มันต้องใช้ แพ็กรวมไว้ในกล่องเดียว</li>
+    <li><code>ps -a</code> · <code>logs</code> · <code>exec</code> · <code>stats</code> · <code>inspect</code> = ครอบคลุมงานที่ต้องใช้แทบทั้งหมด</li>
+    <li>อ่าน STATUS และ exit code เป็น = รู้ทันทีว่าควรไปดูอะไรต่อ</li>
+    <li>Compose = ไฟล์เดียวที่บอกว่าระบบประกอบด้วยอะไร มี 4 จุดหลักที่ต้องดูเป็น</li>
+    <li>เก็บ log ก่อน restart เสมอ</li>
+  </ul>
+  <div class="callout c-purple" style="margin-top:auto"><span class="ico">➡️</span><div><b>พรุ่งนี้:</b> ถ้ามี container เยอะๆ หลายเครื่อง จะจัดการยังไง — Kubernetes &amp; Rancher</div></div>
+</section>
+
+<!-- 43 -->
+<section class="slide divider center">
+  <h1>Q&amp;A</h1>
+  <p class="lead" style="margin-top:.6em">มีเคสจริงที่เคยเจอแล้วอยากถาม เอามาคุยกันได้เลย</p>
+</section>
+
+</div>
+<div id="hint">← → เปลี่ยนสไลด์ · F จอเต็ม · P พิมพ์ PDF</div>
+<div id="nav">
+  <button id="prev" title="ก่อนหน้า">‹</button>
+  <span id="pos">1 / 1</span>
+  <button id="next" title="ถัดไป">›</button>
+  <button id="full" title="เต็มจอ">⛶</button>
+</div>
+<script>
+document.body.classList.add('js');
+const s=[...document.querySelectorAll('.slide')];let i=0;
+const go=n=>{i=Math.max(0,Math.min(s.length-1,n));
+ s.forEach((e,k)=>e.classList.toggle('active',k===i));
+ document.getElementById('bar').style.width=((i+1)/s.length*100)+'%';
+ document.getElementById('pos').textContent=(i+1)+' / '+s.length;
+ history.replaceState(null,'','#'+(i+1));};
+addEventListener('keydown',e=>{
+ if(['ArrowRight',' ','PageDown','ArrowDown'].includes(e.key)){e.preventDefault();go(i+1)}
+ else if(['ArrowLeft','PageUp','ArrowUp'].includes(e.key)){e.preventDefault();go(i-1)}
+ else if(e.key==='Home')go(0); else if(e.key==='End')go(s.length-1);
+ else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+ else if(e.key==='p'||e.key==='P'){window.print()}});
+prev.onclick=()=>go(i-1); next.onclick=()=>go(i+1);
+full.onclick=()=>document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();
+go(parseInt(location.hash.slice(1))-1||0);
+</script>
+</body>
+</html>

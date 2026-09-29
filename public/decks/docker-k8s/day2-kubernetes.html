@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 2 — Kubernetes &amp; Rancher พื้นฐาน</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#191919; --ink2:#37352f; --muted:#787774; --line:#e9e9e7; --bg:#ffffff; --soft:#f7f7f5;
+  --blue:#2383e2; --blue-bg:#e7f3f8; --orange:#d9730d; --orange-bg:#fbecdd;
+  --red:#e03e3e; --red-bg:#fbe4e4; --green:#0f7b6c; --green-bg:#ddedea;
+  --purple:#6940a5; --purple-bg:#eae4f2; --yellow-bg:#fbf3db;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:'IBM Plex Sans Thai',-apple-system,sans-serif;color:var(--ink);background:#f1f1ef;-webkit-font-smoothing:antialiased}
+/* โหมดปกติ (ไม่มี JS): แสดงทุกสไลด์ต่อกันแบบเลื่อนอ่าน */
+#deck{display:flex;flex-direction:column;align-items:center;gap:20px;padding:20px 0}
+/* โหมดพรีเซนต์ (มี JS): ทีละสไลด์เต็มจอ */
+body.js{overflow:hidden}
+body.js #deck{position:relative;width:100vw;height:100vh;flex-direction:row;align-items:center;justify-content:center;gap:0;padding:0}
+body.js .slide{display:none}
+body.js .slide.active{display:flex}
+.slide{display:flex;position:relative;width:min(96vw, calc(100vh * 16 / 9 * 0.96));aspect-ratio:16/9;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:4.2% 5.5%;overflow:hidden;flex-direction:column;box-shadow:0 1px 3px rgba(15,15,15,.06),0 6px 24px rgba(15,15,15,.06)}
+.slide{font-size:min(2.5vh, 1.4vw)}
+h1{font-size:3.2em;font-weight:600;line-height:1.15;letter-spacing:-.02em}
+h2{font-size:1.9em;font-weight:600;line-height:1.25;margin-bottom:.5em;letter-spacing:-.01em}
+h3{font-size:1.15em;font-weight:600;margin-bottom:.35em}
+p,li{font-size:1em;line-height:1.65;color:var(--ink2)}
+.lead{font-size:1.15em;color:var(--muted);font-weight:300}
+.eyebrow{font-size:.72em;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:.9em}
+ul{list-style:none;display:flex;flex-direction:column;gap:.5em}
+ul li{position:relative;padding-left:1.3em}
+ul li::before{content:"";position:absolute;left:.25em;top:.72em;width:.34em;height:.34em;border-radius:50%;background:var(--muted)}
+ul.check li::before{content:"✓";background:none;left:0;top:0;color:var(--green);font-weight:600}
+ul.x li::before{content:"✕";background:none;left:0;top:0;color:var(--red);font-weight:600}
+.sub{font-size:.85em;color:var(--muted)}
+b,strong{font-weight:600;color:var(--ink)}
+code{font-family:'IBM Plex Mono',monospace;font-size:.88em;background:var(--soft);border:1px solid var(--line);border-radius:3px;padding:.08em .35em;color:var(--ink)}
+pre{font-family:'IBM Plex Mono',monospace;background:var(--soft);border:1px solid var(--line);border-radius:4px;padding:.9em 1.1em;font-size:.82em;line-height:1.75;overflow:hidden;white-space:pre-wrap}
+pre code{background:none;border:none;padding:0;font-size:1em}
+.cmt{color:var(--muted)}
+.tok{color:var(--blue)}
+.hl{background:var(--yellow-bg);border-radius:3px;padding:0 .2em}
+.hl-b{background:var(--blue-bg);color:#0b6e99;border-radius:3px;padding:0 .25em;font-weight:500}
+.hl-r{background:var(--red-bg);color:var(--red);border-radius:3px;padding:0 .25em;font-weight:500}
+.hl-g{background:var(--green-bg);color:var(--green);border-radius:3px;padding:0 .25em;font-weight:500}
+.center{justify-content:center;align-items:flex-start}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:1.6em;flex:1;align-content:start}
+.cols3{display:grid;grid-template-columns:repeat(3,1fr);gap:1.1em;flex:1;align-content:start}
+.card{border:1px solid var(--line);border-radius:5px;padding:1em 1.15em;background:#fff}
+.card.soft{background:var(--soft)}
+.card .ico{font-size:1.5em;line-height:1;margin-bottom:.35em;display:block}
+.callout{display:flex;gap:.75em;border-radius:4px;padding:.85em 1.05em;font-size:.95em;align-items:flex-start}
+.callout .ico{font-size:1.15em;line-height:1.4}
+.c-blue{background:var(--blue-bg)}.c-orange{background:var(--orange-bg)}.c-red{background:var(--red-bg)}
+.c-green{background:var(--green-bg)}.c-purple{background:var(--purple-bg)}.c-soft{background:var(--soft)}
+table{border-collapse:collapse;width:100%;font-size:.9em}
+th,td{text-align:left;padding:.5em .7em;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:500;color:var(--muted);font-size:.85em}
+td code{font-size:.92em}
+.divider{display:flex;flex-direction:column;justify-content:center;background:var(--ink);border-color:var(--ink)}
+.divider h1,.divider .lead,.divider .eyebrow{color:#fff}
+.divider .lead{color:#9b9a97}.divider .eyebrow{color:#787774}
+.steps{display:flex;flex-direction:column;gap:.55em}
+.step{display:flex;gap:.7em;align-items:flex-start}
+.step .n{flex:none;width:1.55em;height:1.55em;border-radius:50%;background:var(--soft);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:.75em;font-weight:600;color:var(--ink)}
+.flow{display:flex;align-items:center;gap:.6em;flex-wrap:wrap}
+.flow .box{border:1px solid var(--line);border-radius:5px;padding:.55em .9em;font-size:.9em;background:#fff;font-weight:500}
+.flow .arr{color:var(--muted)}
+.ui{border:1px solid var(--line);border-radius:5px;overflow:hidden;font-size:.85em}
+.ui .bar{background:var(--soft);border-bottom:1px solid var(--line);padding:.4em .8em;color:var(--muted);font-size:.9em;display:flex;gap:.5em;align-items:center}
+.ui .row{padding:.45em .8em;border-bottom:1px solid var(--line);display:flex;justify-content:space-between}
+.ui .row:last-child{border:none}
+.foot{position:absolute;left:5.5%;right:5.5%;bottom:2.2%;display:flex;justify-content:space-between;font-size:.68em;color:#c9c9c7}
+#bar{position:fixed;top:0;left:0;height:2px;background:var(--blue);z-index:10;transition:width .2s}
+#hint{position:fixed;bottom:10px;right:14px;font-size:11px;color:#a5a5a3;z-index:10}
+#nav{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);display:none;gap:6px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:20px;padding:5px 8px;box-shadow:0 2px 8px rgba(15,15,15,.08);z-index:10;font-size:13px}
+body.js #nav{display:flex}
+#nav button{border:none;background:none;cursor:pointer;font-size:15px;color:var(--ink2);padding:2px 8px;border-radius:12px;line-height:1}
+#nav button:hover{background:var(--soft)}
+#pos{font-family:'IBM Plex Mono',monospace;color:var(--muted);min-width:52px;text-align:center}
+@media print{body{overflow:visible;background:#fff}body.js{overflow:visible}#deck,body.js #deck{display:block;height:auto;width:auto;padding:0}.slide,body.js .slide{display:flex!important;page-break-after:always;box-shadow:none;border:none;width:100%;margin:0}#bar,#hint,#nav{display:none!important}}
+</style>
+</head>
+<body>
+<div id="bar"></div>
+<div id="deck">
+
+<!-- 1 -->
+<section class="slide center">
+  <div class="eyebrow">Internal Training</div>
+  <h1>Kubernetes &amp; Rancher<br>พื้นฐาน</h1>
+  <p class="lead" style="margin-top:.6em">Day 2 of 2 — พื้นฐาน K8s, การใช้ Rancher และ kubectl เท่าที่ใช้จริง</p>
+  <div class="foot"><span>Docker &amp; Kubernetes Internal Training</span><span>Day 2</span></div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <h2>ทวน Day 1 สั้นๆ</h2>
+  <ul class="check">
+    <li>Container = แอป + ของที่มันต้องใช้ แพ็กรวมไว้ในกล่องเดียว</li>
+    <li><code>docker ps -a</code> ดูสถานะ · <code>docker logs</code> ดูว่ามันบ่นอะไร</li>
+    <li>อ่าน exit code เป็น: 0 ปกติ · 1 แอปพัง · 137 OOM</li>
+    <li>Compose = ไฟล์เดียวที่บอกว่าระบบมี service อะไร ต่อกันยังไง</li>
+  </ul>
+  <div class="callout c-purple" style="margin-top:auto"><span class="ico">➡️</span><div>วันนี้: แล้วถ้าระบบมี container เป็นร้อยตัว กระจายอยู่หลายเครื่อง — จะดูแลยังไง</div></div>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <h2>Agenda — Day 2</h2>
+  <div class="steps" style="margin-top:.3em">
+    <div class="step"><span class="n">1</span><div><b>Kubernetes คืออะไร</b> <span class="sub">— แก้ปัญหาอะไรที่ Docker เดี่ยวๆ แก้ไม่ได้</span></div></div>
+    <div class="step"><span class="n">2</span><div><b>Object พื้นฐาน</b> <span class="sub">— Pod, Deployment, Service, Namespace</span></div></div>
+    <div class="step"><span class="n">3</span><div><b>Rancher UI</b> <span class="sub">— เครื่องมือหลักที่ทีมใช้ทุกวัน</span></div></div>
+    <div class="step"><span class="n">4</span><div><b>kubectl พื้นฐาน</b> <span class="sub">— 6 คำสั่งที่ใช้จริง</span></div></div>
+    <div class="step"><span class="n">5</span><div><b>Use case ที่เจอบ่อย</b> <span class="sub">— และเมื่อไหร่ควร escalate</span></div></div>
+  </div>
+  <div class="callout c-purple" style="margin-top:auto"><span class="ico">🏥</span><div>ภาคบ่ายมีเกม <b>"ล่ารหัสลับ"</b> — เปิดในเบราว์เซอร์ ทำคนเดียว 12 นาที ไม่ต้องต่อ VPN</div></div>
+</section>
+
+<!-- 4 -->
+<section class="slide divider center">
+  <div class="eyebrow">Part 1</div>
+  <h1>Kubernetes คืออะไร</h1>
+  <p class="lead" style="margin-top:.5em">และทำไมถึงต้องมี ในเมื่อมี Docker แล้ว</p>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <h2>ปัญหาที่ Docker เดี่ยวๆ แก้ไม่ได้</h2>
+  <div class="cols">
+    <div class="card"><h3>😰 ถ้ามีแค่ Docker</h3>
+      <ul class="sub"><li>container ตายตอนตีสาม → ต้องมีคนไป restart เอง</li><li>คนใช้เยอะขึ้น → ต้องเพิ่มเครื่องเอง</li><li>เครื่อง server พังทั้งเครื่อง → ทุกอย่างล่ม</li><li>deploy ใหม่ = ต้องดับของเก่าก่อน</li></ul></div>
+    <div class="card"><h3>🎯 Kubernetes ทำให้</h3>
+      <ul class="sub"><li>container ตาย → สร้างใหม่เองอัตโนมัติ</li><li>สั่งเพิ่ม/ลดจำนวนได้ในคำสั่งเดียว</li><li>เครื่องนึงพัง → ย้ายไปรันเครื่องอื่นให้</li><li>deploy ใหม่แบบไม่ต้องดับระบบ</li></ul></div>
+  </div>
+  <div class="callout c-blue" style="margin-top:1em"><span class="ico">💡</span><div>Docker = คนคุมกล่องทีละใบ · Kubernetes = <b>ผู้จัดการคลังสินค้า</b> ที่คุมกล่องเป็นร้อยใบให้เอง</div></div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <h2>Kubernetes คืออะไร</h2>
+  <div class="callout c-blue"><span class="ico">📘</span><div><b>Kubernetes (เรียกสั้นๆ ว่า K8s)</b> คือระบบที่คอยรันและดูแล container จำนวนมากให้อัตโนมัติ — กระจายอยู่ได้หลายเครื่อง โดยเราไม่ต้องไปนั่งสั่งทีละตัว</div></div>
+  <div class="cols" style="margin-top:1.1em">
+    <div><h3>ที่มาสั้นๆ</h3>
+      <p class="sub">Google ต่อยอดจากระบบภายในของตัวเองที่ชื่อ Borg แล้วเปิดเป็น open source ปี 2014 · ตอนนี้อยู่ในความดูแลของมูลนิธิ CNCF และกลายเป็นมาตรฐานที่แทบทุกที่ใช้</p>
+      <p class="sub" style="margin-top:.5em">ชื่อย่อ <b>K8s</b> มาจาก K + ตัวอักษรตรงกลาง 8 ตัว + s</p></div>
+    <div><h3>มันทำอะไรให้</h3>
+      <ul class="sub"><li>เลือกว่า container ไหนไปรันเครื่องไหน</li><li>ตายแล้วสร้างขึ้นมาใหม่ให้เอง</li><li>เพิ่ม/ลดจำนวนได้ตามโหลด</li><li>อัปเดตเวอร์ชันใหม่โดยระบบไม่ดับ</li><li>ทำให้แต่ละส่วนเรียกหากันเจอ</li></ul></div>
+  </div>
+  <div class="callout c-soft" style="margin-top:auto"><span class="ico">🚫</span><div><b>สิ่งที่ K8s ไม่ใช่:</b> ไม่ได้ build image ให้ · ไม่ใช่ระบบ CI/CD · ไม่ได้แก้บั๊กในแอปให้ — หน้าที่มันคือ "ดูแลให้ container รันตามที่สั่งไว้" เท่านั้น</div></div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <h2>Container Orchestration คืออะไร</h2>
+  <div class="callout c-blue"><span class="ico">📘</span><div><b>Orchestration</b> คือการสั่งการ container จำนวนมากให้ทำงานร่วมกันอย่างเป็นระบบ โดยไม่ต้องมีคนคอยดูทีละตัว · มาจากคำว่า orchestra — <b>K8s ทำหน้าที่เหมือนวาทยกร</b> ที่คุมนักดนตรีทั้งวง</div></div>
+  <table style="margin-top:1.1em">
+    <tr><th style="width:30%">งานที่มันทำแทนคน</th><th>แปลว่า</th></tr>
+    <tr><td><b>Scheduling</b></td><td>ตัดสินใจว่า container ตัวไหนควรไปรันบนเครื่องไหน</td></tr>
+    <tr><td><b>Self-healing</b></td><td>ตรวจว่าตัวไหนตายหรือไม่ตอบสนอง แล้วสร้างใหม่ให้</td></tr>
+    <tr><td><b>Scaling</b></td><td>เพิ่ม/ลดจำนวนตามโหลดหรือตามที่สั่ง</td></tr>
+    <tr><td><b>Service discovery</b></td><td>ทำให้แต่ละส่วนเรียกหากันเจอ แม้ที่อยู่จะเปลี่ยนตลอด</td></tr>
+    <tr><td><b>Rolling update</b></td><td>เปลี่ยนเวอร์ชันทีละตัว ระบบไม่ต้องดับ</td></tr>
+  </table>
+  <div class="callout c-orange" style="margin-top:auto"><span class="ico">💡</span><div>ในตลาดมีหลายเจ้า (Kubernetes, Docker Swarm, Nomad, ECS) แต่ K8s เป็นที่นิยมที่สุด · <b>Rancher ไม่ใช่คู่แข่งของ K8s</b> แต่เป็นหน้าจอที่ช่วยให้จัดการ K8s ได้ง่ายขึ้นอีกที</div></div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <h2>K8s ในภาษาคน: ร้านกาแฟหนึ่งเชน ☕</h2>
+  <p class="sub" style="margin-bottom:.7em">คำศัพท์ทั้งวันนี้ ถ้าเทียบกับร้านกาแฟจะเข้าใจง่ายขึ้นเยอะ — เดี๋ยวจะอ้างถึงภาพนี้ตลอด</p>
+  <table>
+    <tr><th style="width:26%">ศัพท์ K8s</th><th>ในร้านกาแฟคือ</th></tr>
+    <tr><td>📦 <b>Pod</b></td><td>พนักงานชงกาแฟ 1 คน — คนที่ลงมือทำงานจริง</td></tr>
+    <tr><td>👔 <b>Deployment</b></td><td>หัวหน้าร้าน — กำหนดว่าต้องมีพนักงานกี่คน ใครลาออกก็หาคนใหม่มาแทนทันที</td></tr>
+    <tr><td>🧾 <b>Service</b></td><td>เคาน์เตอร์รับออเดอร์ — ลูกค้าสั่งที่เดิมเสมอ ไม่ต้องรู้ว่าวันนี้ใครเป็นคนชง</td></tr>
+    <tr><td>🏪 <b>Node</b></td><td>สาขา — สถานที่ที่พนักงานไปยืนทำงาน</td></tr>
+    <tr><td>🏢 <b>Cluster</b></td><td>ทั้งเชนรวมกัน</td></tr>
+    <tr><td>🚪 <b>Ingress</b></td><td>พนักงานต้อนรับหน้าร้าน — ชี้ว่าลูกค้าคนไหนควรไปเคาน์เตอร์ไหน</td></tr>
+    <tr><td>🗂️ <b>Namespace</b></td><td>โซนในร้าน เช่น โซนกาแฟ โซนเบเกอรี่ — ของคนละโซนไม่ปนกัน</td></tr>
+    <tr><td>📺 <b>Rancher</b></td><td>จอ CCTV + รีโมตของผู้จัดการ — นั่งดูทุกสาขาได้จากที่เดียว</td></tr>
+  </table>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <h2>หัวใจของ K8s: Desired State</h2>
+  <div class="flow" style="margin:.9em 0">
+    <div class="box">เราบอกว่า "อยากได้ 3 ตัว"</div><span class="arr">→</span>
+    <div class="box">K8s คอยเช็คตลอดเวลา</div><span class="arr">→</span>
+    <div class="box">ตายไป 1 → สร้างใหม่ให้เอง</div>
+  </div>
+  <ul style="margin-top:.6em">
+    <li>เราไม่ได้สั่งว่า "ทำ ก ข ค" — เราบอกแค่ว่า <b>ผลลัพธ์ที่อยากได้คืออะไร</b></li>
+    <li>K8s จะพยายามทำให้สถานะจริง = สถานะที่เราต้องการ ตลอดเวลา</li>
+    <li>☕ เหมือนสั่งหัวหน้าร้านว่า "กะนี้ขอพนักงาน 3 คน" — ใครลาป่วย หัวหน้าร้านหาคนมาแทนเองโดยไม่ต้องถามเรา</li>
+  </ul>
+  <div class="callout c-orange" style="margin-top:1em"><span class="ico">⚠️</span><div>เพราะแบบนี้ <b>ลบ pod ทิ้งมันจะเกิดใหม่เอง</b> — ไม่ใช่เรื่องผิดปกติ และเป็นเหตุผลว่าทำไม "restart pod" ถึงปลอดภัยกว่าที่คิด</div></div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <h2>โครงสร้างแบบง่ายที่สุด</h2>
+  <div class="cols3" style="margin-top:.4em">
+    <div class="card soft"><span class="ico">🏢</span><h3>Cluster</h3><p class="sub">ระบบทั้งก้อน = กลุ่มเครื่องที่ทำงานร่วมกัน · ลูกค้าแต่ละรายอาจมีคนละ cluster</p></div>
+    <div class="card soft"><span class="ico">🖥️</span><h3>Node</h3><p class="sub">เครื่อง server 1 เครื่องใน cluster · pod จะไปรันอยู่บน node</p></div>
+    <div class="card soft"><span class="ico">📦</span><h3>Pod</h3><p class="sub">หน่วยเล็กที่สุดที่รันแอป · ข้างในมี container 1 ตัว (ส่วนใหญ่)</p></div>
+  </div>
+  <div class="callout c-soft" style="margin-top:1.2em"><span class="ico">🧠</span><div><b>Control Plane</b> = สมองของ cluster คอยสั่งว่า pod ไหนไปอยู่ node ไหน — เราไม่ต้องยุ่งโดยตรง แต่ถ้ามันมีปัญหา ทั้ง cluster จะรวน</div></div>
+</section>
+
+<!-- 11 -->
+<section class="slide divider center">
+  <div class="eyebrow">Part 2</div>
+  <h1>Object พื้นฐาน</h1>
+  <p class="lead" style="margin-top:.5em">รู้จัก 5 ตัวนี้ก็คุยกับ dev รู้เรื่องแล้ว</p>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+  <h2>Pod — หน่วยที่เล็กที่สุด</h2>
+  <ul>
+    <li>Pod คือที่อยู่ของ container — ปกติ <b>1 pod = 1 container</b></li>
+    <li>Pod มี IP ของตัวเอง แต่ <b>เปลี่ยนทุกครั้งที่เกิดใหม่</b></li>
+    <li>Pod เป็นของ<b>ชั่วคราว</b> — ตายแล้วไม่ฟื้น ระบบจะสร้าง<b>ตัวใหม่</b>ขึ้นมาแทน (ชื่อจะเปลี่ยน)</li>
+    <li>☕ <b>เทียบร้านกาแฟ:</b> pod = พนักงานชงกาแฟ 1 คน · ลาออกแล้วร้านจ้างคนใหม่มาแทน ไม่ใช่คนเดิมกลับมา ชื่อจึงเปลี่ยน</li>
+  </ul>
+  <pre style="margin-top:1em"><code>my-api-7d4b8c9f5-x2k9p
+<span class="cmt">└─ deployment ─┘└hash┘└id┘   ← ชื่อลงท้ายสุ่ม = ปกติ</span></code></pre>
+  <div class="callout c-blue" style="margin-top:auto"><span class="ico">💡</span><div>ถ้าลูกค้าบอก "ชื่อ pod เปลี่ยนไปแล้ว" — <b>ไม่ใช่ปัญหา</b> แปลว่ามันถูกสร้างใหม่ ซึ่งเป็นเรื่องปกติ</div></div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+  <h2>Deployment — คนคุม Pod</h2>
+  <div class="flow" style="margin:.8em 0 1em">
+    <div class="box">Deployment</div><span class="arr">→ ดูแล →</span>
+    <div class="box">📦 Pod</div><div class="box">📦 Pod</div><div class="box">📦 Pod</div>
+  </div>
+  <ul>
+    <li>บอกว่า "อยากได้ pod แบบนี้ จำนวน 3 ตัว จาก image tag นี้"</li>
+    <li>Pod ตาย → Deployment สร้างใหม่ให้อัตโนมัติ</li>
+    <li>เปลี่ยน image tag → ทยอยเปลี่ยน pod ทีละตัว (rolling update) ระบบไม่ดับ</li>
+    <li>ใน Rancher จะเห็นเป็น <b>Workload</b> — และนี่คือระดับที่เรามักจะไป restart หรือ scale</li>
+    <li>☕ <b>เทียบร้านกาแฟ:</b> Deployment = หัวหน้าร้านที่สั่งไว้ว่า "กะนี้ต้องมีพนักงาน 3 คนเสมอ"</li>
+  </ul>
+  <div class="callout c-green" style="margin-top:auto"><span class="ico">✅</span><div>เวลาจะ restart ให้ทำที่ระดับ <b>Deployment/Workload</b> ไม่ใช่ไล่ลบ pod ทีละตัว</div></div>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+  <h2>Service — ที่อยู่ถาวรของแอป</h2>
+  <ul>
+    <li>Pod IP เปลี่ยนตลอด → ถ้าเรียก pod ตรงๆ จะพังทันทีที่ pod เกิดใหม่</li>
+    <li><b>Service</b> = ชื่อ/IP ที่ไม่เปลี่ยน แล้วกระจาย traffic ไปยัง pod ที่ยังไหว</li>
+    <li>☕ <b>เทียบร้านกาแฟ:</b> Service = เคาน์เตอร์รับออเดอร์ · ลูกค้าสั่งที่เดิมทุกครั้ง ไม่ต้องรู้ว่าวันนี้ใครเป็นคนชง</li>
+  </ul>
+  <table style="margin-top:1em">
+    <tr><th style="width:28%">ประเภท</th><th>ใช้ตอนไหน</th></tr>
+    <tr><td><b>ClusterIP</b></td><td>เรียกกันภายใน cluster เท่านั้น (ค่าเริ่มต้น)</td></tr>
+    <tr><td><b>NodePort</b></td><td>เปิดพอร์ตบนตัว node ให้เข้าจากข้างนอกได้</td></tr>
+    <tr><td><b>LoadBalancer</b></td><td>ผูกกับ LB ของ cloud — มี IP สาธารณะ</td></tr>
+  </table>
+  <div class="callout c-blue" style="margin-top:auto"><span class="ico">💡</span><div>"pod ปกติดี แต่ลูกค้าเข้าไม่ได้" → มักเป็นปัญหาที่ <b>Service หรือ Ingress</b> ไม่ใช่ที่ pod</div></div>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+  <h2>เส้นทางของ request จากลูกค้า</h2>
+  <div class="flow" style="margin:1.2em 0">
+    <div class="box">🌍 ลูกค้า</div><span class="arr">→</span>
+    <div class="box">Ingress<br><span class="sub">ดู URL/domain</span></div><span class="arr">→</span>
+    <div class="box">Service<br><span class="sub">กระจาย traffic</span></div><span class="arr">→</span>
+    <div class="box">📦 Pod<br><span class="sub">แอปจริง</span></div>
+  </div>
+  <table>
+    <tr><th style="width:30%">เข้าไม่ได้ตรงจุดไหน</th><th>อาการที่เห็น</th></tr>
+    <tr><td>Ingress</td><td>404 / ชื่อโดเมนเข้าไม่ได้ / cert หมดอายุ</td></tr>
+    <tr><td>Service</td><td>502 / 503 — หา pod ปลายทางไม่เจอ</td></tr>
+    <tr><td>Pod</td><td>500 / timeout — แอปเองมีปัญหา</td></tr>
+  </table>
+  <div class="callout c-soft" style="margin-top:auto"><span class="ico">☕</span><div><b>เทียบร้านกาแฟ:</b> ลูกค้าเดินเข้าร้าน → พนักงานต้อนรับชี้ทาง (Ingress) → ต่อคิวที่เคาน์เตอร์ (Service) → พนักงานชงให้ (Pod) · ติดตรงไหน ลูกค้าก็ไม่ได้กาแฟ</div></div>
+</section>
+
+<!-- 16 -->
+<section class="slide">
+  <h2>Namespace, ConfigMap &amp; Secret</h2>
+  <div class="cols3">
+    <div class="card soft"><span class="ico">🗂️</span><h3>Namespace</h3><p class="sub">โซนแบ่งของใน cluster เช่น <code>prod</code>, <code>staging</code> · <b>ต้องเลือกให้ถูกก่อนหาอะไรเสมอ</b> ☕ = โซนกาแฟ / โซนเบเกอรี่</p></div>
+    <div class="card soft"><span class="ico">⚙️</span><h3>ConfigMap</h3><p class="sub">ค่า config ที่ไม่ลับ เช่น URL, feature flag ☕ = สูตรกาแฟที่ติดไว้หลังเคาน์เตอร์</p></div>
+    <div class="card soft"><span class="ico">🔐</span><h3>Secret</h3><p class="sub">ค่าที่เป็นความลับ เช่น password, token ☕ = รหัสตู้เซฟหลังร้าน</p></div>
+  </div>
+  <div class="callout c-red" style="margin-top:1.2em"><span class="ico">🚫</span><div><b>Secret ไม่ได้เข้ารหัสจริง</b> — มันแค่ถูกเข้ารหัสแบบ base64 ซึ่งถอดได้ทันที · <b>ห้าม screenshot หรือแปะค่าใน ticket / แชท</b> เด็ดขาด</div></div>
+  <div class="callout c-orange" style="margin-top:.7em"><span class="ico">⚠️</span><div>หาอะไรไม่เจอใน Rancher ให้เช็คก่อนเลยว่า <b>อยู่ผิด namespace หรือผิด cluster หรือเปล่า</b></div></div>
+</section>
+
+<!-- 17 -->
+<section class="slide">
+  <h2>Pod Status ที่เจอบ่อย — ตัวที่ปกติ</h2>
+  <table>
+    <tr><th style="width:32%">STATUS</th><th>แปลว่า</th></tr>
+    <tr><td><span class="hl-g">Running 1/1</span></td><td>ปกติ container พร้อมใช้งาน</td></tr>
+    <tr><td><span class="hl">Running 0/1</span></td><td>รันอยู่ แต่ <b>ยังไม่พร้อมรับ traffic</b> — readiness ยังไม่ผ่าน</td></tr>
+    <tr><td><span class="hl">ContainerCreating</span></td><td>กำลังสร้าง — ถ้าค้างเกิน 2-3 นาที = ผิดปกติ</td></tr>
+    <tr><td><span class="hl-g">Completed</span></td><td>job ที่รันเสร็จแล้ว — ไม่ใช่ error</td></tr>
+    <tr><td><span class="hl">Terminating</span></td><td>กำลังปิดตัว — ถ้าค้างนาน อาจติด finalizer</td></tr>
+  </table>
+  <div class="callout c-orange" style="margin-top:auto"><span class="ico">⚠️</span><div><span class="hl">Running 0/1</span> คือกับดัก — เห็นคำว่า Running แต่ลูกค้าใช้ไม่ได้จริง ให้ดูตัวเลข READY เสมอ</div></div>
+</section>
+
+<!-- 18 -->
+<section class="slide">
+  <h2>Pod Status ที่เจอบ่อย — ตัวที่มีปัญหา</h2>
+  <table>
+    <tr><th style="width:30%">STATUS</th><th>สาเหตุ</th><th style="width:26%">ไปดูต่อที่</th></tr>
+    <tr><td><span class="hl-r">CrashLoopBackOff</span></td><td>แอปพังตอนเริ่ม แล้ววน restart</td><td class="sub">logs (previous)</td></tr>
+    <tr><td><span class="hl-r">ImagePullBackOff</span></td><td>ดึง image ไม่ได้ — tag ผิด/ไม่มีสิทธิ์</td><td class="sub">Events</td></tr>
+    <tr><td><span class="hl-r">Pending</span></td><td>ไม่มี node ว่างพอ / รอ volume</td><td class="sub">Events</td></tr>
+    <tr><td><span class="hl-r">OOMKilled</span></td><td>ใช้ RAM เกิน limit</td><td class="sub">memory limit</td></tr>
+    <tr><td><span class="hl-r">Error</span></td><td>container จบด้วย exit code ไม่ใช่ 0</td><td class="sub">logs</td></tr>
+    <tr><td><span class="hl-r">Evicted</span></td><td>โดนไล่ออกจาก node เพราะ node ทรัพยากรหมด</td><td class="sub">node status</td></tr>
+  </table>
+  <div class="callout c-blue" style="margin-top:auto"><span class="ico">💡</span><div>สังเกตคอลัมน์ <b>RESTARTS</b> ด้วย — เลขสูงและเพิ่มเรื่อยๆ = มีปัญหาแม้สถานะจะเป็น Running</div></div>
+</section>
+
+<!-- 19 -->
+<section class="slide">
+  <h2>การ์ดอาการ 6 แบบ 🩺</h2>
+  <p class="sub" style="margin-bottom:.7em">จำ 6 ใบนี้ได้ = ไล่เคสได้เกือบทุกเคสที่จะเจอ · บ่ายนี้จะได้ใช้จริงในคลินิก</p>
+  <div class="cols3">
+    <div class="card"><span class="ico">💚</span><h3>Running 1/1</h3><p class="sub">สบายดี ทำงานปกติ<br><b>→ ไม่ต้องทำอะไร</b></p></div>
+    <div class="card"><span class="ico">😴</span><h3>Running 0/1</h3><p class="sub">มาทำงานแล้ว แต่ยังไม่พร้อมรับลูกค้า<br><b>→ ดู Events + readiness</b></p></div>
+    <div class="card"><span class="ico">🔁</span><h3>CrashLoopBackOff</h3><p class="sub">เข้างานแล้วเป็นลมทุกรอบ<br><b>→ ดู Logs (Previous)</b></p></div>
+    <div class="card"><span class="ico">📦</span><h3>ImagePullBackOff</h3><p class="sub">ยังไม่ได้ตัวคนมาเลย หยิบของผิดกล่อง<br><b>→ ดู Events</b></p></div>
+    <div class="card"><span class="ico">🪑</span><h3>Pending</h3><p class="sub">ไม่มีที่ให้ยืนทำงาน<br><b>→ ดู Events + ทรัพยากร node</b></p></div>
+    <div class="card"><span class="ico">🍔</span><h3>OOMKilled</h3><p class="sub">กินเกินโควตา เลยโดนเชิญออก<br><b>→ ดู RESTARTS + memory limit</b></p></div>
+  </div>
+  <div class="callout c-blue" style="margin-top:auto"><span class="ico">💡</span><div>กฎเดียวที่ต้องจำ: <b>ยังไม่ได้เริ่มทำงาน → ดู Events · เริ่มทำงานแล้วล้ม → ดู Logs</b></div></div>
+</section>
+
+<!-- 20 -->
+<section class="slide divider center">
+  <div class="eyebrow">Part 3</div>
+  <h1>Rancher UI</h1>
+  <p class="lead" style="margin-top:.5em">เครื่องมือหลักที่เราจะใช้จริงทุกวัน</p>
+</section>
+
+<!-- 21 -->
+<section class="slide">
+  <h2>Rancher คืออะไร</h2>
+  <ul>
+    <li>หน้าจอเว็บสำหรับจัดการ Kubernetes — <b>ทำแทน kubectl ได้เกือบทั้งหมด</b></li>
+    <li>☕ <b>เทียบร้านกาแฟ:</b> Rancher = จอ CCTV + รีโมตของผู้จัดการ นั่งดูได้ทุกสาขาจากที่เดียว</li>
+    <li>ดูได้หลาย cluster จากที่เดียว</li>
+    <li>มีระบบสิทธิ์ — เห็นเฉพาะ project/namespace ที่ได้รับสิทธิ์</li>
+  </ul>
+  <div class="cols" style="margin-top:1.1em">
+    <div class="callout c-green"><span class="ico">✅</span><div><b>ข้อดี</b><br><span class="sub">ไม่ต้องจำคำสั่ง เห็นภาพรวมง่าย มี log/exec ในตัว</span></div></div>
+    <div class="callout c-orange"><span class="ico">⚠️</span><div><b>ข้อควรระวัง</b><br><span class="sub">กดปุ่มผิดมีผลจริงกับ production ทันที ไม่มี undo</span></div></div>
+  </div>
+</section>
+
+<!-- 22 -->
+<section class="slide">
+  <h2>3 อย่างที่ต้องเลือกให้ถูกก่อนทุกครั้ง</h2>
+  <div class="steps">
+    <div class="step"><span class="n">1</span><div><b>Cluster</b> — ลูกค้ารายไหน / environment ไหน <span class="sub">(เมนูบนซ้าย)</span></div></div>
+    <div class="step"><span class="n">2</span><div><b>Project / Namespace</b> — ทีมหรือระบบย่อยไหน</div></div>
+    <div class="step"><span class="n">3</span><div><b>Workload</b> — service ที่เป็นปัญหาชื่ออะไร</div></div>
+  </div>
+  <div class="callout c-red" style="margin-top:1.2em"><span class="ico">🚨</span><div><b>เช็ค cluster ให้ชัวร์ก่อนกดทุกครั้ง</b> — เคสอุบัติเหตุที่เจอบ่อยที่สุดคือเผลอไป restart ของ production ทั้งที่ตั้งใจจะแตะ staging</div></div>
+  <div class="callout c-soft" style="margin-top:.8em"><span class="ico">💡</span><div>ตั้งชื่อ cluster ให้แยก prod/staging ชัดเจน และอ่านชื่อบนหัวจอทุกครั้งก่อนลงมือ</div></div>
+</section>
+
+<!-- 23 -->
+<section class="slide">
+  <h2>ดู Workload และ Pod ใน Rancher</h2>
+  <div class="ui" style="margin:.5em 0 1em">
+    <div class="bar">Cluster: <b>prod-th</b> · Namespace: <b>payment</b> · Workloads</div>
+    <div class="row"><span>🟢 payment-api</span><span class="sub">Deployment · 3/3 · 12d</span></div>
+    <div class="row"><span>🔴 payment-worker</span><span class="sub">Deployment · 0/2 · CrashLoopBackOff</span></div>
+    <div class="row"><span>🟢 redis</span><span class="sub">StatefulSet · 1/1 · 30d</span></div>
+  </div>
+  <ul class="sub">
+    <li><b>Workloads</b> → เห็นทุก service ในหน้าเดียว พร้อมสถานะสี</li>
+    <li>ตัวเลข <b>3/3</b> = พร้อมใช้ 3 จาก 3 ตัวที่ต้องการ · <b>0/2</b> = ไม่มีตัวไหนพร้อมเลย</li>
+    <li>คลิกชื่อ workload → เห็นรายชื่อ pod ข้างใน</li>
+  </ul>
+</section>
+
+<!-- 24 -->
+<section class="slide">
+  <h2>ดู Log ผ่าน Rancher</h2>
+  <div class="steps">
+    <div class="step"><span class="n">1</span><div>เข้า Workload → คลิก pod ที่มีปัญหา</div></div>
+    <div class="step"><span class="n">2</span><div>เมนู <b>⋮ → View Logs</b></div></div>
+    <div class="step"><span class="n">3</span><div>เปิด <b>Previous</b> ถ้า pod เพิ่ง restart ไป — <span class="hl">log ของรอบที่พังอยู่ตรงนั้น</span></div></div>
+    <div class="step"><span class="n">4</span><div>เปิด <b>Timestamps</b> เพื่อเทียบกับเวลาที่ลูกค้าแจ้ง</div></div>
+    <div class="step"><span class="n">5</span><div>กด <b>Download</b> เก็บไฟล์ log ไว้แนบ ticket</div></div>
+  </div>
+  <div class="callout c-blue" style="margin-top:auto"><span class="ico">💡</span><div>อ่าน log <b>จากล่างขึ้นบน</b> — หา error แรกสุดที่เกิดขึ้น ไม่ใช่บรรทัดสุดท้าย เพราะ error หลังๆ มักเป็นผลพวง</div></div>
+</section>
+
+<!-- 25 -->
+<section class="slide">
+  <h2>Events — จุดที่คนมองข้ามบ่อยที่สุด</h2>
+  <ul>
+    <li>Events บอกว่า <b>K8s พยายามทำอะไรและติดตรงไหน</b> — ต่างจาก log ที่เป็นเสียงจากตัวแอป</li>
+    <li>ดูได้ที่หน้า pod ส่วน <b>Events</b> หรือเมนู <b>Cluster → Events</b></li>
+  </ul>
+  <table style="margin-top:.9em">
+    <tr><th style="width:38%">ข้อความที่เจอบ่อย</th><th>แปลว่า</th></tr>
+    <tr><td class="sub">Failed to pull image</td><td>tag ผิด หรือไม่มีสิทธิ์เข้า registry</td></tr>
+    <tr><td class="sub">Insufficient cpu / memory</td><td>node ทรัพยากรไม่พอ pod เลยขึ้นไม่ได้</td></tr>
+    <tr><td class="sub">Liveness probe failed</td><td>แอปไม่ตอบ health check → โดน restart</td></tr>
+    <tr><td class="sub">FailedMount</td><td>ต่อ volume ไม่ได้</td></tr>
+  </table>
+  <div class="callout c-green" style="margin-top:auto"><span class="ico">✅</span><div>Pod ไม่ยอมขึ้น (Pending / ImagePullBackOff) → <b>ดู Events ก่อน log เสมอ</b> เพราะแอปยังไม่ได้เริ่มรัน จึงยังไม่มี log</div></div>
+</section>
+
+<!-- 26 -->
+<section class="slide">
+  <h2>Exec, Restart และ Scale ใน Rancher</h2>
+  <table>
+    <tr><th style="width:34%">อยากทำอะไร</th><th>ทำยังไง</th></tr>
+    <tr><td>เข้าไปข้างใน pod</td><td>Pod → ⋮ → <b>Execute Shell</b></td></tr>
+    <tr><td>รีสตาร์ททั้ง service</td><td>Workload → ⋮ → <b>Redeploy</b> <span class="sub">(rolling ทีละตัว ระบบไม่ดับ)</span></td></tr>
+    <tr><td>เพิ่ม/ลดจำนวน pod</td><td>Workload → <b>Scale</b> +/−</td></tr>
+    <tr><td>ดู config/env</td><td>Workload → tab <b>Configuration</b></td></tr>
+    <tr><td>ย้อนกลับเวอร์ชันเดิม</td><td>Workload → ⋮ → <b>Rollback</b> <span class="sub">(ต้องได้รับอนุมัติก่อน)</span></td></tr>
+  </table>
+  <div class="callout c-orange" style="margin-top:auto"><span class="ico">⚠️</span><div><b>Redeploy ปลอดภัยกว่าลบ pod ทีละตัว</b> — แต่ทั้งคู่ทำให้ log ของรอบเดิมหายไป <span class="hl">เก็บ log ก่อนเสมอ</span></div></div>
+</section>
+
+<!-- 27 -->
+<section class="slide">
+  <div class="eyebrow">🔎 Lab · 12 นาที · ทำคนเดียว</div>
+  <h2>ล่ารหัสลับใน Kubernetes</h2>
+  <p class="sub" style="margin-bottom:.7em">เปิดไฟล์ <code>k8s-clinic-simulator.html</code> ที่แจกให้ (ดับเบิลคลิกได้เลย ไม่ต้องต่อ VPN) · ข้างในมี workload 5 ตัว ซ่อนรหัสลับไว้ <b>4 คำ</b> คนละที่กัน</p>
+  <table>
+    <tr><th style="width:26%">Workload</th><th>ใบ้</th></tr>
+    <tr><td><code>bean-grinder</code></td><td>ดึง image ไม่ได้ — ชื่อ image ที่ดึงไม่สำเร็จมีรหัสอยู่</td></tr>
+    <tr><td><code>steam-wand</code></td><td>ตายแล้วเกิดใหม่ตลอด · รหัสอยู่ใน log <b>รอบที่มันตาย</b></td></tr>
+    <tr><td><code>menu-screen</code></td><td>ดูเหมือนปกติ แต่ใช้ไม่ได้ · รหัสอยู่ใน "เงื่อนไขที่ไม่เคยผ่าน"</td></tr>
+    <tr><td><code>cash-register</code></td><td>ปกติดี 100% แต่รหัสก็ซ่อนอยู่ในนั้น</td></tr>
+  </table>
+  <div class="cols" style="margin-top:.9em">
+    <div class="callout c-orange"><span class="ico">🎁</span><div><b>โบนัส:</b> <code>ice-maker</code> ไม่มีรหัส แต่มีตัวเลขน่าสงสัย 1 ช่อง — ช่องไหน แปลว่าอะไร</div></div>
+    <div class="callout c-purple"><span class="ico">🩺</span><div>กดปุ่ม <b>วินิจฉัย</b> ในแต่ละตัวเพื่อเก็บคะแนน (เต็ม 15) — ใครได้เต็มบ้าง เดี๋ยวมาดูกัน</div></div>
+  </div>
+</section>
+
+<!-- 28 -->
+<section class="slide">
+  <div class="eyebrow">🔑 เฉลย</div>
+  <h2>รหัสลับทั้ง 4 คำ</h2>
+  <table>
+    <tr><th style="width:24%">Workload</th><th style="width:22%">รหัส</th><th>เจอได้จากไหน</th></tr>
+    <tr><td><code>bean-grinder</code></td><td><span class="hl-b">EVENTS</span></td><td>ไม่มี log ให้ดูเลย เพราะยังไม่เริ่มรัน → ต้องดู Events</td></tr>
+    <tr><td><code>steam-wand</code></td><td><span class="hl-b">PREVIOUS</span></td><td>log รอบปัจจุบันไม่มี ต้องกดปุ่ม Previous</td></tr>
+    <tr><td><code>menu-screen</code></td><td><span class="hl-b">READY</span></td><td>อยู่ใน readiness probe ที่ไม่เคยผ่าน → ดู Configuration</td></tr>
+    <tr><td><code>cash-register</code></td><td><span class="hl-b">LOGS</span></td><td>log ปกติของตัวที่ไม่ได้ป่วย — ต้องกล้าเปิดดูด้วย</td></tr>
+  </table>
+  <div class="callout c-green" style="margin-top:1.1em"><span class="ico">🧠</span><div>เรียงกันได้ว่า <b>EVENTS · PREVIOUS · READY · LOGS</b> — ไม่ใช่คำมั่วๆ แต่คือ <b>4 ที่ที่ต้องดูทุกครั้งเวลาเจอเคสจริง</b></div></div>
+  <div class="callout c-orange" style="margin-top:auto"><span class="ico">🎁</span><div><b>โบนัส:</b> <code>ice-maker</code> → คอลัมน์ <b>RESTARTS</b> เพิ่มเรื่อยๆ · describe จะเห็น <code>OOMKilled · Exit 137</code> = ใช้ RAM เกิน limit</div></div>
+</section>
+
+<!-- 29 -->
+<section class="slide divider center">
+  <div class="eyebrow">Part 4</div>
+  <h1>kubectl พื้นฐาน</h1>
+  <p class="lead" style="margin-top:.5em">6 คำสั่งที่ครอบคลุมงานที่ต้องใช้</p>
+</section>
+
+<!-- 30 -->
+<section class="slide">
+  <h2>ทำไมต้องรู้ kubectl ทั้งที่มี Rancher</h2>
+  <ul>
+    <li>เร็วกว่ามากเวลาต้องดูหลาย pod พร้อมกัน</li>
+    <li>ก๊อป output แนบ ticket ได้เลย — ชัดเจนกว่า screenshot</li>
+    <li>บางข้อมูล UI ไม่แสดง (เช่น <code>describe</code> แบบเต็ม)</li>
+    <li>เวลา Rancher เองมีปัญหา ยังเข้าถึง cluster ได้</li>
+  </ul>
+  <div class="callout c-blue" style="margin-top:1.2em"><span class="ico">💡</span><div>Rancher มี <b>kubectl Shell</b> ในตัว (ปุ่ม <code>&gt;_</code> มุมขวาบน) — ใช้ได้ทันทีโดยไม่ต้องตั้งค่าอะไรในเครื่อง</div></div>
+</section>
+
+<!-- 31 -->
+<section class="slide">
+  <h2><code>kubectl get</code> — ดูว่ามีอะไรอยู่บ้าง</h2>
+  <pre><code>kubectl get pods -n k8s-clinic            <span class="cmt"># ดู pod ใน namespace</span>
+kubectl get pods -n k8s-clinic -o wide    <span class="cmt"># เห็น node และ IP ด้วย</span>
+kubectl get pods -A                       <span class="cmt"># ดูทุก namespace</span>
+kubectl get deploy,svc -n k8s-clinic      <span class="cmt"># ดูหลายชนิดพร้อมกัน</span>
+
+<span class="cmt"># หา pod ที่มีปัญหาเร็วๆ</span>
+kubectl get pods -A | grep -v Running</code></pre>
+  <div class="callout c-orange" style="margin-top:1em"><span class="ico">⚠️</span><div><b>ลืม <code>-n &lt;namespace&gt;</code> แล้วจะไม่เจออะไรเลย</b> — เพราะมันจะไปดูที่ namespace <code>default</code> ให้แทน</div></div>
+</section>
+
+<!-- 32 -->
+<section class="slide">
+  <h2><code>describe</code> &amp; <code>logs</code> — สองตัวที่ใช้บ่อยสุด</h2>
+  <pre><code><span class="cmt"># ดูรายละเอียด + Events ของ pod (สำคัญมาก)</span>
+kubectl describe pod &lt;pod&gt; -n payment
+
+<span class="cmt"># ดู log</span>
+kubectl logs &lt;pod&gt; -n payment --tail 200
+kubectl logs -f &lt;pod&gt; -n payment              <span class="cmt"># real-time</span>
+kubectl logs &lt;pod&gt; -n payment --previous      <span class="cmt"># ← รอบที่มันพังไป</span>
+kubectl logs -l app=payment-api -n payment    <span class="cmt"># ดูทุก pod ของ service</span></code></pre>
+  <div class="callout c-green" style="margin-top:1em"><span class="ico">✅</span><div>เจอ <b>CrashLoopBackOff</b> ให้ใช้ <code>--previous</code> เสมอ ไม่งั้นจะได้ log ของรอบใหม่ที่ยังไม่ทันพ่น error อะไรออกมา</div></div>
+</section>
+
+<!-- 33 -->
+<section class="slide">
+  <h2>คำสั่งที่เหลือ</h2>
+  <pre><code><span class="cmt"># เข้าไปข้างใน pod</span>
+kubectl exec -it &lt;pod&gt; -n payment -- sh
+
+<span class="cmt"># ดู events เรียงตามเวลา ← ใช้ตอน pod ไม่ยอมขึ้น</span>
+kubectl get events -n payment --sort-by=.lastTimestamp
+
+<span class="cmt"># restart ทั้ง deployment แบบ rolling</span>
+kubectl rollout restart deploy/payment-api -n payment
+kubectl rollout status  deploy/payment-api -n payment
+
+<span class="cmt"># ทดสอบต่อเข้า service จากเครื่องตัวเอง</span>
+kubectl port-forward svc/payment-api 8080:80 -n payment</code></pre>
+  <div class="callout c-blue" style="margin-top:auto"><span class="ico">💡</span><div><code>port-forward</code> ช่วยแยกได้ว่าปัญหาอยู่ที่ <b>แอป</b> หรือที่ <b>ingress/network</b> — ถ้ายิงตรงแล้วได้ แปลว่าแอปปกติ</div></div>
+</section>
+
+<!-- 34 -->
+<section class="slide">
+  <h2>Cheat Sheet — kubectl</h2>
+  <div class="cols">
+    <div><h3 class="sub">ดูสถานะ</h3>
+      <pre><code>kubectl get pods -n &lt;ns&gt;
+kubectl get pods -n &lt;ns&gt; -o wide
+kubectl get pods -A | grep -v Running
+kubectl top pods -n &lt;ns&gt;</code></pre>
+      <h3 class="sub" style="margin-top:.8em">หาสาเหตุ</h3>
+      <pre><code>kubectl describe pod &lt;pod&gt; -n &lt;ns&gt;
+kubectl get events -n &lt;ns&gt; \
+  --sort-by=.lastTimestamp</code></pre></div>
+    <div><h3 class="sub">ดู log</h3>
+      <pre><code>kubectl logs &lt;pod&gt; -n &lt;ns&gt; --tail 200
+kubectl logs &lt;pod&gt; -n &lt;ns&gt; --previous
+kubectl logs -f &lt;pod&gt; -n &lt;ns&gt;</code></pre>
+      <h3 class="sub" style="margin-top:.8em">ลงมือแก้</h3>
+      <pre><code>kubectl exec -it &lt;pod&gt; -n &lt;ns&gt; -- sh
+kubectl rollout restart deploy/&lt;name&gt;
+kubectl rollout undo deploy/&lt;name&gt;</code></pre></div>
+  </div>
+</section>
+
+<!-- 35 -->
+<section class="slide">
+  <div class="eyebrow">⚡ Mini Challenge · 5 นาที</div>
+  <h2>อ่าน output ของ kubectl ให้เป็น</h2>
+  <p class="sub" style="margin-bottom:.6em">ถ้าวันหนึ่งได้สิทธิ์ใช้ kubectl ผลลัพธ์จะหน้าตาแบบนี้ — ลองตอบ 3 ข้อจากภาพนี้</p>
+  <pre><code>$ kubectl get pods -n k8s-clinic
+NAME                             READY   STATUS             RESTARTS   AGE
+bean-grinder-5f9c7d8b6-mn4tq     0/1     ImagePullBackOff   0          12m
+cash-register-7d4b8c9f5-x2k9p    1/1     Running            0          3h
+ice-maker-8b7d6c5f4-r7t2m        1/1     Running            14         52m
+menu-screen-4d5e6f7a8-q9z1c      0/1     Running            0          41m
+steam-wand-6c8f9d7a5-k2p9w       0/1     CrashLoopBackOff   7          18m</code></pre>
+  <div class="steps" style="margin-top:.9em">
+    <div class="step"><span class="n">1</span><div>ตัวไหนที่ลูกค้า "ใช้งานไม่ได้" ทั้งที่สถานะเขียนว่า Running</div></div>
+    <div class="step"><span class="n">2</span><div>ตัวไหนน่าเป็นห่วงที่สุดถ้าปล่อยไว้ข้ามคืน และดูจากคอลัมน์ไหน</div></div>
+    <div class="step"><span class="n">3</span><div>ถ้าจะหาสาเหตุของ <code>bean-grinder</code> ต้องดู Events หรือ Logs</div></div>
+  </div>
+  <!-- <div class="callout c-blue" style="margin-top:auto"><span class="ico">💡</span><div>เฉลย: <b>menu-screen</b> (READY 0/1) · <b>ice-maker</b> (RESTARTS 14 = ตายแล้วเกิดใหม่เรื่อยๆ) · <b>Events</b> เพราะ container ยังไม่เคยเริ่มรัน</div></div> -->
+</section>
+
+<!-- 35.5 -->
+
+
+<!-- 36 -->
+<section class="slide divider center">
+  <div class="eyebrow">Part 5</div>
+  <h1>เคสจริงที่เจอบ่อย</h1>
+  <p class="lead" style="margin-top:.5em">อาการ → เช็คอะไร → แก้ได้เองหรือต้องส่งต่อ</p>
+</section>
+
+<!-- 37 -->
+<section class="slide">
+  <h2>เคส 1 — CrashLoopBackOff</h2>
+  <p class="sub" style="margin-bottom:.8em">แปลว่า: แอปเริ่มทำงานแล้วพังทันที K8s จึงสร้างใหม่วนไปเรื่อยๆ</p>
+  <div class="steps">
+    <div class="step"><span class="n">1</span><div><code>logs --previous</code> หรือเปิด <b>Previous</b> ใน Rancher</div></div>
+    <div class="step"><span class="n">2</span><div>อ่านหา error แรกสุด — มักเป็นหนึ่งใน 3 อย่างนี้</div></div>
+  </div>
+  <table style="margin-top:.8em">
+    <tr><th style="width:38%">error ที่เจอ</th><th>สาเหตุ</th></tr>
+    <tr><td class="sub">connection refused / timeout</td><td>ต่อ DB หรือ service อื่นไม่ได้</td></tr>
+    <tr><td class="sub">missing env / undefined config</td><td>ConfigMap หรือ Secret หาย/ผิด</td></tr>
+    <tr><td class="sub">permission denied</td><td>สิทธิ์ไฟล์หรือ volume ไม่ถูก</td></tr>
+  </table>
+  <div class="callout c-orange" style="margin-top:auto"><span class="ico">⚠️</span><div>Restart ซ้ำๆ <b>ไม่ช่วย</b>ถ้าสาเหตุยังอยู่ — เก็บ log แล้วส่งต่อจะเร็วกว่า</div></div>
+</section>
+
+<!-- 38 -->
+<section class="slide">
+  <h2>เคส 2 — ImagePullBackOff</h2>
+  <p class="sub" style="margin-bottom:.8em">แปลว่า: ดึง image ไม่ได้ pod เลยยังไม่เริ่มรัน (ยังไม่มี log ให้ดู)</p>
+  <div class="steps">
+    <div class="step"><span class="n">1</span><div>ดู <b>Events</b> → บรรทัด <code class="sub">Failed to pull image</code> จะบอกสาเหตุตรงๆ</div></div>
+    <div class="step"><span class="n">2</span><div>เช็คว่า image tag ที่ระบุมีอยู่จริงใน registry ไหม</div></div>
+    <div class="step"><span class="n">3</span><div>ถ้าเป็น <code class="sub">unauthorized</code> → imagePullSecret หมดอายุ/ไม่ถูกต้อง</div></div>
+  </div>
+  <div class="cols" style="margin-top:1em">
+    <div class="callout c-green"><span class="ico">✅</span><div>ทำเองได้: ยืนยันว่า tag ผิดหรือ registry มีปัญหา</div></div>
+    <div class="callout c-red"><span class="ico">➡️</span><div>ต้อง escalate: การแก้ secret หรือแก้ tag บน production</div></div>
+  </div>
+</section>
+
+<!-- 39 -->
+<section class="slide">
+  <h2>เคส 3 — Pod ค้างที่ Pending</h2>
+  <p class="sub" style="margin-bottom:.8em">แปลว่า: K8s หา node ให้ pod ไปรันไม่ได้</p>
+  <table>
+    <tr><th style="width:42%">ใน Events เขียนว่า</th><th>สาเหตุ</th></tr>
+    <tr><td class="sub">Insufficient cpu / memory</td><td>ทุก node เต็ม — ต้องขยาย cluster หรือลดของที่ไม่จำเป็น</td></tr>
+    <tr><td class="sub">node(s) had taint...</td><td>ตั้งค่า scheduling ไว้ ทำให้ลงบาง node ไม่ได้</td></tr>
+    <tr><td class="sub">FailedMount / waiting for volume</td><td>storage มีปัญหา</td></tr>
+    <tr><td class="sub">no nodes available</td><td>node ตายหมดหรือ NotReady</td></tr>
+  </table>
+  <pre style="margin-top:1em"><code>kubectl get nodes            <span class="cmt"># node ไหน NotReady บ้าง</span>
+kubectl describe node &lt;node&gt; <span class="cmt"># ดูว่าเหลือทรัพยากรเท่าไหร่</span></code></pre>
+  <div class="callout c-red" style="margin-top:auto"><span class="ico">🚨</span><div>ถ้าหลาย pod ขึ้น Pending พร้อมกัน = ปัญหาระดับ cluster → <b>escalate ทันที</b> ไม่ต้องไล่ทีละตัว</div></div>
+</section>
+
+<!-- 40 -->
+<section class="slide">
+  <h2>เคส 4 — "ระบบใช้ได้บ้างไม่ได้บ้าง"</h2>
+  <p class="sub" style="margin-bottom:.8em">อาการแบบสุ่ม มักแปลว่า pod บางตัวเสีย แต่บางตัวยังดี</p>
+  <div class="steps">
+    <div class="step"><span class="n">1</span><div><code>get pods</code> — มีตัวไหน READY ไม่ครบ เช่น <span class="hl">0/1</span> ไหม</div></div>
+    <div class="step"><span class="n">2</span><div>ดูคอลัมน์ <b>RESTARTS</b> — ตัวไหนเลขสูงผิดปกติ</div></div>
+    <div class="step"><span class="n">3</span><div>ถ้า restart เยอะ + memory สูง → สงสัย <b>OOMKilled</b></div></div>
+    <div class="step"><span class="n">4</span><div><code>kubectl top pods -n &lt;ns&gt;</code> ดูการใช้ CPU/RAM จริง</div></div>
+  </div>
+  <div class="callout c-blue" style="margin-top:1em"><span class="ico">💡</span><div>Service กระจาย traffic ไปทุก pod — ถ้ามี 1 ใน 3 ตัวเสีย ลูกค้าจะเจอ error ประมาณ 1 ใน 3 ครั้ง <b>นี่คือที่มาของอาการ "เป็นๆ หายๆ"</b></div></div>
+</section>
+
+<!-- 41 -->
+<section class="slide">
+  <h2>เคส 5 — "หลัง deploy แล้วพัง"</h2>
+  <pre><code><span class="cmt"># ดูประวัติการ deploy</span>
+kubectl rollout history deploy/&lt;name&gt; -n &lt;ns&gt;
+
+<span class="cmt"># ดูว่า rollout ค้างอยู่หรือเปล่า</span>
+kubectl rollout status deploy/&lt;name&gt; -n &lt;ns&gt;
+
+<span class="cmt"># ย้อนกลับเวอร์ชันก่อนหน้า ← ต้องได้รับอนุมัติก่อนเสมอ</span>
+kubectl rollout undo deploy/&lt;name&gt; -n &lt;ns&gt;</code></pre>
+  <ul style="margin-top:1em">
+    <li>เทียบเวลาที่ deploy กับเวลาที่ลูกค้าเริ่มแจ้ง — ตรงกันไหม</li>
+    <li>ใน Rancher ดูได้ที่ tab <b>Recent Changes</b> / <b>Revision History</b> ของ workload</li>
+  </ul>
+  <div class="callout c-red" style="margin-top:auto"><span class="ico">🚨</span><div><b>Rollback บน production ไม่ใช่สิ่งที่เราตัดสินใจเอง</b> — แจ้งทีมที่รับผิดชอบ พร้อมข้อมูลว่า revision ไหนที่ยังดี</div></div>
+</section>
+
+<!-- 42 -->
+<section class="slide">
+  <h2>Checklist — ไล่ปัญหาบน K8s</h2>
+  <div class="steps">
+    <div class="step"><span class="n">1</span><div><b>ถูก cluster / namespace ไหม</b> — เช็คก่อนเสมอ</div></div>
+    <div class="step"><span class="n">2</span><div><b>Pod สถานะอะไร READY เท่าไหร่</b> — <code>get pods</code></div></div>
+    <div class="step"><span class="n">3</span><div><b>RESTARTS เยอะไหม</b> — ถ้าเยอะแปลว่ามีปัญหาแม้จะขึ้น Running</div></div>
+    <div class="step"><span class="n">4</span><div><b>Events ว่าอะไร</b> — <code>describe pod</code> (ใช้กับ pod ที่ยังไม่เริ่มรัน)</div></div>
+    <div class="step"><span class="n">5</span><div><b>Log ว่าอะไร</b> — <code>logs --previous</code> (ใช้กับ pod ที่เคยรันแล้วพัง)</div></div>
+    <div class="step"><span class="n">6</span><div><b>ถ้า pod ปกติหมด</b> → ปัญหาอยู่ที่ Service / Ingress / นอก cluster</div></div>
+  </div>
+  <div class="callout c-green" style="margin-top:auto"><span class="ico">✅</span><div>จำหลักง่ายๆ: <b>pod ยังไม่เริ่มรัน → ดู Events · pod เคยรันแล้วพัง → ดู Logs</b></div></div>
+</section>
+
+<!-- 43 -->
+<section class="slide">
+  <h2>สิ่งที่ทำได้เอง vs ต้องส่งต่อ</h2>
+  <div class="cols">
+    <div><h3 class="sub" style="color:var(--green)">ทำได้เอง</h3>
+      <ul class="check"><li>ดู pod status / logs / events</li><li>เข้า shell เพื่อดูค่า (อ่านอย่างเดียว)</li><li>ดู config ของ workload</li><li>Redeploy ตามขั้นตอนที่ได้รับมอบหมาย</li><li>Scale ตาม runbook ที่มีอยู่</li></ul></div>
+    <div><h3 class="sub" style="color:var(--red)">ต้อง escalate</h3>
+      <ul class="x"><li>แก้ ConfigMap / Secret</li><li>Rollback หรือเปลี่ยน image tag</li><li>ลบ pod/workload/volume</li><li>เรื่องระดับ node หรือ cluster</li><li>ทุกเคสที่เกี่ยวกับข้อมูลสูญหาย</li></ul></div>
+  </div>
+  <div class="callout c-orange" style="margin-top:1em"><span class="ico">⚠️</span><div>หลักคิดง่ายๆ: <b>อ่านได้เสมอ · เขียนต้องมีคนอนุมัติ</b></div></div>
+</section>
+
+<!-- 44 -->
+<section class="slide">
+  <h2>ส่งเคสต่อยังไงให้ dev แก้ได้เร็ว</h2>
+  <div class="cols">
+    <div><h3>ข้อมูลที่ต้องมีครบ</h3>
+      <ul class="check"><li>Cluster + Namespace + ชื่อ workload</li><li>ชื่อ pod และสถานะ (พร้อม READY / RESTARTS)</li><li>Log ~200 บรรทัด พร้อม timestamp</li><li>Events จาก <code>describe</code></li><li>เวลาที่เริ่มมีอาการ + จำนวนลูกค้าที่กระทบ</li><li>มีการ deploy หรือเปลี่ยนอะไรก่อนหน้าไหม</li></ul></div>
+    <div><h3>ตัวอย่างการเขียน</h3>
+      <div class="card soft sub" style="line-height:1.7">
+        <b>Cluster:</b> prod-th · <b>NS:</b> payment<br>
+        <b>Workload:</b> payment-worker (0/2)<br>
+        <b>Pod:</b> payment-worker-6f8d…-k2p9<br>
+        <b>Status:</b> CrashLoopBackOff · RESTARTS 47<br>
+        <b>เริ่มมีอาการ:</b> 04/08 14:20<br>
+        <b>ก่อนหน้า:</b> deploy tag 2.3.1 เวลา 14:05<br>
+        <b>Log (previous):</b> <code>ECONNREFUSED redis:6379</code><br>
+        <b>ลองแล้ว:</b> redeploy 1 ครั้ง อาการเดิม
+      </div></div>
+  </div>
+</section>
+
+<!-- 45 -->
+<section class="slide">
+  <h2>ข้อควรระวังบน Production</h2>
+  <ul class="x">
+    <li>อย่ากดอะไรก่อนอ่านชื่อ cluster บนหัวจอ</li>
+    <li>อย่าแก้ไฟล์หรือ config ข้างใน pod — หายทันทีที่ pod เกิดใหม่</li>
+    <li>อย่า screenshot หน้า Secret หรือแปะค่าลง ticket</li>
+    <li>อย่าลบ pod เพื่อ "ลองดู" — ใช้ Redeploy ตาม runbook แทน</li>
+    <li>อย่า restart ก่อนเก็บ log — หลักฐานจะหายไปพร้อมกัน</li>
+  </ul>
+  <div class="callout c-blue" style="margin-top:auto"><span class="ico">💡</span><div>ไม่แน่ใจ = ถาม · การถามช้าไป 5 นาที ดีกว่ากดผิดแล้วระบบลูกค้าล่ม</div></div>
+</section>
+
+<!-- 46 -->
+<section class="slide">
+  <h2>สรุป 2 วัน</h2>
+  <div class="cols">
+    <div><h3>Day 1 — Docker</h3>
+      <ul class="sub"><li>container คืออะไร ต่างจาก VM ยังไง</li><li><code>ps -a</code> · <code>logs</code> · <code>exec</code> · <code>stats</code></li><li>อ่าน exit code เป็น</li><li>Compose: image / ports / env / volumes</li></ul></div>
+    <div><h3>Day 2 — K8s &amp; Rancher</h3>
+      <ul class="sub"><li>Pod / Deployment / Service / Namespace</li><li>อ่าน pod status และ RESTARTS เป็น</li><li>Rancher: logs, events, exec, redeploy</li><li>kubectl: get / describe / logs --previous</li></ul></div>
+  </div>
+  <div class="callout c-green" style="margin-top:1em"><span class="ico">🎯</span><div>สิ่งที่อยากให้ติดตัวไปที่สุด: <b>pod ไม่ขึ้น → ดู Events · pod พังหลังรัน → ดู Logs · ไม่แน่ใจ → เก็บข้อมูลให้ครบแล้วส่งต่อ</b></div></div>
+</section>
+
+<!-- 47 -->
+<section class="slide divider center">
+  <h1>Q&amp;A</h1>
+  <p class="lead" style="margin-top:.6em">เอาเคสจริงที่เคยเจอมาลองไล่ด้วยกันได้เลย</p>
+</section>
+
+</div>
+<div id="hint">← → เปลี่ยนสไลด์ · F จอเต็ม · P พิมพ์ PDF</div>
+<div id="nav">
+  <button id="prev" title="ก่อนหน้า">‹</button>
+  <span id="pos">1 / 1</span>
+  <button id="next" title="ถัดไป">›</button>
+  <button id="full" title="เต็มจอ">⛶</button>
+</div>
+<script>
+document.body.classList.add('js');
+const s=[...document.querySelectorAll('.slide')];let i=0;
+const go=n=>{i=Math.max(0,Math.min(s.length-1,n));
+ s.forEach((e,k)=>e.classList.toggle('active',k===i));
+ document.getElementById('bar').style.width=((i+1)/s.length*100)+'%';
+ document.getElementById('pos').textContent=(i+1)+' / '+s.length;
+ history.replaceState(null,'','#'+(i+1));};
+addEventListener('keydown',e=>{
+ if(['ArrowRight',' ','PageDown','ArrowDown'].includes(e.key)){e.preventDefault();go(i+1)}
+ else if(['ArrowLeft','PageUp','ArrowUp'].includes(e.key)){e.preventDefault();go(i-1)}
+ else if(e.key==='Home')go(0); else if(e.key==='End')go(s.length-1);
+ else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+ else if(e.key==='p'||e.key==='P'){window.print()}});
+prev.onclick=()=>go(i-1); next.onclick=()=>go(i+1);
+full.onclick=()=>document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();
+go(parseInt(location.hash.slice(1))-1||0);
+</script>
+</body>
+</html>

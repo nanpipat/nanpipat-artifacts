@@ -2,7 +2,6 @@ import Link from "next/link";
 import { GetStaticProps } from "next";
 import {
   Box,
-  Container,
   Heading,
   HStack,
   Badge,
@@ -11,9 +10,15 @@ import {
   Link as ChakraLink,
   Icon,
 } from "@chakra-ui/react";
+import {
+  IoArrowForward,
+  IoBookOutline,
+  IoSchoolOutline,
+  IoTimeOutline,
+} from "react-icons/io5";
 import { useColorModeValue } from "@/components/ui/color-mode";
-import { IoArrowForward, IoTimeOutline } from "react-icons/io5";
 import Main from "@/components/layouts/main";
+import Cover from "@/components/cover";
 import { getAllArticles, getAllCourses } from "@/lib/content";
 
 export default function Home({
@@ -44,32 +49,42 @@ export default function Home({
       <SectionHeading title="Courses" href="/courses" />
       <SimpleGrid columns={{ base: 1, md: 2 }} gap={6} mb={12}>
         {courses.map((course) => (
-          <ChakraLink as={Link} href={`/courses/${course.slug}`} key={course.slug} _hover={{ textDecoration: "none" }}>
+          <ChakraLink
+            as={Link}
+            href={`/courses/${course.slug}`}
+            key={course.slug}
+            _hover={{ textDecoration: "none" }}
+          >
             <Box
-              p={5}
               borderRadius="lg"
               bg={cardBg}
+              overflow="hidden"
               transition="all 0.3s"
               _hover={{ bg: cardHoverBg, transform: "translateY(-4px)", boxShadow: "lg" }}
               height="100%"
             >
-              <HStack mb={2} flexWrap="wrap" gap={2}>
-                {course.level && (
-                  <Badge colorPalette="teal" borderRadius="full">
-                    {course.level}
-                  </Badge>
-                )}
-                <Text fontSize="xs" color={muted}>
-                  {course.decks.length} deck{course.decks.length === 1 ? "" : "s"}
-                  {course.materials.length > 0 ? ` · ${course.materials.length} material${course.materials.length === 1 ? "" : "s"}` : ""}
+              <Cover src={course.cover} alt={course.title} fallbackIcon={IoSchoolOutline} />
+              <Box p={5}>
+                <HStack mb={2} flexWrap="wrap" gap={2}>
+                  {course.level && (
+                    <Badge colorPalette="teal" borderRadius="full">
+                      {course.level}
+                    </Badge>
+                  )}
+                  <Text fontSize="xs" color={muted}>
+                    {course.decks.length} deck{course.decks.length === 1 ? "" : "s"}
+                    {course.materials.length > 0
+                      ? ` · ${course.materials.length} material${course.materials.length === 1 ? "" : "s"}`
+                      : ""}
+                  </Text>
+                </HStack>
+                <Heading as="h3" size="md" mb={2}>
+                  {course.title}
+                </Heading>
+                <Text fontSize="sm" color={muted} lineClamp={3}>
+                  {course.summary}
                 </Text>
-              </HStack>
-              <Heading as="h3" size="md" mb={2}>
-                {course.title}
-              </Heading>
-              <Text fontSize="sm" color={muted} lineClamp={2}>
-                {course.summary}
-              </Text>
+              </Box>
             </Box>
           </ChakraLink>
         ))}
@@ -85,28 +100,36 @@ export default function Home({
             _hover={{ textDecoration: "none" }}
           >
             <Box
-              p={4}
+              display={{ base: "block", md: "flex" }}
               borderRadius="lg"
               bg={cardBg}
+              overflow="hidden"
               transition="all 0.3s"
               _hover={{ bg: cardHoverBg }}
               mb={3}
             >
-              <HStack fontSize="xs" color={muted} mb={1}>
-                <Icon as={IoTimeOutline} />
-                <Text>{article.date}</Text>
-                {article.tags.slice(0, 3).map((tag) => (
-                  <Badge key={tag} colorPalette="teal" borderRadius="full">
-                    {tag}
-                  </Badge>
-                ))}
-              </HStack>
-              <Heading as="h3" size="sm" mb={1}>
-                {article.title}
-              </Heading>
-              <Text fontSize="sm" color={muted} lineClamp={2}>
-                {article.excerpt}
-              </Text>
+              <Box width={{ base: "100%", md: "240px" }} flexShrink={0}>
+                <Cover src={article.cover} alt={article.title} fallbackIcon={IoBookOutline} />
+              </Box>
+              <Box p={4}>
+                <HStack fontSize="xs" color={muted} mb={1} flexWrap="wrap" gap={2}>
+                  <HStack gap={1}>
+                    <Icon as={IoTimeOutline} />
+                    <Text>{article.date}</Text>
+                  </HStack>
+                  {article.tags.slice(0, 3).map((tag) => (
+                    <Badge key={tag} colorPalette="teal" borderRadius="full">
+                      {tag}
+                    </Badge>
+                  ))}
+                </HStack>
+                <Heading as="h3" size="sm" mb={1}>
+                  {article.title}
+                </Heading>
+                <Text fontSize="sm" color={muted} lineClamp={2}>
+                  {article.excerpt}
+                </Text>
+              </Box>
             </Box>
           </ChakraLink>
         ))}

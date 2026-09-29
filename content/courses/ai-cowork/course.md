@@ -3,6 +3,7 @@ title: "AI Cowork — Working in the Age of AI"
 level: "Workshop"
 tags: ["ai", "workshop", "llm"]
 updated: "2026-09-29"
+cover: "/decks/ai-cowork/assets/new-coworker.png"
 summary: "เวิร์กช็อปเรื่องการทำงานร่วมกับ AI ในยุคใหม่ — AI as a New Coworker: ตั้งแต่พื้นฐาน AI 101 แนวคิดการทำงานแบบ agent ไปจนถึงการใช้เครื่องมือจริงในงานประจำวัน"
 ---
 

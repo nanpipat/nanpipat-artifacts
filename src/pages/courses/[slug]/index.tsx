@@ -11,9 +11,10 @@ import {
 } from "@chakra-ui/react";
 import { useColorModeValue } from "@/components/ui/color-mode";
 import { GetStaticPaths, GetStaticProps } from "next";
-import { IoChevronBack, IoDownloadOutline, IoDocumentOutline } from "react-icons/io5";
+import { IoChevronBack, IoDownloadOutline, IoDocumentOutline, IoSchoolOutline } from "react-icons/io5";
 import Main from "@/components/layouts/main";
 import DeckPreview from "@/components/deck-preview";
+import Cover from "@/components/cover";
 import { getAllCourseSlugs, getAllCourses, getCourse } from "@/lib/content";
 
 interface CoursePageProps {
@@ -22,6 +23,7 @@ interface CoursePageProps {
   level: string | null;
   tags: string[];
   updated: string | null;
+  cover: string | null;
   html: string;
   decks: {
     id: string;
@@ -44,6 +46,7 @@ export default function CoursePage({
   level,
   tags,
   updated,
+  cover,
   html,
   decks,
   materials,
@@ -60,6 +63,10 @@ export default function CoursePage({
           All Courses
         </Link>
       </Button>
+
+      <Box mb={6}>
+        <Cover src={cover} alt={title} fallbackIcon={IoSchoolOutline} />
+      </Box>
 
       <HStack mb={2} flexWrap="wrap" gap={2}>
         {level && (
@@ -195,6 +202,7 @@ export const getStaticProps: GetStaticProps<CoursePageProps> = async ({
       level: course.level ?? null,
       tags: course.tags,
       updated: course.updated ?? null,
+      cover: course.cover ?? null,
       html: course.html,
       decks: course.decks,
       materials: course.materials,

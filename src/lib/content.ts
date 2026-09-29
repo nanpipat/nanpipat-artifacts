@@ -14,6 +14,7 @@ export interface Article {
   date: string
   tags: string[]
   excerpt: string
+  cover: string | null
   sourceUrl?: string
 }
 
@@ -41,12 +42,20 @@ export interface Course {
   summary: string
   tags: string[]
   updated?: string
+  cover: string | null
   decks: Deck[]
   materials: Material[]
 }
 
 export interface CourseWithContent extends Course {
   html: string
+}
+
+function firstImage(markdown: string): string | undefined {
+  const match = markdown.match(/!\[[^\]]*\]\(([^)\s]+)\)/)
+  if (!match) return undefined
+  const url = match[1]
+  return /^https?:\/\//.test(url) || url.startsWith('/') ? url : undefined
 }
 
 function firstParagraph(markdown: string): string {
@@ -90,6 +99,7 @@ export function getAllArticles(): Article[] {
         date: String(data.date ?? data.published ?? ''),
         tags: Array.isArray(data.tags) ? data.tags.map(String) : [],
         excerpt: String(data.excerpt ?? firstParagraph(content)),
+        cover: data.cover ? String(data.cover) : firstImage(content) ?? null,
         sourceUrl: data.source_url ? String(data.source_url) : undefined,
       } as Article
     })
@@ -155,6 +165,7 @@ export function getAllCourses(): Course[] {
         summary: String(data.summary ?? ''),
         tags: Array.isArray(data.tags) ? data.tags.map(String) : [],
         updated: data.updated ? String(data.updated) : undefined,
+        cover: data.cover ? String(data.cover) : null,
         decks: scanDecks(d.name),
         materials: scanMaterials(d.name),
       } as Course
@@ -189,6 +200,7 @@ export async function getCourse(slug: string): Promise<CourseWithContent | null>
     summary: String(data.summary ?? ''),
     tags: Array.isArray(data.tags) ? data.tags.map(String) : [],
     updated: data.updated ? String(data.updated) : undefined,
+    cover: data.cover ? String(data.cover) : null,
     decks: scanDecks(slug),
     materials: scanMaterials(slug),
     html: processed.toString(),
@@ -210,6 +222,7 @@ export async function getArticle(slug: string): Promise<{ article: Article; html
     date: String(data.date ?? data.published ?? ''),
     tags: Array.isArray(data.tags) ? data.tags.map(String) : [],
     excerpt: String(data.excerpt ?? firstParagraph(content)),
+    cover: data.cover ? String(data.cover) : firstImage(content) ?? null,
     sourceUrl: data.source_url ? String(data.source_url) : undefined,
   }
   return { article, html: processed.toString() }
