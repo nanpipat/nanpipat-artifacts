@@ -15,6 +15,7 @@ import { IoChevronBack, IoDownloadOutline, IoDocumentOutline, IoSchoolOutline } 
 import Main from "@/components/layouts/main";
 import DeckPreview from "@/components/deck-preview";
 import Cover from "@/components/cover";
+import { proseCss } from "@/lib/prose";
 import { getAllCourseSlugs, getAllCourses, getCourse } from "@/lib/content";
 
 interface CoursePageProps {
@@ -51,7 +52,6 @@ export default function CoursePage({
   decks,
   materials,
 }: CoursePageProps) {
-  const contentBg = useColorModeValue("whiteAlpha.500", "whiteAlpha.200");
   const muted = useColorModeValue("gray.500", "whiteAlpha.600");
   const border = useColorModeValue("gray.200", "whiteAlpha.200");
 
@@ -84,36 +84,7 @@ export default function CoursePage({
         {title}
       </Heading>
 
-      <Box
-        p={8}
-        borderRadius="lg"
-        bg={contentBg}
-        className="article-content"
-        css={{
-          "& h2": { fontSize: "xl", fontWeight: "bold", mb: 3, mt: 5 },
-          "& h3": { fontSize: "lg", fontWeight: "bold", mb: 3, mt: 4 },
-          "& p": { mb: 4, lineHeight: "1.8" },
-          "& ul, & ol": { mb: 4, pl: 6 },
-          "& li": { mb: 2, lineHeight: "1.7" },
-          "& pre": {
-            bg: useColorModeValue("gray.100", "gray.900"),
-            p: 4,
-            borderRadius: "md",
-            overflow: "auto",
-            mb: 4,
-          },
-          "& code": {
-            bg: useColorModeValue("gray.100", "gray.900"),
-            px: 2,
-            py: 1,
-            borderRadius: "sm",
-            fontSize: "sm",
-          },
-          "& pre code": { bg: "transparent", p: 0 },
-          "& a": { color: "teal.500", textDecoration: "underline" },
-        }}
-        dangerouslySetInnerHTML={{ __html: html }}
-      />
+      <Box css={proseCss} className="article-content" dangerouslySetInnerHTML={{ __html: html }} />
 
       {decks.length > 0 && (
         <Box mt={10}>

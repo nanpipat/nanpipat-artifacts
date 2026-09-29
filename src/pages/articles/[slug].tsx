@@ -14,6 +14,7 @@ import { GetStaticPaths, GetStaticProps } from "next";
 import { IoBookOutline, IoChevronBack, IoOpenOutline } from "react-icons/io5";
 import Main from "@/components/layouts/main";
 import Cover from "@/components/cover";
+import { proseCss } from "@/lib/prose";
 import { getAllArticles, getArticle } from "@/lib/content";
 
 interface ArticlePageProps {
@@ -33,7 +34,6 @@ export default function ArticlePage({
   sourceUrl,
   html,
 }: ArticlePageProps) {
-  const contentBg = useColorModeValue("whiteAlpha.500", "whiteAlpha.200");
   const muted = useColorModeValue("gray.500", "whiteAlpha.600");
 
   return (
@@ -75,61 +75,7 @@ export default function ArticlePage({
         <Separator my={5} />
       </Box>
 
-      <Box
-        p={8}
-        borderRadius="lg"
-        bg={contentBg}
-        className="article-content"
-        css={{
-          "& h1": { fontSize: "2xl", fontWeight: "bold", mb: 4, mt: 6 },
-          "& h2": { fontSize: "xl", fontWeight: "bold", mb: 3, mt: 5 },
-          "& h3": { fontSize: "lg", fontWeight: "bold", mb: 3, mt: 4 },
-          "& p": { mb: 4, lineHeight: "1.8" },
-          "& img": { maxWidth: "100%", borderRadius: "md", mb: 4 },
-          "& ul, & ol": { mb: 4, pl: 6 },
-          "& li": { mb: 2, lineHeight: "1.7" },
-          "& pre": {
-            bg: useColorModeValue("gray.100", "gray.900"),
-            p: 4,
-            borderRadius: "md",
-            overflow: "auto",
-            mb: 4,
-          },
-          "& code": {
-            bg: useColorModeValue("gray.100", "gray.900"),
-            px: 2,
-            py: 1,
-            borderRadius: "sm",
-            fontSize: "sm",
-          },
-          "& pre code": { bg: "transparent", p: 0 },
-          "& blockquote": {
-            borderLeft: "4px solid",
-            borderColor: "teal.500",
-            pl: 4,
-            py: 2,
-            fontStyle: "italic",
-            mb: 4,
-          },
-          "& a": { color: "teal.500", textDecoration: "underline" },
-          "& table": { width: "100%", mb: 4, borderCollapse: "collapse", display: "table" },
-          "& th": {
-            border: "1px solid",
-            borderColor: useColorModeValue("gray.300", "gray.600"),
-            px: 4,
-            py: 2,
-            textAlign: "left",
-            fontWeight: "bold",
-          },
-          "& td": {
-            border: "1px solid",
-            borderColor: useColorModeValue("gray.300", "gray.600"),
-            px: 4,
-            py: 2,
-          },
-        }}
-        dangerouslySetInnerHTML={{ __html: html }}
-      />
+      <Box css={proseCss} className="article-content" dangerouslySetInnerHTML={{ __html: html }} />
     </Main>
   );
 }
