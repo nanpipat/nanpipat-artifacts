@@ -2,6 +2,9 @@ import { createSystem, defaultConfig, defineConfig } from '@chakra-ui/react'
 
 const config = defineConfig({
   globalCss: {
+    html: {
+      scrollBehavior: 'smooth'
+    },
     body: {
       bg: { base: '#f0e7db', _dark: '#202023' }
     }

@@ -8,15 +8,46 @@ import {
   Text,
   Icon,
   List,
+  Link as ChakraLink,
 } from "@chakra-ui/react";
 import { useColorModeValue } from "@/components/ui/color-mode";
 import { GetStaticPaths, GetStaticProps } from "next";
-import { IoChevronBack, IoDownloadOutline, IoDocumentOutline, IoSchoolOutline } from "react-icons/io5";
+import { IoChevronBack, IoDocumentTextOutline, IoDownloadOutline, IoDocumentOutline, IoEaselOutline, IoSchoolOutline } from "react-icons/io5";
 import Main from "@/components/layouts/main";
 import DeckPreview from "@/components/deck-preview";
 import Cover from "@/components/cover";
 import { proseCss } from "@/lib/prose";
 import { getAllCourseSlugs, getAllCourses, getCourse } from "@/lib/content";
+
+function SectionPill({
+  href,
+  icon: IconComp,
+  children,
+}: {
+  href: string;
+  icon: React.ElementType;
+  children: React.ReactNode;
+}) {
+  return (
+    <ChakraLink
+      href={href}
+      fontSize="sm"
+      fontWeight="medium"
+      color="teal.500"
+      display="inline-flex"
+      alignItems="center"
+      gap={1.5}
+      px={2}
+      py={1}
+      borderRadius="md"
+      _hover={{ bg: "teal.500", color: "white" }}
+      transition="all 0.15s"
+    >
+      <IconComp aria-hidden />
+      {children}
+    </ChakraLink>
+  );
+}
 
 interface CoursePageProps {
   slug: string;
@@ -54,6 +85,8 @@ export default function CoursePage({
 }: CoursePageProps) {
   const muted = useColorModeValue("gray.500", "whiteAlpha.600");
   const border = useColorModeValue("gray.200", "whiteAlpha.200");
+  const navBg = useColorModeValue("#f0e7dbdd", "#202023dd");
+  const hasNav = decks.length > 0 || materials.length > 0;
 
   return (
     <Main width="768px" title={`${title} - Artifacts`}>
@@ -84,10 +117,43 @@ export default function CoursePage({
         {title}
       </Heading>
 
-      <Box css={proseCss} className="article-content" dangerouslySetInnerHTML={{ __html: html }} />
+      {hasNav && (
+        <HStack
+          position="sticky"
+          top="60px"
+          zIndex={2}
+          gap={2}
+          flexWrap="wrap"
+          justify={{ base: "flex-start", md: "center" }}
+          px={3}
+          py={2}
+          mb={8}
+          borderRadius="full"
+          border="1px solid"
+          borderColor={border}
+          bg={navBg}
+          style={{ backdropFilter: "blur(10px)" }}
+        >
+          <SectionPill href="#overview" icon={IoDocumentTextOutline}>
+            Overview
+          </SectionPill>
+          {decks.length > 0 && (
+            <SectionPill href="#slides" icon={IoEaselOutline}>
+              Slides ({decks.length})
+            </SectionPill>
+          )}
+          {materials.length > 0 && (
+            <SectionPill href="#materials" icon={IoDownloadOutline}>
+              Materials ({materials.length})
+            </SectionPill>
+          )}
+        </HStack>
+      )}
+
+      <Box id="overview" css={proseCss} className="article-content" dangerouslySetInnerHTML={{ __html: html }} />
 
       {decks.length > 0 && (
-        <Box mt={10}>
+        <Box id="slides" css={{ scrollMarginTop: "90px" }} mt={10}>
           <Heading as="h2" size="lg" mb={2}>
             Slides
           </Heading>
@@ -103,7 +169,7 @@ export default function CoursePage({
       )}
 
       {materials.length > 0 && (
-        <Box mt={10}>
+        <Box id="materials" css={{ scrollMarginTop: "90px" }} mt={10}>
           <Heading as="h2" size="lg" mb={2}>
             Materials
           </Heading>
