@@ -3,525 +3,1854 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Working in the Age of AI — How We Work with AI</title>
+<title>Working in the Age of AI · Motion</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{--ink:#191919;--ink2:#37352f;--muted:#787774;--line:#e9e9e7;--bg:#fff;--soft:#f7f7f5;--blue:#2383e2;--blue-bg:#e7f3f8;--orange:#d9730d;--orange-bg:#fbecdd;--red:#e03e3e;--red-bg:#fbe4e4;--green:#0f7b6c;--green-bg:#ddedea;--purple:#6940a5;--purple-bg:#eae4f2;--yellow-bg:#fbf3db}
-*{box-sizing:border-box}html,body{height:100%}body{margin:0;background:#f1f1ef;color:var(--ink);font-family:'IBM Plex Sans Thai',sans-serif;-webkit-font-smoothing:antialiased}#deck{display:flex;flex-direction:column;align-items:center;gap:20px;padding:20px 0}body.js{overflow:hidden}body.js #deck{position:relative;width:100vw;height:100vh;flex-direction:row;align-items:center;justify-content:center;gap:0;padding:0}body.js .slide{display:none}body.js .slide.active{display:flex}
-.slide{display:flex;position:relative;width:min(96vw,calc(100vh * 16 / 9 * .96));aspect-ratio:16/9;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:4.2% 5.5%;overflow:hidden;flex-direction:column;box-shadow:0 1px 3px rgba(15,15,15,.06),0 6px 24px rgba(15,15,15,.06);font-size:min(2.5vh,1.4vw)}
-h1,h2,h3,p{margin:0}h1{font-size:3.2em;font-weight:600;line-height:1.15;letter-spacing:-.02em}h2{font-size:1.9em;font-weight:600;line-height:1.25;margin-bottom:.5em;letter-spacing:-.01em}h3{font-size:1.12em;font-weight:600;margin-bottom:.3em}p,li{font-size:1em;line-height:1.58;color:var(--ink2)}.lead{font-size:1.16em;color:var(--muted);font-weight:300}.eyebrow{font-size:.72em;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:.9em}.sub{font-size:.82em;color:var(--muted)}b,strong{font-weight:600;color:var(--ink)}
-ul,ol{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:.47em}ul li{position:relative;padding-left:1.25em}ul li:before{content:"";position:absolute;left:.25em;top:.72em;width:.34em;height:.34em;border-radius:50%;background:var(--muted)}ul.check li:before{content:"✓";background:none;left:0;top:0;color:var(--green);font-weight:600}ol{counter-reset:item}ol li{counter-increment:item;display:flex;gap:.6em}ol li:before{content:counter(item,decimal-leading-zero);font-family:'IBM Plex Mono',monospace;color:var(--muted);font-size:.75em;padding-top:.18em}
-code,pre{font-family:'IBM Plex Mono',monospace}code{font-size:.86em;background:var(--soft);border:1px solid var(--line);border-radius:3px;padding:.08em .35em}pre{margin:0;background:var(--soft);border:1px solid var(--line);border-radius:4px;padding:.9em 1.1em;font-size:.8em;line-height:1.65;white-space:pre-wrap;overflow:hidden}pre code{background:none;border:0;padding:0;font-size:1em}.cols{display:grid;grid-template-columns:1fr 1fr;gap:2em;align-items:start}.cols.three{grid-template-columns:repeat(3,1fr);gap:1.4em}.center{justify-content:center;align-items:flex-start}.split{display:grid;grid-template-columns:1fr .95fr;gap:2.2em;align-items:center;flex:1;min-height:0}.split img{width:100%;max-height:100%;object-fit:contain}.illustration{width:100%;height:100%;object-fit:contain}.big{font-size:1.45em;line-height:1.4}.huge{font-size:2.3em;line-height:1.25;font-weight:600}.muted{color:var(--muted)}.blue{color:var(--blue)}.green{color:var(--green)}.orange{color:var(--orange)}.red{color:var(--red)}.purple{color:var(--purple)}.mono{font-family:'IBM Plex Mono',monospace}.spacer{flex:1}.mt{margin-top:1em}.mt2{margin-top:1.6em}.mb{margin-bottom:1em}
-.line{height:1px;background:var(--line);margin:1em 0}.callout{display:flex;gap:.65em;align-items:flex-start;padding:.65em .85em;border-radius:3px;font-size:.88em;line-height:1.5}.callout b{color:inherit}.c-blue{background:var(--blue-bg);color:#0b6e99}.c-orange{background:var(--orange-bg);color:#9b4a00}.c-green{background:var(--green-bg);color:#0b665a}.c-red{background:var(--red-bg);color:#a82929}.c-purple{background:var(--purple-bg);color:#5c3597}.c-soft{background:var(--soft);color:var(--ink2)}.callout .ico{flex:none}.quote{border-left:4px solid var(--blue);padding:.3em 0 .3em 1em;font-size:1.23em;line-height:1.5}.quote.orange-border{border-color:var(--orange)}.quote.green-border{border-color:var(--green)}.flow{display:flex;align-items:center;gap:.55em;flex-wrap:wrap}.flow .box{border:1px solid var(--line);border-radius:5px;padding:.45em .75em;background:#fff;font-weight:500;font-size:.9em}.flow .arr{color:var(--muted)}.row{display:flex;gap:1.2em;align-items:center}.row>div{flex:1}.pill{display:inline-block;background:var(--soft);border:1px solid var(--line);border-radius:3px;padding:.13em .5em;font-size:.78em;color:var(--muted)}.topic-grid{display:grid;grid-template-columns:1fr 1fr;gap:.55em 1.7em}.topic-grid div{border-bottom:1px solid var(--line);padding:.4em 0}.topic-grid small{display:block;color:var(--muted);font-size:.75em}.num{font-family:'IBM Plex Mono',monospace;color:var(--muted);font-size:.75em}.numbered{display:grid;grid-template-columns:auto 1fr;gap:.55em .8em;align-items:start}.numbered .n{font-family:'IBM Plex Mono',monospace;color:var(--blue);font-size:.88em}.numbered div{line-height:1.45}.divider{justify-content:center;background:var(--ink);border-color:var(--ink)}.divider h1,.divider .lead{color:#fff}.divider .lead{color:#9b9a97}.divider .eyebrow{color:#9b9a97}.divider .foot{color:#787774}.foot{position:absolute;left:5.5%;right:5.5%;bottom:2.2%;display:flex;justify-content:space-between;color:#c9c9c7;font-size:.68em}.badge{font-family:'IBM Plex Mono',monospace;font-size:.75em;color:var(--muted);letter-spacing:.04em}.time{font-family:'IBM Plex Mono',monospace;color:var(--muted);font-size:.82em}.scribble{font-size:1.5em;line-height:1.15}.rule{display:grid;grid-template-columns:1fr 1fr;gap:1.4em}.rule>div{padding:.8em;border-top:3px solid var(--line)}.rule .good{border-color:var(--green)}.rule .bad{border-color:var(--red)}
-#bar{position:fixed;top:0;left:0;height:2px;background:var(--blue);z-index:10;transition:width .2s}#hint{position:fixed;bottom:10px;right:14px;font-size:11px;color:#a5a5a3;z-index:10}#nav{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);display:none;gap:6px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:20px;padding:5px 8px;box-shadow:0 2px 8px rgba(15,15,15,.08);z-index:10;font-size:13px}body.js #nav{display:flex}body.export #nav,body.export #hint,body.export #bar{display:none!important}body.export .slide{width:100vw;height:100vh;aspect-ratio:auto;border:0;border-radius:0;box-shadow:none}#nav button{border:0;background:none;cursor:pointer;font-size:15px;color:var(--ink2);padding:2px 8px;border-radius:12px}#nav button:hover{background:var(--soft)}#pos{font-family:'IBM Plex Mono',monospace;color:var(--muted);min-width:58px;text-align:center}@page{size:16in 9in;margin:0}@media print{body,body.js{overflow:visible;background:#fff}#deck,body.js #deck{display:block;height:auto;width:auto;padding:0}.slide,body.js .slide{display:flex!important;width:16in;height:9in;aspect-ratio:auto;page-break-after:always;box-shadow:none;border:0;border-radius:0;font-size:24px}#bar,#hint,#nav{display:none!important}}
+:root{
+  --ink:#191919;--ink2:#37352f;--muted:#787774;--faint:#b9b8b4;--line:#e6e6e3;--soft:#f6f6f4;--bg:#fff;
+  --blue:#2383e2;--blue-d:#0b6bcb;--blue-bg:#e3effb;--blue-bg2:#f1f7fd;--blue-line:#bcd8f4;
+  --orange:#d9730d;--orange-bg:#fbecdd;--green:#0f7b6c;--green-bg:#ddedea;--red:#e03e3e;--red-bg:#fbe4e4;--purple:#6940a5;--purple-bg:#eae4f2;
+  --ease:cubic-bezier(.22,1,.36,1);--ease-io:cubic-bezier(.76,0,.24,1);--spring:cubic-bezier(.34,1.56,.64,1);
+  --sans:'IBM Plex Sans Thai','Sukhumvit Set','Thonburi',sans-serif;--mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#efefec}
+body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased;cursor:default}
+#stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;margin:-540px 0 0 -960px;transform:scale(var(--k,1));background:#fff;overflow:hidden;box-shadow:0 10px 60px rgba(0,0,0,.06)}
+h1,h2,h3,p{margin:0}
+
+/* ---------- background layer ---------- */
+#bg{position:absolute;inset:0;pointer-events:none}
+#bg .grid{position:absolute;top:0;bottom:0;left:-480px;right:-480px;background-image:radial-gradient(#dcdcd8 1.5px,transparent 1.7px);background-size:40px 40px;opacity:.5;transform:translateX(var(--gx,0px));transition:transform 1.4s var(--ease-io),opacity .8s}
+#bg .orb,#bg .ring,#bg .dot{position:absolute;left:0;top:0;border-radius:50%;will-change:transform}
+#bg .orb{width:1000px;height:1000px;margin:-500px 0 0 -500px;background:var(--blue-bg2);transform:translate(var(--ox),var(--oy)) scale(var(--os));transition:transform 1.25s var(--ease-io),background-color .9s var(--ease-io)}
+#bg .ring{width:1000px;height:1000px;margin:-500px 0 0 -500px;border:2px solid #d7e7f8;transform:translate(var(--rx),var(--ry)) scale(var(--rs));transition:transform 1.45s var(--ease-io),border-color .9s,opacity .6s}
+#bg .dot{width:36px;height:36px;margin:-18px 0 0 -18px;background:var(--blue);transform:translate(var(--dx),var(--dy)) scale(var(--ds));transition:transform 1.1s var(--spring)}
+#bg.flood .orb{background:var(--blue)}
+#bg.flood .ring{border-color:rgba(255,255,255,.25)}
+#bg.flood .grid{opacity:0}
+
+/* ---------- scenes ---------- */
+.scene{position:absolute;inset:0;padding:132px 150px 118px;display:flex;flex-direction:column;visibility:hidden}
+.scene.active,.scene.leaving{visibility:visible}
+.scene.active{transition:transform 1s var(--ease)}
+.scene.leaving{opacity:0;transform:translateX(calc(var(--dir,1) * -90px));filter:blur(5px);transition:opacity .5s var(--ease),transform .65s var(--ease),filter .5s}
+.scene[data-t=zoom].leaving{transform:scale(1.07)}
+.scene[data-t=zoom].enter{transform:scale(.93)}
+.scene.enter{transform:translateX(calc(var(--dir,1) * 50px))}
+.scene.snap,.scene.snap *{transition:none!important}
+
+/* animated element base */
+.a,[data-s]{opacity:0;transform:var(--from,translateY(38px));transition:opacity .6s var(--ease) var(--delay,0s),transform .95s var(--ease) var(--delay,0s),clip-path 1s var(--ease) var(--delay,0s),filter .6s var(--ease) var(--delay,0s)}
+.on{opacity:1;transform:none}
+.fx-left{--from:translateX(-70px)}
+.fx-right{--from:translateX(70px)}
+.fx-down{--from:translateY(-40px)}
+.fx-fade{--from:none}
+.fx-zoom{--from:scale(1.12);filter:blur(6px)}
+.fx-zoom.on{filter:none}
+.fx-pop{--from:scale(.55);transition:opacity .4s var(--ease) var(--delay,0s),transform .75s var(--spring) var(--delay,0s)}
+.fx-grow{--from:scaleX(0);transform-origin:left center;transition:opacity .3s var(--ease) var(--delay,0s),transform .7s var(--ease-io) var(--delay,0s)}
+.fx-growy{--from:scaleY(0);transform-origin:center bottom;transition:opacity .3s var(--ease) var(--delay,0s),transform .9s var(--ease) var(--delay,0s)}
+.fx-wipe{opacity:1;transform:none;clip-path:inset(0 100% 0 0)}
+.fx-wipe.on{clip-path:inset(0 0 0 0)}
+.st{opacity:1;transform:none}
+.mask{display:block;overflow:hidden;padding:.14em 0 .1em;margin:-.14em 0 -.1em;opacity:1;transform:none}
+.mask>span{display:block;transform:translateY(110%);transition:transform 1.1s var(--ease) var(--delay,0s)}
+.mask.on>span{transform:none}
+svg .draw{opacity:1;transform:none;stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset 1.1s var(--ease-io) var(--delay,0s)}
+svg .draw.on{stroke-dashoffset:0}
+
+/* ---------- typography ---------- */
+.eyebrow{font-family:var(--mono);font-size:21px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:22px}
+.title{font-size:70px;font-weight:600;line-height:1.22;letter-spacing:-.015em;margin-bottom:18px}
+.lead{font-size:34px;line-height:1.5;color:var(--muted);font-weight:300}
+.t{font-size:32px;line-height:1.55;color:var(--ink2)}
+.s{font-size:26px;line-height:1.5;color:var(--muted)}
+.mono{font-family:var(--mono)}
+b,strong{font-weight:600;color:var(--ink)}
+.blue{color:var(--blue)}.green{color:var(--green)}.orange{color:var(--orange)}.red{color:var(--red)}.purple{color:var(--purple)}.muted{color:var(--muted)}
+.mt{margin-top:28px}.mt2{margin-top:48px}.mb{margin-bottom:28px}
+.grow{flex:1;min-height:0}
+.center-x{text-align:center;align-items:center}
+
+/* ---------- layout ---------- */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:40px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:32px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:28px}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center}
+.col{display:flex;flex-direction:column}
+.row{display:flex;align-items:center;gap:20px}
+.body{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center}
+
+/* ---------- components ---------- */
+.card{background:#fff;border:2px solid var(--line);border-radius:24px;padding:36px 40px}
+.card h3{font-size:38px;font-weight:600;line-height:1.3;margin-bottom:10px}
+.card .k{font-family:var(--mono);font-size:20px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;display:block}
+.card.blue{border-color:var(--blue-line);background:var(--blue-bg2)}
+.card.soft{background:var(--soft);border-color:transparent}
+.card.dash{border-style:dashed}
+.card .t+.t{margin-top:8px}
+
+.callout{margin-top:auto;display:flex;gap:22px;align-items:center;padding:24px 34px;border-radius:18px;background:var(--soft);font-size:30px;line-height:1.5;color:var(--ink2)}
+.callout .ico{font-size:38px;flex:none;line-height:1}
+.callout.blue{background:var(--blue-bg);color:#0b5ea8}
+.callout.orange{background:var(--orange-bg);color:#9b4a00}
+.callout.green{background:var(--green-bg);color:#0b665a}
+.callout.red{background:var(--red-bg);color:#a82929}
+.callout b{color:inherit}
+
+.chip{display:inline-flex;align-items:center;gap:12px;padding:16px 32px;border-radius:999px;border:2px solid var(--line);font-size:34px;font-weight:500;background:#fff;white-space:nowrap}
+.chip.blue{background:var(--blue);border-color:var(--blue);color:#fff}
+.chip.sm{font-size:24px;padding:8px 20px}
+.tag{display:inline-block;font-family:var(--mono);font-size:20px;font-weight:500;padding:5px 14px;border-radius:8px;background:var(--soft);color:var(--muted);letter-spacing:.04em;white-space:nowrap}
+.tag.blue{background:var(--blue-bg);color:var(--blue-d)}.tag.green{background:var(--green-bg);color:var(--green)}.tag.red{background:var(--red-bg);color:var(--red)}.tag.orange{background:var(--orange-bg);color:var(--orange)}.tag.purple{background:var(--purple-bg);color:var(--purple)}
+
+.nrow{display:grid;grid-template-columns:120px 1fr;align-items:baseline;padding:22px 0;border-bottom:2px solid var(--line)}
+.nrow .n{font-family:var(--mono);font-size:30px;font-weight:500;color:var(--blue)}
+.nrow b{font-size:36px;margin-right:14px}
+.nrow .t{font-size:32px}
+.nlist{display:flex;flex-direction:column}
+
+.kv{display:grid;grid-template-columns:300px 1fr;align-items:baseline;padding:20px 0;border-bottom:2px solid var(--line)}
+.kv>b{font-size:34px}.kv>span{font-size:32px;color:var(--ink2)}
+
+/* check rows */
+.tick{display:grid;grid-template-columns:80px 1fr;align-items:center;padding:22px 0;border-bottom:2px solid var(--line)}
+.chk{width:48px;height:48px;border-radius:12px;border:3px solid var(--faint);display:grid;place-items:center;transition:background-color .35s var(--ease) calc(var(--delay,0s) + .45s),border-color .35s calc(var(--delay,0s) + .45s)}
+.chk svg{width:30px;height:30px}
+.chk path{fill:none;stroke:#fff;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset .45s var(--ease) calc(var(--delay,0s) + .6s)}
+.tick.on .chk{background:var(--green);border-color:var(--green)}
+.tick.on .chk path{stroke-dashoffset:0}
+.tick .t{font-size:34px}
+.tick.q .chk{border-radius:50%}
+
+/* window (Cowork prompt) */
+.win{background:#fff;border:2px solid var(--line);border-radius:24px;box-shadow:0 34px 80px -40px rgba(18,52,96,.35);overflow:hidden;display:flex;flex-direction:column}
+.win .wbar{display:flex;align-items:center;gap:10px;padding:16px 26px;border-bottom:2px solid var(--line);background:var(--soft);font-family:var(--mono);font-size:19px;color:var(--muted);letter-spacing:.06em}
+.win .wbar i{width:14px;height:14px;border-radius:50%;background:#dededa;display:block}
+.win .wbar i:nth-child(1){background:#f3b1ab}.win .wbar i:nth-child(2){background:#f5d38f}.win .wbar i:nth-child(3){background:#a8d9b4}
+.win .wbar span{margin-left:14px}
+.win .wbody{padding:30px 38px;font-size:32px;line-height:1.62;white-space:pre-wrap;color:var(--ink)}
+.win .wfoot{display:flex;justify-content:flex-end;align-items:center;gap:14px;padding:0 26px 22px;font-family:var(--mono);font-size:18px;color:var(--faint)}
+.win .send{width:52px;height:52px;border-radius:50%;background:var(--line);display:grid;place-items:center;color:#fff;font-size:26px;transition:background-color .4s}
+.win.sent .send{background:var(--blue)}
+.fill{color:var(--blue);background:var(--blue-bg);border-radius:8px;padding:0 .2em}
+.ch{visibility:hidden}
+.ch.v{visibility:visible}
+.ch.cur{position:relative}
+.ch.cur::after{content:"";position:absolute;right:-5px;top:.18em;bottom:.12em;width:3px;border-radius:2px;background:var(--blue);animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+
+/* file chip */
+.file{display:inline-flex;align-items:center;gap:14px;padding:14px 24px 14px 18px;border-radius:14px;border:2px solid var(--line);font-family:var(--mono);font-size:26px;background:#fff;white-space:nowrap;position:relative}
+.file svg{width:30px;height:30px;flex:none}
+.file.ghost{border-style:dashed;color:var(--faint);background:transparent}
+.file.new{border-color:var(--green);color:var(--ink)}
+.file.new::after{content:"";position:absolute;inset:-2px;border-radius:14px;border:3px solid var(--green);opacity:0}
+.file.new.on::after{animation:ping 1.2s var(--ease) calc(var(--delay,0s) + .3s) 2}
+.file .nb{font-family:var(--sans);font-size:18px;font-weight:600;color:#fff;background:var(--green);border-radius:999px;padding:2px 12px;margin-left:4px}
+@keyframes ping{0%{opacity:.9;transform:scale(1)}100%{opacity:0;transform:scale(1.25)}}
+
+/* flow */
+.flow{display:flex;align-items:center;flex-wrap:nowrap}
+.node{padding:18px 30px;border:2px solid var(--line);border-radius:18px;font-size:32px;font-weight:500;background:#fff;white-space:nowrap}
+.node.blue{border-color:var(--blue);background:var(--blue);color:#fff}
+.node.lb{border-color:var(--blue-line);background:var(--blue-bg2);color:var(--blue-d)}
+.arr{width:64px;height:3px;background:var(--faint);position:relative;margin:0 6px;flex:none}
+.arr::after{content:"";position:absolute;right:-2px;top:50%;width:14px;height:14px;border-top:3px solid var(--faint);border-right:3px solid var(--faint);transform:translateY(-50%) rotate(45deg)}
+.arr.blue{background:var(--blue)}.arr.blue::after{border-color:var(--blue)}
+
+/* role badge */
+.role{display:flex;flex-direction:column;align-items:flex-start;gap:18px}
+.role .rb{width:150px;height:150px;border-radius:50%;background:var(--blue);color:#fff;display:grid;place-items:center;font-family:var(--mono);font-size:46px;font-weight:600;box-shadow:0 0 0 14px var(--blue-bg)}
+.role .rn{font-family:var(--mono);font-size:22px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+
+/* divider scenes */
+.scene.divider{justify-content:center;color:#fff;padding-left:170px}
+.divider .num{font-family:var(--mono);font-size:30px;font-weight:500;letter-spacing:.2em;color:rgba(255,255,255,.7);margin-bottom:34px}
+.divider h1{font-size:128px;font-weight:600;line-height:1.08;letter-spacing:-.025em}
+.divider .lead{color:rgba(255,255,255,.78);margin-top:34px;font-size:38px}
+.divider .bignum{position:absolute;right:130px;bottom:40px;font-family:var(--mono);font-size:420px;font-weight:600;line-height:1;color:rgba(255,255,255,.12);letter-spacing:-.04em}
+
+/* ---------- HUD ---------- */
+#hud{position:absolute;inset:0;pointer-events:none;z-index:5}
+#hud-ch{position:absolute;left:150px;top:54px;height:30px;overflow:hidden;font-family:var(--mono);font-size:20px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);transition:color .6s}
+#hud-ch span{display:block;height:30px;line-height:30px;transition:transform .7s var(--ease),opacity .5s}
+#hud-ch span.out{transform:translateY(-100%);opacity:0}
+#hud-ch span.in{transform:translateY(100%);opacity:0}
+#prog{position:absolute;left:0;bottom:0;height:6px;background:var(--blue);width:0;transition:width .9s var(--ease),background-color .6s}
+#beats{position:absolute;left:150px;bottom:46px;display:flex;gap:10px}
+#beats i{width:11px;height:11px;border-radius:50%;background:#e1e1dd;transition:background-color .35s,transform .35s var(--spring)}
+#beats i.on{background:var(--blue)}
+#beats i.now{transform:scale(1.35)}
+#hud-n{position:absolute;right:150px;bottom:40px;font-family:var(--mono);font-size:20px;color:var(--faint);letter-spacing:.08em;transition:color .6s}
+#stage.dark #hud-ch,#stage.dark #hud-n{color:rgba(255,255,255,.7)}
+#stage.dark #beats i{background:rgba(255,255,255,.3)}
+#stage.dark #beats i.on{background:#fff}
+#stage.dark #prog{background:#fff}
+#roles{position:absolute;right:150px;top:40px;display:flex;align-items:flex-start;opacity:0;transform:translateY(-14px);transition:opacity .6s,transform .6s var(--ease)}
+#roles.show{opacity:1;transform:none}
+#roles .r{display:flex;flex-direction:column;align-items:center;gap:8px;width:118px}
+#roles .r i{width:30px;height:30px;border-radius:50%;border:3px solid #d9d9d5;background:#fff;display:grid;place-items:center;font-style:normal;font-size:16px;color:#fff;font-weight:700;transition:all .5s var(--ease)}
+#roles .r b{font-family:var(--mono);font-size:17px;font-weight:600;color:var(--faint);letter-spacing:.08em;transition:color .5s}
+#roles .r small{font-family:var(--mono);font-size:13px;color:var(--faint);transition:color .5s}
+#roles .ln{width:26px;height:3px;background:#e1e1dd;margin-top:14px;transition:background-color .5s}
+#roles .r.cur i{border-color:var(--blue);background:var(--blue);box-shadow:0 0 0 7px var(--blue-bg)}
+#roles .r.cur b{color:var(--blue)}#roles .r.cur small{color:var(--ink2)}
+#roles .r.done i{border-color:var(--green);background:var(--green)}
+#roles .r.done i::after{content:"✓"}
+#roles .r.done b{color:var(--ink2)}
+#roles .ln.done{background:var(--green)}
+
+/* ---------- overlays (not scaled) ---------- */
+.ovl{position:fixed;inset:0;z-index:20;display:none;background:rgba(250,250,249,.97);backdrop-filter:blur(6px);overflow:auto;padding:44px 56px 60px;font-family:var(--sans)}
+.ovl.show{display:block;animation:ovIn .35s var(--ease)}
+@keyframes ovIn{from{opacity:0;transform:scale(1.02)}}
+#ov h4{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:26px 0 10px;font-weight:500}
+#ov .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+#ov button{all:unset;cursor:pointer;background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:14px;line-height:1.4;color:var(--ink2);display:flex;gap:10px;transition:border-color .2s,transform .2s}
+#ov button:hover{border-color:var(--blue);transform:translateY(-2px)}
+#ov button.cur{border-color:var(--blue);background:var(--blue-bg2)}
+#ov button span{font-family:var(--mono);font-size:12px;color:var(--muted);padding-top:2px;flex:none;width:24px}
+#ov .top{display:flex;justify-content:space-between;align-items:baseline}
+#ov .top b{font-size:22px}#ov .top small{color:var(--muted);font-size:13px}
+#help .box{max-width:560px;margin:8vh auto;background:#fff;border:1px solid var(--line);border-radius:16px;padding:30px 36px;box-shadow:0 20px 60px rgba(0,0,0,.08)}
+#help h4{margin:0 0 16px;font-size:20px}
+#help table{width:100%;border-collapse:collapse;font-size:15px}
+#help td{padding:8px 0;border-bottom:1px solid var(--line);color:var(--ink2)}
+#help td:first-child{font-family:var(--mono);font-size:13px;color:var(--muted);width:44%}
+#blank{position:fixed;inset:0;background:#fff;z-index:15;opacity:0;pointer-events:none;transition:opacity .5s}
+#blank.show{opacity:1;pointer-events:auto}
+#toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,10px);z-index:12;background:rgba(25,25,25,.88);color:#fff;font-size:14px;padding:10px 18px;border-radius:999px;opacity:0;transition:opacity .5s,transform .5s var(--ease);pointer-events:none;font-family:var(--sans)}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#toast kbd{font-family:var(--mono);font-size:12px;background:rgba(255,255,255,.18);border-radius:5px;padding:1px 7px;margin:0 2px}
+
+@media (prefers-reduced-motion:reduce){
+  .a,[data-s],.mask>span,#bg *{transition-duration:.01s!important;animation-duration:.01s!important}
+}
+@media print{
+  @page{size:1920px 1080px;margin:0}
+  html,body{overflow:visible;height:auto;background:#fff}
+  #stage{position:static;margin:0;transform:none;width:1920px;height:auto;overflow:visible;box-shadow:none}
+  #bg,#hud,.ovl,#blank,#toast{display:none!important}
+  .scene{position:relative;width:1920px;height:1080px;visibility:visible!important;opacity:1!important;transform:none!important;filter:none!important;break-after:page;page-break-after:always;overflow:hidden}
+  .scene.divider{background:var(--blue)}
+  .scene *{transition:none!important;animation:none!important}
+  html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
 </style>
 </head>
 <body>
-<div id="bar"></div><div id="deck">
+<div id="stage">
+  <div id="bg"><div class="grid"></div><div class="orb"></div><div class="ring"></div><div class="dot"></div></div>
 
-<section class="slide center">
+<style>
+/* scene-specific: opening + AI 101 */
+.hero-t{font-size:150px;font-weight:600;line-height:1.04;letter-spacing:-.03em}
+.core{position:absolute;left:150px;bottom:140px;font-size:46px;line-height:1.35;font-weight:300;color:var(--ink2)}
+.core b{font-weight:600}
+.core svg{display:block;width:760px;height:26px;margin-top:6px}
+.core path{fill:none;stroke:var(--blue);stroke-width:6;stroke-linecap:round}
+.verbs{display:grid;grid-template-columns:repeat(4,1fr);gap:28px}
+.verb{border:2px solid var(--line);border-radius:28px;padding:44px 40px;background:#fff;min-height:300px;display:flex;flex-direction:column;justify-content:space-between}
+.verb .v{font-size:88px;font-weight:600;letter-spacing:-.02em;line-height:1.1}
+.verb .t{color:var(--muted)}
+.verb .ix{font-family:var(--mono);font-size:20px;color:var(--faint)}
+.verb.hot{background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:0 30px 70px -30px rgba(35,131,226,.7)}
+.verb.hot .t,.verb.hot .ix{color:rgba(255,255,255,.8)}
+.imgbox{border-radius:24px;overflow:hidden;background:#fff;border:2px solid var(--line)}
+.imgbox img{display:block;width:100%;height:auto}
+.ba{display:flex;flex-direction:column;gap:14px;padding:30px 0;border-bottom:2px solid var(--line)}
+.ba .t{font-size:38px;line-height:1.45}
+/* rings */
+.rings-wrap{display:grid;grid-template-columns:600px 1fr;gap:70px;align-items:center}
+.rings{position:relative;width:560px;height:560px;margin-left:10px}
+.rg{position:absolute;border-radius:50%;border:2px solid var(--line);display:flex;justify-content:center;background:#fff}
+.rg>span{font-family:var(--mono);font-size:19px;font-weight:500;letter-spacing:.08em;color:var(--muted);margin-top:18px}
+.r1{inset:0;background:var(--soft)}
+.r2{inset:58px}
+.r3{inset:116px;background:var(--blue-bg2);border-color:var(--blue-line)}.r3>span{color:var(--blue-d)}
+.r4{inset:182px;background:var(--blue);border-color:var(--blue);align-items:center}.r4>span{color:#fff;margin:0;font-size:24px}
+.orbitA{position:absolute;inset:92px;border-radius:50%;border:3px dashed var(--orange);animation:spin 26s linear infinite}
+.orbitA::before{content:"";position:absolute;left:50%;top:-11px;width:20px;height:20px;margin-left:-10px;border-radius:50%;background:var(--orange)}
+.lblA{position:absolute;right:-70px;top:250px}
+.lblM{position:absolute;left:50%;top:352px;margin-left:-72px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.defs{display:flex;flex-direction:column}
+.def{display:grid;grid-template-columns:380px 1fr;align-items:baseline;padding:16px 0;border-bottom:2px solid var(--line)}
+.def b{font-size:30px}.def span{font-size:28px;color:var(--ink2);line-height:1.45}
+.quote-card{align-self:center;font-size:52px;font-weight:500;padding:34px 60px;border-radius:24px;background:var(--ink);color:#fff;letter-spacing:-.01em}
+.links{display:block;width:100%;height:80px}
+.links path{fill:none;stroke:var(--faint);stroke-width:2.5}
+.wcard h3{font-size:34px}
+.pills{display:flex;gap:12px;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:10px;padding:10px 20px;border-radius:999px;background:var(--green-bg);color:var(--green);font-size:25px;font-weight:500}
+.klbl{font-family:var(--mono);font-size:22px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
+.klbl.blue{color:var(--blue)}
+.four{display:grid;grid-template-columns:repeat(4,1fr);gap:40px}
+.four .bn{font-family:var(--mono);font-size:120px;font-weight:500;color:var(--blue);line-height:1;letter-spacing:-.04em}
+.four b{display:block;font-size:44px;margin:26px 0 12px}
+.four .it{border-top:3px solid var(--ink);padding-top:30px}
+.kit{display:grid;grid-template-columns:1fr 400px 1fr;gap:56px;align-items:center}
+.kcol{display:flex;flex-direction:column;gap:22px}
+.kt{display:flex;align-items:center;gap:22px;padding:20px 28px;border:2px solid var(--line);border-radius:20px;background:#fff}
+.kt .e{font-size:44px;width:56px;text-align:center}
+.kt b{font-size:32px;display:block;line-height:1.3}.kt small{font-size:24px;color:var(--muted)}
+.inL{--from:translateX(240px) scale(.8)}.inR{--from:translateX(-240px) scale(.8)}
+.kcenter{width:400px;height:400px;border-radius:50%;background:var(--blue);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;box-shadow:0 0 0 26px var(--blue-bg),0 0 0 52px var(--blue-bg2)}
+.kcenter .face{font-size:110px;line-height:1.1}
+.kcenter b{color:#fff;font-size:40px}.kcenter small{font-size:26px;opacity:.8}
+</style>
 
-  <h1>Working in<br>the Age of AI</h1>
-  <p class="lead mt">How We Work with AI</p>
-  <div class="spacer"></div><p class="sub">AI as a New Coworker</p>
-</section>
-
-<section class="slide">
-<h2>วันนี้ให้ AI ช่วยอะไรไปแล้วบ้าง?</h2>
-  <p class="lead">นึกถึงงานจริงหนึ่งอย่าง แล้วเล่าให้คนข้าง ๆ ฟังสั้น ๆ</p>
-  <div class="topic-grid mt2"><div><b>ถาม</b><small>ขอคำตอบ</small></div><div><b>ร่าง</b><small>ช่วยเริ่มต้นงาน</small></div><div><b>สรุป</b><small>ย่อยข้อมูลยาว ๆ</small></div><div><b>ลงมือ</b><small>ใช้เครื่องมือทำงานต่อ</small></div></div>
-  <div class="spacer"></div><div class="callout c-blue"><span class="ico">💬</span><div>มีใครเคยให้ AI เปิดไฟล์หรือทำงานหลายขั้นแทนเราแล้วบ้าง?</div></div>
-</section>
-
-<section class="slide">
-
-  <h2>AI เริ่มลงมาช่วยทำงานจริงแล้ว</h2>
-  <div class="split">
-    <div><p class="big">เมื่อก่อนเราถาม AI แล้วเอาคำตอบไปทำต่อเอง</p><p class="big mt">ตอนนี้บางตัวเปิดไฟล์ ใช้เครื่องมือ แล้วส่งงานกลับมาให้เราตรวจได้</p></div>
-    <img src="assets/new-coworker.png" alt="การ์ตูนพนักงาน AI ใหม่เจองานกองโต">
+<!-- S01 -->
+<section class="scene" data-bg="hero" data-chapter="00 · Opening" data-title="Working in the Age of AI">
+  <div class="body" style="justify-content:flex-start;padding-top:60px">
+    <div class="eyebrow a">Online Interactive Workshop · 2 ชั่วโมง</div>
+    <h1 class="hero-t"><span class="mask a"><span>Working in</span></span><span class="mask a"><span>the Age of AI</span></span></h1>
+    <p class="lead a mt" style="font-size:44px">How We Work with AI</p>
+    <div class="a mt"><span class="chip blue sm">AI as a New Coworker</span></div>
   </div>
-  <div class="callout c-blue"><span class="ico">💡</span><div>ลองนึกว่ามีเพื่อนร่วมทีมใหม่ เก่งนะ แต่ยังไม่รู้ว่าทีมเราทำงานกันยังไง</div></div>
-</section>
-
-<section class="slide divider">
-<h1>AI 101</h1><p class="lead mt">ศัพท์ใหม่น้อยที่สุด เพื่อคุยกันรู้เรื่อง</p>
-</section>
-
-<section class="slide">
-  <h2>ศัพท์ AI ที่เจอบ่อย เอาแค่พอคุยรู้เรื่อง</h2>
-  <div class="topic-grid mt">
-    <div><b>Artificial Intelligence</b><small>ชื่อรวมกว้าง ๆ ของระบบที่ทำงานคล้ายใช้ความคิดคน</small></div>
-    <div><b>Machine Learning</b><small>เห็นข้อมูลเยอะ ๆ แล้วจับแพตเทิร์น</small></div>
-    <div><b>Generative AI</b><small>สร้างข้อความ ภาพ หรือโค้ดใหม่ให้เรา</small></div>
-    <div><b>Large Language Model</b><small>สมองที่คุยและทำงานกับภาษาเป็นหลัก</small></div>
-    <div><b>Multimodal AI</b><small>อ่านได้หลายแบบ เช่น ข้อความกับรูป</small></div>
-    <div><b>Agentic AI</b><small>รับเป้าหมาย แล้วใช้เครื่องมือทำงานต่อ</small></div>
-  </div>
-  <div class="callout c-purple mt2"><span class="ico">🧠</span><div>Agent หลายตัวก็ใช้ GenAI อยู่ข้างในนั่นแหละ</div></div>
-</section>
-
-<section class="slide">
-  <h2>โจทย์เดียวกัน AI ช่วยได้หลายแบบ</h2>
-  <p class="lead">“อยากให้ทีมจัดการ Task ง่ายขึ้น”</p>
-  <div class="topic-grid mt2">
-    <div><b>Automation</b><small>ตั้งกฎไว้ พอครบเงื่อนไขก็เปลี่ยน status ให้</small></div>
-    <div><b>Machine Learning</b><small>ดูงานเก่า แล้วเดาว่างานไหนเสี่ยงส่งช้า</small></div>
-    <div><b>Generative AI</b><small>ช่วยร่าง user story, ข้อความบนจอ หรือโค้ด</small></div>
-    <div><b>Agentic workflow</b><small>รับงาน เปิดของที่เกี่ยว ลงมือ แล้วเช็กผล</small></div>
-  </div>
-  <div class="spacer"></div><div class="callout c-purple"><span class="ico">🧩</span><div>สองคำนี้ซ้อนกันได้: Agent อาจใช้ GenAI เป็นสมอง</div></div>
-</section>
-
-<section class="slide">
-  <h2>ฟรีแลนซ์มือดี กับเพื่อนร่วมทีม AI</h2>
-  <div class="cols"><div><h3>GenAI</h3><p>เราบรีฟ ได้งานกลับมา แล้วเราเป็นคนทำขั้นต่อเอง</p></div><div><h3>Agentic workflow</h3><p>เราบอกเป้าหมาย เปิดเครื่องมือให้ แล้ว AI ไปทำหลายขั้นก่อนมารายงาน</p></div></div>
-  <img src="assets/freelancer-vs-agent.png" alt="การ์ตูนเปรียบ AI ที่ส่งเอกสาร กับ AI ที่ทำงานหลายขั้นตอน" style="width:100%;height:50%;object-fit:cover;object-position:center 62%;margin-top:.5em">
-  <div class="spacer"></div><div class="callout c-blue"><span class="ico">💡</span><div>จำง่าย ๆ: ต่างกันที่งานที่มอบและเครื่องมือที่ให้ ไม่ได้แปลว่าตัวหนึ่งฉลาดกว่าเสมอ</div></div>
-</section>
-
-<section class="slide">
-  <h2>บั๊กเดียวกัน ลองสั่งสองแบบ</h2>
-  <div class="cols mt">
-    <div><h3>ถามแบบ Chat</h3><pre><code>"Status เปลี่ยนแล้วไม่ถูกบันทึก
-น่าจะเกิดจากอะไร?"</code></pre><p class="mt">AI ช่วยเดาหรือยกตัวอย่าง ส่วนเรายังต้องไปเปิดไฟล์ลองเอง</p></div>
-    <div><h3>มอบหมายแบบ Agent</h3><pre><code>"สืบสวน bug นี้ใน repo
-แก้ แล้วทดสอบให้ดู"</code></pre><p class="mt">AI เปิดไฟล์ หาเหตุ แก้ ลองรัน แล้วเอาหลักฐานมาให้ดู</p></div>
-  </div>
-  <div class="spacer"></div><div class="callout c-orange"><span class="ico">🔍</span><div>ถ้าเปิดไฟล์หรือรันทดสอบไม่ได้ AI ก็ช่วยได้แค่แนะนำ</div></div>
-</section>
-
-<section class="slide">
-  <h2>อยากให้ AI ทำงานต่อเอง ต้องมีอะไร?</h2>
-  <div class="numbered mt">
-    <span class="n">01</span><div><b>Goal</b> รู้ว่าจะส่งงานแบบไหนถึงเรียกว่าเสร็จ</div>
-    <span class="n">02</span><div><b>Tools</b> มีเครื่องมือที่งานนั้นต้องใช้</div>
-    <span class="n">03</span><div><b>Loop</b> ลองทำ เห็นผล แล้วแก้ทางได้</div>
-    <span class="n">04</span><div><b>Boundary</b> รู้ว่าแค่ไหนทำเองได้ เมื่อไรต้องถาม</div>
-  </div>
-  <div class="spacer"></div><div class="callout c-blue"><span class="ico">👨‍💻</span><div>สมองตัวเดิม แต่ให้เครื่องมือกับวิธีทำงานเพิ่ม ก็กลายเป็น Agent ได้</div></div>
-</section>
-
-<section class="slide">
-  <h2>ถ้ารับ AI เข้าทีม ต้องเตรียมอะไรให้?</h2>
-  <div class="topic-grid mt">
-    <div><b>🧠 Model</b><small>สมอง</small></div><div><b>📚 Context</b><small>สิ่งที่ต้องรู้เกี่ยวกับงาน</small></div>
-    <div><b>📋 Prompt</b><small>งานที่มอบหมายตอนนี้</small></div><div><b>📜 Instructions</b><small>กฎของทีม</small></div>
-    <div><b>📕 Skill</b><small>SOP / วิธีทำงาน</small></div><div><b>🛠️ Tool</b><small>เครื่องมือที่ใช้ลงมือ</small></div>
-    <div><b>🔌 MCP</b><small>มาตรฐานเชื่อมต่อ</small></div><div><b>👨‍💻 Agent</b><small>ผู้รับเป้าหมายแล้วทำงาน</small></div>
+  <div class="core" data-s="1">Don't just use AI.<br><b>Learn how to work with AI.</b>
+    <svg viewBox="0 0 760 26"><path class="draw" data-s="1" data-d=".5" pathLength="1" d="M4 16 C180 4 420 4 756 14"/></svg>
   </div>
 </section>
 
-<section class="slide divider">
-<h1>Anatomy of<br>an AI Coworker</h1><p class="lead mt">คนเก่งก็ต้องมีบรีฟ คู่มือ และเครื่องมือ</p>
-</section>
-
-<section class="slide">
-  <h2>Model: เลือกคนให้ถูกงาน</h2>
-  <p class="big">เหมือนเลือกคนมาช่วยงาน: แก้ง่าย ๆ ก็ไม่ต้องเรียก CTO ทุกครั้ง</p>
-  <div class="topic-grid mt2"><div><b>งานเร็ว ๆ</b><small>จัดรูปแบบ user story 20 ข้อ</small></div><div><b>งานที่ต้องคิดหลายมุม</b><small>หา edge case ของการเปลี่ยน status</small></div><div><b>งานที่ซับซ้อน</b><small>ออกแบบวิธีเก็บข้อมูลและย้ายของเดิม</small></div><div><b>งานที่ใช้ภาพ</b><small>อ่าน screenshot ที่ผู้ใช้แจ้ง bug</small></div></div>
-  <div class="spacer"></div><div class="callout c-blue"><span class="ico">💡</span><div>เลือกจากงานจริง: ต้องคิดลึกแค่ไหน รีบแค่ไหน งบเท่าไร</div></div>
-</section>
-
-<section class="slide">
-  <h2>คนเก่งแค่ไหน ก็ต้องรู้เรื่องทีมก่อน</h2>
-  <p class="big">ลองรับคนเก่งมากเข้าทีม แล้วโยน Jira ให้ตั้งแต่วันแรก</p>
-  <div class="cols mt2"><div><h3>เขายังไม่รู้</h3><ul><li>ลูกค้าคือใคร</li><li>กฎธุรกิจของทีม</li><li>เราเคยลองอะไรไปแล้ว</li></ul></div><div><h3>และยังไม่รู้</h3><ul><li>ข้อมูลอยู่ที่ไหน</li><li>ข้อจำกัดของงาน</li><li>คำว่า “เสร็จ” หมายถึงอะไร</li></ul></div></div>
-  <div class="spacer"></div><div class="callout c-orange"><span class="ico">📚</span><div>เก่งแค่ไหน ถ้าไม่รู้กติกาทีม ก็มีเดาผิด</div></div>
-</section>
-
-<section class="slide">
-  <h2>โจทย์เดียวกัน แต่เล่าให้ AI ไม่เท่ากัน</h2>
-  <div class="cols mt">
-    <div><h3>บอกแค่ว่า “เพิ่ม priority”</h3><pre><code>AI อาจสร้าง Priority: Low / Medium / High
-แล้วเพิ่ม field ใหม่เอง</code></pre><p class="sub mt">หน้าตาดี แต่ AI เดาของเดิมเอา</p></div>
-    <div><h3>แนบ Context ที่เกี่ยวข้อง</h3><pre><code>ระบบเดิมมี P1 / P2 / P3
-Task ถูกเก็บใน localStorage
-ต้อง filter ตาม priority ได้</code></pre><p class="sub mt">คราวนี้ AI ต่อของเดิมได้ถูกทาง</p></div>
+<!-- S02 -->
+<section class="scene" data-bg="tr">
+  <h2 class="title a">วันนี้ให้ AI ช่วยอะไรไปแล้วบ้าง?</h2>
+  <p class="lead a">นึกถึงงานจริงหนึ่งอย่าง แล้วเล่าให้คนข้าง ๆ ฟังสั้น ๆ</p>
+  <div class="body">
+    <div class="verbs">
+      <div class="verb fx-pop" data-s="1"><span class="ix">01</span><div><div class="v">ถาม</div><p class="t">ขอคำตอบ</p></div></div>
+      <div class="verb fx-pop" data-s="1"><span class="ix">02</span><div><div class="v">ร่าง</div><p class="t">ช่วยเริ่มต้นงาน</p></div></div>
+      <div class="verb fx-pop" data-s="1"><span class="ix">03</span><div><div class="v">สรุป</div><p class="t">ย่อยข้อมูลยาว ๆ</p></div></div>
+      <div class="verb hot fx-pop" data-s="2"><span class="ix">04</span><div><div class="v">ลงมือ</div><p class="t">ใช้เครื่องมือทำงานต่อ</p></div></div>
+    </div>
   </div>
-  <div class="spacer"></div><div class="callout c-orange"><span class="ico">📚</span><div>ส่งเฉพาะข้อมูลที่ทำให้ตัดสินใจถูก ไม่ต้องยกทั้งบริษัทมา</div></div>
+  <div class="callout blue" data-s="3"><span class="ico">💬</span><span>มีใครเคยให้ AI <b>เปิดไฟล์หรือทำงานหลายขั้น</b>แทนเราแล้วบ้าง?</span></div>
 </section>
 
-<section class="slide">
-  <h2>Prompt คือบรีฟงานรอบนี้</h2>
-  <div class="cols mt2"><div><p class="big">“ช่วยวิเคราะห์ requirement นี้”</p><p class="sub mt">บรีฟที่เราส่งในรอบนี้</p></div><div><p class="big">“ระบบเราใช้ TypeScript และมี API convention แบบนี้”</p><p class="sub mt">เรื่องที่ควรรู้ทุกครั้งที่เข้ามาทำงาน</p></div></div>
-  <div class="spacer"></div><div class="callout c-blue"><span class="ico">📋</span><div>บรีฟดีช่วยเยอะ แต่ถ้าไม่มีข้อมูลกับเครื่องมือ งานก็ยังติด</div></div>
-</section>
-
-<section class="slide">
-  <h2>สี่อย่างนี้ หน้าที่ไม่เหมือนกัน</h2>
-  <div class="topic-grid mt">
-    <div><b>Prompt</b><small>“วันนี้ช่วยเพิ่ม priority filter”</small></div>
-    <div><b>Context</b><small>“Task ใช้ P1/P2/P3 และเก็บใน localStorage”</small></div>
-    <div><b>Instructions</b><small>“ห้ามแตะ production data; แจ้งก่อนเปลี่ยน schema”</small></div>
-    <div><b>Skill</b><small>“ก่อนแก้ feature ให้ review requirement ตาม checklist นี้”</small></div>
+<!-- S03 -->
+<section class="scene" data-bg="r">
+  <h2 class="title a">AI เริ่มลงมาช่วยทำงานจริงแล้ว</h2>
+  <div class="split grow" style="grid-template-columns:1fr 1.05fr">
+    <div class="col">
+      <div class="ba" data-s="1"><span><span class="tag">เมื่อก่อน</span></span><p class="t">เราถาม AI แล้ว<b>เอาคำตอบไปทำต่อเอง</b></p></div>
+      <div class="ba" data-s="2" style="border:0"><span><span class="tag blue">ตอนนี้</span></span><p class="t">บางตัว<b>เปิดไฟล์ ใช้เครื่องมือ</b> แล้วส่งงานกลับมาให้เราตรวจได้</p></div>
+    </div>
+    <div class="imgbox a fx-right"><img src="assets/new-coworker.png" alt="พนักงาน AI ใหม่เจองานกองโตในวันแรก"></div>
   </div>
-  <div class="spacer"></div><div class="callout c-blue"><span class="ico">🏢</span><div>งานวันนี้ · ความรู้ทีม · กติกา · สูตรทำงานประจำ</div></div>
+  <div class="callout" data-s="3"><span class="ico">💡</span><span>ลองนึกว่ามีเพื่อนร่วมทีมใหม่ เก่งนะ แต่ยังไม่รู้ว่าทีมเราทำงานกันยังไง</span></div>
 </section>
 
-<section class="slide">
-  <h2>Skill บอกวิธีทำ · Tool ให้ลงมือ</h2>
-  <div class="split"><div><p class="big"><b>Tool</b> บอกว่า AI ทำอะไรได้</p><p class="big mt"><b>Skill</b> บอกว่าควรทำงานนั้นอย่างไร</p><p class="sub mt2">เช่น Tool เปิดไฟล์ได้ ส่วน Skill บอกว่าต้องเช็กอะไรบ้าง</p></div><img src="assets/tools-matter.png" alt="การ์ตูน AI ช่างซ่อมรู้วิธีแก้แต่ไม่มีเครื่องมือ"></div>
-  <div class="callout c-orange"><span class="ico">🛠️</span><div>รู้วิธีซ่อมรถ แต่ไม่มีประแจ ก็ยังซ่อมไม่ได้</div></div>
+<!-- S04 -->
+<section class="scene divider" data-bg="flood" data-chapter="01 · AI 101" data-title="AI 101">
+  <div class="num a">CHAPTER 01</div>
+  <h1><span class="mask a"><span>AI 101</span></span></h1>
+  <p class="lead a">ศัพท์ใหม่น้อยที่สุด เพื่อคุยกันรู้เรื่อง</p>
+  <div class="bignum a fx-zoom">01</div>
 </section>
 
-<section class="slide">
-  <h2>Skill หน้าตาแบบไหน? ลองดูงาน BA</h2>
-  <div class="cols mt">
-    <div><h3>ถ้าไม่มี SOP</h3><p>วันนี้ถามเรื่องผู้ใช้ พรุ่งนี้ลืมถาม บางทีกระโดดไปสร้างของเลย</p></div>
-    <div><h3>ถ้ามี Skill</h3><ol><li>อ่าน requirement</li><li>แยก facts กับ assumptions</li><li>ถามไม่เกิน 5 เรื่องที่เปลี่ยนแบบระบบ</li><li>ร่าง acceptance criteria</li></ol></div>
+<!-- S05 -->
+<section class="scene" data-bg="bl">
+  <h2 class="title a">ศัพท์ AI ที่เจอบ่อย เอาแค่พอคุยรู้เรื่อง</h2>
+  <div class="rings-wrap grow">
+    <div class="rings">
+      <div class="rg r1 fx-pop" data-s="1"><span>AI</span></div>
+      <div class="rg r2 fx-pop" data-s="2"><span>MACHINE LEARNING</span></div>
+      <div class="rg r3 fx-pop" data-s="3"><span>GENERATIVE AI</span></div>
+      <div class="rg r4 fx-pop" data-s="4"><span>LLM</span></div>
+      <div class="lblM fx-pop" data-s="4" data-d=".35"><span class="tag purple" style="font-size:18px">+ Multimodal</span></div>
+      <div class="fx-fade" data-s="5" style="position:absolute;inset:0"><div class="orbitA"></div></div>
+      <div class="lblA fx-pop" data-s="5" data-d=".3"><span class="tag orange" style="font-size:22px">Agentic AI</span></div>
+    </div>
+    <div class="col" style="height:100%;justify-content:center">
+      <div class="defs">
+        <div class="def" data-s="1"><b>Artificial Intelligence</b><span>ชื่อรวมกว้าง ๆ ของระบบที่ทำงานคล้ายใช้ความคิดคน</span></div>
+        <div class="def" data-s="2"><b>Machine Learning</b><span>เห็นข้อมูลเยอะ ๆ แล้วจับแพตเทิร์น</span></div>
+        <div class="def" data-s="3"><b>Generative AI</b><span>สร้างข้อความ ภาพ หรือโค้ดใหม่ให้เรา</span></div>
+        <div class="def" data-s="4"><b>Large Language Model</b><span>สมองที่คุยและทำงานกับภาษาเป็นหลัก</span></div>
+        <div class="def" data-s="4"><b class="purple">Multimodal AI</b><span>อ่านได้หลายแบบ เช่น ข้อความกับรูป</span></div>
+        <div class="def" data-s="5"><b class="orange">Agentic AI</b><span>รับเป้าหมาย แล้วใช้เครื่องมือทำงานต่อ</span></div>
+      </div>
+      <div class="callout orange mt" data-s="6" style="margin-top:34px"><span class="ico">🧠</span><span>Agent หลายตัวก็ใช้ GenAI อยู่ข้างในนั่นแหละ</span></div>
+    </div>
   </div>
-  <div class="spacer"></div><div class="callout c-purple"><span class="ico">📕</span><div>เหมือนมีเช็กลิสต์ประจำทีม หยิบใช้ซ้ำได้</div></div>
 </section>
 
-<section class="slide">
-  <h2>AI มีเครื่องมืออะไรในกระเป๋าบ้าง?</h2>
-  <div class="topic-grid mt">
-    <div><b>Files</b><small>อ่านและแก้ไฟล์</small></div><div><b>Terminal</b><small>รันคำสั่งและ tests</small></div>
-    <div><b>Git</b><small>ดู diff และประวัติ</small></div><div><b>Browser</b><small>ดูหน้าเว็บจริง</small></div>
-    <div><b>Search</b><small>หาข้อมูล</small></div><div><b>API / Database</b><small>เข้าถึงระบบที่ได้รับสิทธิ์</small></div>
+<!-- S06 -->
+<section class="scene" data-bg="tr">
+  <h2 class="title a">โจทย์เดียวกัน AI ช่วยได้หลายแบบ</h2>
+  <div class="body" style="justify-content:flex-start;padding-top:10px">
+    <div class="quote-card a fx-zoom">“อยากให้ทีมจัดการ Task ง่ายขึ้น”</div>
+    <svg class="links" viewBox="0 0 1620 80" preserveAspectRatio="none">
+      <path class="draw" data-s="1" pathLength="1" d="M810 0 C810 45 192 35 192 80"/>
+      <path class="draw" data-s="2" pathLength="1" d="M810 0 C810 45 604 35 604 80"/>
+      <path class="draw" data-s="3" pathLength="1" d="M810 0 C810 45 1016 35 1016 80"/>
+      <path class="draw" data-s="4" pathLength="1" d="M810 0 C810 45 1428 35 1428 80" style="stroke:var(--blue)"/>
+    </svg>
+    <div class="g4" style="gap:28px">
+      <div class="card wcard" data-s="1" data-d=".3"><span class="k">01</span><h3>Automation</h3><p class="t">ตั้งกฎไว้ พอครบเงื่อนไขก็เปลี่ยน status ให้</p></div>
+      <div class="card wcard" data-s="2" data-d=".3"><span class="k">02</span><h3>Machine Learning</h3><p class="t">ดูงานเก่า แล้วเดาว่างานไหนเสี่ยงส่งช้า</p></div>
+      <div class="card wcard" data-s="3" data-d=".3"><span class="k">03</span><h3>Generative AI</h3><p class="t">ช่วยร่าง user story, ข้อความบนจอ หรือโค้ด</p></div>
+      <div class="card wcard blue" data-s="4" data-d=".3"><span class="k blue">04</span><h3>Agentic workflow</h3><p class="t">รับงาน เปิดของที่เกี่ยว ลงมือ แล้วเช็กผล</p></div>
+    </div>
   </div>
-  <div class="spacer"></div><div class="callout c-red"><span class="ico">🚧</span><div>ให้เครื่องมือเท่าที่งานต้องใช้ งานเสี่ยงให้คนกดโอเคก่อน</div></div>
+  <div class="callout blue" data-s="5"><span class="ico">🧩</span><span>สองคำนี้ซ้อนกันได้: Agent อาจใช้ GenAI เป็นสมอง</span></div>
 </section>
 
-<section class="slide">
-  <h2>MCP: หัวต่อให้ AI ไปหยิบของ</h2>
-  <p class="big">นึกถึงหัวต่อกลาง: อยากให้ AI ไปอ่านเอกสารหรือใช้บริการอื่น ก็มีทางเชื่อม</p>
-  <div class="flow mt2"><span class="box">AI application</span><span class="arr">↔</span><span class="box" style="background:var(--blue-bg)">MCP</span><span class="arr">↔</span><span class="box">Files / API / Services</span></div>
-  <div class="spacer"></div><div class="callout c-blue"><span class="ico">🔌</span><div>MCP คือทางเชื่อม ส่วน AI ยังต้องคิดและทำงานเอง</div></div>
-</section>
-
-<section class="slide">
-  <h2>AI จะอ่าน Jira ของทีมได้ยังไง?</h2>
-  <div class="cols mt"><div><h3>ยังไม่เชื่อม</h3><p>เราเปิด Jira แล้วคัดลอกข้อมูลมาแปะให้ AI ทุกครั้ง</p></div><div><h3>เชื่อมผ่าน MCP server</h3><p>AI เรียก tool ไปอ่านข้อมูลที่เราอนุญาต แล้วเอามาช่วยทำงาน</p></div></div>
-  <div class="flow mt2"><span class="box">AI app</span><span class="arr">→</span><span class="box">MCP server</span><span class="arr">→</span><span class="box">ข้อมูล / บริการ</span></div>
-  <div class="spacer"></div><div class="callout c-red"><span class="ico">🔐</span><div>ต่อสายแล้ว ก็ยังต้องดูว่า AI มีสิทธิ์เห็นอะไรบ้าง</div></div>
-</section>
-
-<section class="slide">
-  <h2>สี่คำนี้ ใช้กับงานจริงยังไง?</h2>
-  <div class="topic-grid mt">
-    <div><b>Model</b><small>ใครคิด?</small></div><div><b>Skill</b><small>ทำตามวิธีไหน?</small></div>
-    <div><b>Tool</b><small>ใช้ทำอะไรได้?</small></div><div><b>MCP</b><small>ต่อ Tool หรือข้อมูลภายนอกอย่างไร?</small></div>
+<!-- S07 -->
+<section class="scene" data-bg="bl">
+  <h2 class="title a">ฟรีแลนซ์มือดี กับเพื่อนร่วมทีม AI</h2>
+  <div class="split grow" style="grid-template-columns:1.1fr 1fr;gap:56px">
+    <div class="imgbox a fx-left"><img src="assets/freelancer-vs-agent.png" alt="งานแบบส่งชิ้นงานกลับมา เทียบกับงานหลายขั้นตอนของ AI teammate"></div>
+    <div class="col" style="gap:28px">
+      <div class="card fx-right" data-s="1"><span class="k">GenAI · ฟรีแลนซ์มือดี</span><p class="t">เราบรีฟ ได้งานกลับมา แล้ว<b>เราเป็นคนทำขั้นต่อเอง</b></p></div>
+      <div class="card blue fx-right" data-s="2"><span class="k" style="color:var(--blue)">Agentic workflow · เพื่อนร่วมทีม AI</span><p class="t">เราบอกเป้าหมาย เปิดเครื่องมือให้ แล้ว <b>AI ไปทำหลายขั้น</b>ก่อนมารายงาน</p></div>
+    </div>
   </div>
-  <div class="spacer"></div><div class="quote">“ช่วย review requirement ใน Jira ตาม checklist ทีม แล้วส่งคำถามที่ต้องถามลูกค้า”</div>
-  <p class="sub mt">Model ช่วยคิด · Skill ให้เช็กลิสต์ · MCP ต่อ Jira · Tool เปิด issue</p>
+  <div class="callout" data-s="3"><span class="ico">💡</span><span>จำง่าย ๆ: ต่างกันที่<b>งานที่มอบ</b>และ<b>เครื่องมือที่ให้</b> ไม่ได้แปลว่าตัวหนึ่งฉลาดกว่าเสมอ</span></div>
 </section>
 
-<section class="slide divider">
-<h1>Prompt Is Not<br>Everything</h1><p class="lead mt">บรีฟเก่งอย่างเดียว งานก็ยังพังได้</p>
-</section>
-
-<section class="slide">
-  <h2>พิมพ์ Prompt เก่งอย่างเดียว ยังไม่พอ</h2>
-  <div class="topic-grid mt">
-    <div><b>Prompt</b><small>งานวันนี้</small></div><div><b>Context</b><small>ความรู้เกี่ยวกับบริษัท</small></div>
-    <div><b>Instructions</b><small>กฎของทีม</small></div><div><b>Skill</b><small>SOP</small></div>
-    <div><b>Tools</b><small>เครื่องมือ</small></div><div><b>Model</b><small>สมอง</small></div>
+<!-- S08 -->
+<section class="scene" data-bg="br">
+  <h2 class="title a">บั๊กเดียวกัน ลองสั่งสองแบบ</h2>
+  <div class="g2 grow" style="gap:56px;align-content:center">
+    <div class="col">
+      <div class="klbl a">ถามแบบ Chat</div>
+      <div class="win a" data-label="CHAT"><div class="wbody type" data-s="1">“Status เปลี่ยนแล้วไม่ถูกบันทึก
+น่าจะเกิดจากอะไร?”</div></div>
+      <p class="t mt" data-s="2">AI <b>ช่วยเดา</b>หรือยกตัวอย่าง ส่วนเรายังต้องไปเปิดไฟล์ลองเอง</p>
+    </div>
+    <div class="col">
+      <div class="klbl blue a">มอบหมายแบบ Agent</div>
+      <div class="win a" data-label="COWORK"><div class="wbody type" data-s="3">“สืบสวน bug นี้ใน repo
+แก้ แล้วทดสอบให้ดู”</div></div>
+      <div class="pills mt">
+        <span class="pill fx-pop" data-s="4">✓ เปิดไฟล์</span>
+        <span class="pill fx-pop" data-s="4" data-d=".35">✓ หาเหตุ</span>
+        <span class="pill fx-pop" data-s="4" data-d=".7">✓ แก้</span>
+        <span class="pill fx-pop" data-s="4" data-d="1.05">✓ ลองรัน</span>
+        <span class="pill fx-pop" data-s="4" data-d="1.4">✓ หลักฐาน</span>
+      </div>
+    </div>
   </div>
-  <div class="spacer"></div><div class="callout c-purple"><span class="ico">🧩</span><div>ให้ข้อมูลที่ใช่ บอกกติกา แล้วขอดูหลักฐานก่อนรับงาน</div></div>
+  <div class="callout blue" data-s="5"><span class="ico">🔍</span><span>ถ้าเปิดไฟล์หรือรันทดสอบไม่ได้ AI ก็ช่วยได้แค่แนะนำ</span></div>
 </section>
 
-<section class="slide">
-<h2>ลองสั่งงานสั้น ๆ ใน Claude Cowork</h2>
-  <p class="lead">หยิบงานจริงของคุณหนึ่งงาน แล้วพิมพ์ตามสไตล์ตัวเอง</p>
-  <div class="quote mt2">“ช่วยฉันเริ่มงานนี้หน่อย ก่อนลงมือ คุณต้องรู้อะไรจากฉันบ้าง?”</div>
-  <div class="numbered mt2"><span class="n">01</span><div>ดูว่า Cowork ถามกลับเรื่องไหน</div><span class="n">02</span><div>ตอบเพิ่มเฉพาะข้อมูลที่ทำให้งานชัดขึ้น</div><span class="n">03</span><div>สังเกตว่าเราเริ่มกำหนดขอบเขตงานแล้ว</div></div>
-  <div class="spacer"></div><div class="callout c-blue"><span class="ico">✍️</span><div>นี่คือวอร์มมือ เดี๋ยวเราใช้ Cowork ทำโปรเจกต์เดียวกันทั้งห้อง</div></div>
+<!-- S09 -->
+<section class="scene" data-bg="tr">
+  <h2 class="title a">อยากให้ AI ทำงานต่อเอง ต้องมีอะไร?</h2>
+  <div class="body">
+    <div class="four">
+      <div class="it" data-s="1"><div class="bn">01</div><b>Goal</b><p class="t">รู้ว่าจะส่งงานแบบไหนถึงเรียกว่าเสร็จ</p></div>
+      <div class="it" data-s="2"><div class="bn">02</div><b>Tools</b><p class="t">มีเครื่องมือที่งานนั้นต้องใช้</p></div>
+      <div class="it" data-s="3"><div class="bn">03</div><b>Loop</b><p class="t">ลองทำ เห็นผล แล้วแก้ทางได้</p></div>
+      <div class="it" data-s="4"><div class="bn">04</div><b>Boundary</b><p class="t">รู้ว่าแค่ไหนทำเองได้ เมื่อไรต้องถาม</p></div>
+    </div>
+  </div>
+  <div class="callout blue" data-s="5"><span class="ico">👨‍💻</span><span>สมองตัวเดิม แต่ให้เครื่องมือกับวิธีทำงานเพิ่ม ก็กลายเป็น Agent ได้</span></div>
 </section>
 
-<section class="slide divider">
-<h1>From Chat<br>to Agent</h1><p class="lead mt">จากคนตอบคำถาม สู่คนที่ช่วยทำงานต่อ</p>
+<!-- S10 -->
+<section class="scene" data-bg="center" data-t="zoom">
+  <h2 class="title a">ถ้ารับ AI เข้าทีม ต้องเตรียมอะไรให้?</h2>
+  <div class="kit grow">
+    <div class="kcol">
+      <div class="kt inL" data-s="1"><span class="e">🧠</span><div><b>Model</b><small>สมอง</small></div></div>
+      <div class="kt inL" data-s="1"><span class="e">📋</span><div><b>Prompt</b><small>งานที่มอบหมายตอนนี้</small></div></div>
+      <div class="kt inL" data-s="1"><span class="e">📕</span><div><b>Skill</b><small>SOP / วิธีทำงาน</small></div></div>
+      <div class="kt inL" data-s="1"><span class="e">🔌</span><div><b>MCP</b><small>มาตรฐานเชื่อมต่อ</small></div></div>
+    </div>
+    <div class="kcenter a fx-pop"><div class="face">👨‍💻</div><b>AI Coworker</b><small>เพื่อนร่วมทีมใหม่</small></div>
+    <div class="kcol">
+      <div class="kt inR" data-s="1"><span class="e">📚</span><div><b>Context</b><small>สิ่งที่ต้องรู้เกี่ยวกับงาน</small></div></div>
+      <div class="kt inR" data-s="1"><span class="e">📜</span><div><b>Instructions</b><small>กฎของทีม</small></div></div>
+      <div class="kt inR" data-s="1"><span class="e">🛠️</span><div><b>Tool</b><small>เครื่องมือที่ใช้ลงมือ</small></div></div>
+      <div class="kt inR" data-s="1"><span class="e">👨‍💻</span><div><b>Agent</b><small>ผู้รับเป้าหมายแล้วทำงาน</small></div></div>
+    </div>
+  </div>
 </section>
 
-<section class="slide">
-  <h2>แชตตอบกลับ กับ Agent ทำงานต่อ</h2>
-  <div class="cols mt2"><div><h3>Chat</h3><div class="flow"><span class="box">ถาม</span><span class="arr">→</span><span class="box">ตอบ</span><span class="arr">→</span><span class="box">คนทำต่อ</span></div><p class="sub mt">เหมาะกับช่วยคิดหรือช่วยร่าง</p></div><div><h3>Agentic workflow</h3><div class="flow"><span class="box">เป้าหมาย</span><span class="arr">→</span><span class="box">วางแผน</span><span class="arr">→</span><span class="box">ใช้ Tool</span><span class="arr">→</span><span class="box">ตรวจ</span></div><p class="sub mt">เหมาะกับงานที่มีหลายขั้นและขอบเขตชัด</p></div></div>
-  <div class="spacer"></div><div class="callout c-blue"><span class="ico">👨‍💻</span><div>Agent รับเป้าหมาย ใช้เครื่องมือ แล้วเอางานมาให้เราตรวจ</div></div>
+<style>
+/* anatomy */
+.mrow{display:grid;grid-template-columns:360px 1fr 380px;gap:40px;align-items:center;padding:24px 0;border-bottom:2px solid var(--line)}
+.mrow b{font-size:34px}.mrow .t{font-size:30px}
+.meter{height:16px;border-radius:99px;background:var(--soft);overflow:hidden;position:relative}
+.meter i{position:absolute;left:0;top:0;bottom:0;width:var(--w);border-radius:99px;background:var(--blue);transform:scaleX(0);transform-origin:left;transition:transform 1.1s var(--ease-io) calc(var(--delay,0s) + .25s)}
+.mrow.on .meter i{transform:scaleX(1)}
+.meter-l{display:flex;justify-content:space-between;font-family:var(--mono);font-size:17px;color:var(--faint);margin-top:8px}
+.ticket-wrap{display:flex;justify-content:center}
+.ticket{width:560px;background:#fff;border:2px solid var(--line);border-radius:22px;padding:30px 34px;box-shadow:0 30px 70px -36px rgba(0,0,0,.35);transform:rotate(-3deg)}
+.drop{--from:translateY(-420px) rotate(8deg);transition:opacity .3s var(--ease) var(--delay,0s),transform 1s var(--spring) var(--delay,0s)}
+.ticket .id{font-family:var(--mono);font-size:20px;color:var(--blue);font-weight:600}
+.ticket h3{font-size:36px;margin:10px 0 18px}
+.ticket .meta{display:flex;gap:10px}
+.qs{display:flex;flex-direction:column;gap:16px}
+.q{display:flex;align-items:center;gap:18px;font-size:32px;color:var(--ink2)}
+.q .qm{width:48px;height:48px;border-radius:50%;background:var(--orange-bg);color:var(--orange);display:grid;place-items:center;font-weight:700;font-size:26px;flex:none}
+.res{border-radius:18px;padding:22px 28px;font-size:29px;line-height:1.55;margin-top:22px;white-space:pre-line}
+.res.bad{background:var(--red-bg);color:#8f2222}
+.res.good{background:var(--green-bg);color:#0b5c51}
+.res .v{display:block;font-weight:600;margin-top:6px}
+.layer{display:grid;grid-template-columns:320px 1fr;align-items:center;gap:30px;padding:26px 36px;border-radius:20px;border:2px solid var(--line);background:#fff;margin-bottom:18px}
+.layer b{font-size:36px}.layer .t{font-size:31px}
+.layer .ix{font-family:var(--mono);font-size:18px;color:var(--faint);display:block;margin-bottom:4px;letter-spacing:.1em}
+.stack4 .layer:nth-child(1){border-left:10px solid var(--blue)}
+.stack4 .layer:nth-child(2){border-left:10px solid var(--purple)}
+.stack4 .layer:nth-child(3){border-left:10px solid var(--red)}
+.stack4 .layer:nth-child(4){border-left:10px solid var(--orange)}
+.sticky{width:250px;padding:20px 22px;background:#fdf6d8;border-radius:6px;font-size:24px;line-height:1.45;color:#6b5a14;box-shadow:0 12px 26px -16px rgba(0,0,0,.35)}
+.mess{position:relative;height:330px}
+.toolg{display:grid;grid-template-columns:repeat(3,1fr);gap:26px}
+.tool{border:2px solid var(--line);border-radius:22px;padding:30px 34px;background:#fff}
+.tool code{font-family:var(--mono);font-size:22px;color:var(--blue-d);background:var(--blue-bg);padding:4px 12px;border-radius:8px}
+.tool b{display:block;font-size:38px;margin:18px 0 6px}.tool .t{font-size:28px;color:var(--muted)}
+.diag{position:relative;width:1620px;height:420px}
+.diag svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.diag .wire{fill:none;stroke:var(--faint);stroke-width:3}
+.diag .pk{fill:var(--blue)}
+.dn{position:absolute;display:flex;align-items:center;justify-content:center;border-radius:20px;border:2px solid var(--line);background:#fff;font-size:32px;font-weight:600}
+.hub{position:absolute;left:730px;top:130px;width:160px;height:160px;border-radius:50%;background:var(--blue);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--mono);font-weight:600;font-size:32px;box-shadow:0 0 0 18px var(--blue-bg)}
+.hub small{font-size:30px;line-height:1}
+.pingring{position:absolute;inset:-18px;border-radius:50%;border:3px solid var(--blue);animation:pr 2.4s var(--ease) infinite;opacity:0}
+@keyframes pr{0%{transform:scale(.9);opacity:.6}100%{transform:scale(1.5);opacity:0}}
+.bounce{animation:bnc 1.6s var(--ease-io) infinite alternate}
+@keyframes bnc{from{transform:translateX(-120px)}to{transform:translateX(120px)}}
+.lane{display:flex;align-items:center;justify-content:space-between;padding:30px 40px;border-radius:22px;background:var(--soft);position:relative;overflow:hidden}
+.lane .node{font-size:28px}
+.sent-hl{font-size:48px;line-height:1.7;font-weight:500;color:var(--ink)}
+.hl{border-radius:10px;padding:2px 6px;-webkit-box-decoration-break:clone;box-decoration-break:clone;background-repeat:no-repeat;background-size:0% 100%;transition:background-size .8s var(--ease-io) var(--delay,0s),color .4s;position:relative}
+.hl.on{background-size:100% 100%}
+.hl.hm{background-image:linear-gradient(var(--purple-bg),var(--purple-bg))}
+.hl.hk{background-image:linear-gradient(var(--orange-bg),var(--orange-bg))}
+.hl.hc{background-image:linear-gradient(var(--blue-bg),var(--blue-bg))}
+.hl .pop{position:absolute;left:50%;top:-34px;transform:translateX(-50%) scale(.6);opacity:0;font-family:var(--mono);font-size:18px;font-weight:600;white-space:nowrap;background:var(--green);color:#fff;padding:3px 12px;border-radius:99px;transition:all .6s var(--spring) .2s;line-height:1.4}
+.hl.ht.on .pop{opacity:1;transform:translateX(-50%) scale(1)}
+.map4 .card{padding:28px 32px}
+.map4 .card h3{font-size:34px;margin-bottom:4px}
+.map4 .card .s{font-size:24px}
+.map4 .card.m{border-color:#d5c7ea}.map4 .card.m h3{color:var(--purple)}
+.map4 .card.k{border-color:#f1cfa9}.map4 .card.k h3{color:var(--orange)}
+.map4 .card.c{border-color:var(--blue-line)}.map4 .card.c h3{color:var(--blue)}
+.map4 .card.tl{border-color:#b5dbd4}.map4 .card.tl h3{color:var(--green)}
+</style>
+
+<!-- S11 -->
+<section class="scene divider" data-chapter="02 · Anatomy of an AI Coworker" data-title="Anatomy of an AI Coworker">
+  <div class="num a">CHAPTER 02</div>
+  <h1><span class="mask a"><span>Anatomy of</span></span><span class="mask a"><span>an AI Coworker</span></span></h1>
+  <p class="lead a">คนเก่งก็ต้องมีบรีฟ คู่มือ และเครื่องมือ</p>
+  <div class="bignum a fx-zoom">02</div>
 </section>
 
-<section class="slide">
-  <h2>Agent ทำงานวนรอบยังไง?</h2>
-  <div class="flow mt2"><span class="box">Goal</span><span class="arr">→</span><span class="box">Plan</span><span class="arr">→</span><span class="box">Act</span><span class="arr">→</span><span class="box">Observe</span><span class="arr">→</span><span class="box">Verify</span></div>
-  <div class="cols mt2"><div><h3>AI รับผิดชอบ</h3><ul><li>เสนอแผน</li><li>ใช้ tools ตามสิทธิ์</li><li>รายงานผลและหลักฐาน</li></ul></div><div><h3>Human รับผิดชอบ</h3><ul><li>กำหนดเป้าหมายและขอบเขต</li><li>อนุมัติจุดเสี่ยง</li><li>ตรวจงานสำคัญ</li></ul></div></div>
-  <div class="spacer"></div><div class="callout c-orange"><span class="ico">⚠️</span><div>AI ทำงานให้ได้ แต่คนยังต้องดูว่างานใช้ได้จริงไหม</div></div>
+<!-- S12 -->
+<section class="scene" data-bg="tr">
+  <div class="eyebrow a">🧠 Model</div>
+  <h2 class="title a">Model: เลือกคนให้ถูกงาน</h2>
+  <p class="lead a">เหมือนเลือกคนมาช่วยงาน: แก้ง่าย ๆ ก็ไม่ต้องเรียก CTO ทุกครั้ง</p>
+  <div class="body nlist">
+    <div class="mrow" data-s="1"><b>งานเร็ว ๆ</b><span class="t">จัดรูปแบบ user story 20 ข้อ</span><div><div class="meter" style="--w:22%"><i></i></div><div class="meter-l"><span>เร็ว · ถูก</span><span>คิดลึก</span></div></div></div>
+    <div class="mrow" data-s="2"><b>งานที่ต้องคิดหลายมุม</b><span class="t">หา edge case ของการเปลี่ยน status</span><div><div class="meter" style="--w:58%"><i></i></div></div></div>
+    <div class="mrow" data-s="3"><b>งานที่ซับซ้อน</b><span class="t">ออกแบบวิธีเก็บข้อมูลและย้ายของเดิม</span><div><div class="meter" style="--w:94%"><i></i></div></div></div>
+    <div class="mrow" data-s="4" style="border:0"><b>งานที่ใช้ภาพ</b><span class="t">อ่าน screenshot ที่ผู้ใช้แจ้ง bug</span><div><span class="tag purple">ต้องอ่านรูปได้</span></div></div>
+  </div>
+  <div class="callout blue" data-s="5"><span class="ico">💡</span><span>เลือกจากงานจริง: ต้องคิดลึกแค่ไหน รีบแค่ไหน งบเท่าไร</span></div>
 </section>
 
-<section class="slide" data-source="https://support.claude.com/en/articles/13345190-get-started-with-claude-cowork">
-<h2>ก่อนเริ่มงาน ให้ Cowork มีโต๊ะทำงาน</h2>
-  <div class="cols mt"><div><h3>โฟลเดอร์งาน</h3><p>ใช้ <b>Work in a folder</b> เลือกโฟลเดอร์ Task App ของตัวเอง Cowork จะอ่านและเขียนไฟล์ในพื้นที่ที่เราให้สิทธิ์</p></div><div><h3>กติกาประจำงาน</h3><p>บอกไว้ว่า “ถามก่อนเมื่อโจทย์ไม่ชัด” และ “สร้างไฟล์เฉพาะในโฟลเดอร์นี้”</p></div></div>
-  <div class="spacer"></div><div class="callout c-purple"><span class="ico">📁</span><div>วันนี้เราจะเห็น Cowork สร้างไฟล์จริง ไม่ได้คุยแล้วจบในช่องตอบ</div></div>
+<!-- S13 -->
+<section class="scene" data-bg="br">
+  <div class="eyebrow a">📚 Context</div>
+  <h2 class="title a">คนเก่งแค่ไหน ก็ต้องรู้เรื่องทีมก่อน</h2>
+  <p class="lead a">ลองรับคนเก่งมากเข้าทีม แล้วโยน Jira ให้ตั้งแต่วันแรก</p>
+  <div class="split grow" style="grid-template-columns:640px 1fr;gap:70px">
+    <div class="ticket-wrap"><div class="drop a" data-d=".2"><div class="ticket"><span class="id">TASK-128</span><h3>เพิ่ม priority ให้ Task</h3><div class="meta"><span class="tag orange">To do</span><span class="tag">Due: พรุ่งนี้</span></div></div></div></div>
+    <div class="g2" style="gap:30px">
+      <div><div class="klbl" data-s="1">เขายังไม่รู้</div><div class="qs">
+        <div class="q fx-pop" data-s="1"><span class="qm">?</span>ลูกค้าคือใคร</div>
+        <div class="q fx-pop" data-s="1"><span class="qm">?</span>กฎธุรกิจของทีม</div>
+        <div class="q fx-pop" data-s="1"><span class="qm">?</span>เราเคยลองอะไรไปแล้ว</div></div></div>
+      <div><div class="klbl" data-s="2">และยังไม่รู้</div><div class="qs">
+        <div class="q fx-pop" data-s="2"><span class="qm">?</span>ข้อมูลอยู่ที่ไหน</div>
+        <div class="q fx-pop" data-s="2"><span class="qm">?</span>ข้อจำกัดของงาน</div>
+        <div class="q fx-pop" data-s="2"><span class="qm">?</span>คำว่า “เสร็จ” หมายถึงอะไร</div></div></div>
+    </div>
+  </div>
+  <div class="callout orange" data-s="3"><span class="ico">📚</span><span>เก่งแค่ไหน ถ้าไม่รู้กติกาทีม ก็มีเดาผิด</span></div>
 </section>
 
-<section class="slide" data-source="https://support.claude.com/en/articles/12512180-use-skills-in-claude">
-<h2>Skill หาใน Cowork ก่อน</h2>
-  <p class="lead">เปิด <b>Customize → Skills</b> แล้วดูว่ามีอะไรให้ใช้กับงานนี้บ้าง</p>
-  <div class="topic-grid mt2"><div><b>ของที่เปิดใช้อยู่</b><small>Skill ของเรา ของทีม หรือของ Anthropic</small></div><div><b>Browse skills</b><small>หาเพิ่มจากไดเรกทอรีใน Claude</small></div><div><b>ไม่เจอที่ตรงงาน</b><small>ลองบรีฟเองก่อน แล้วค่อยทำ Skill</small></div><div><b>ก่อนใช้จริง</b><small>อ่านว่ามันจะทำอะไรและใช้อะไรบ้าง</small></div></div>
-  <div class="spacer"></div><div class="callout c-blue"><span class="ico">🔎</span><div>ตอนทำ BA ลองมองหา Skill ที่ช่วย review requirement หรือร่างเอกสาร</div></div>
+<!-- S14 -->
+<section class="scene" data-bg="tl">
+  <h2 class="title a">โจทย์เดียวกัน แต่เล่าให้ AI ไม่เท่ากัน</h2>
+  <div class="g2 grow" style="gap:56px;align-content:center">
+    <div class="col">
+      <div class="klbl a">บอกแค่ว่า “เพิ่ม priority”</div>
+      <div class="win a"><div class="wbody type" data-s="1">เพิ่ม priority ให้หน่อย</div></div>
+      <div class="res bad" data-s="2">AI อาจสร้าง Priority: Low / Medium / High
+แล้วเพิ่ม field ใหม่เอง<span class="v">✕ หน้าตาดี แต่ AI เดาของเดิมเอา</span></div>
+    </div>
+    <div class="col">
+      <div class="klbl blue a">แนบ Context ที่เกี่ยวข้อง</div>
+      <div class="win a"><div class="wbody type" data-s="3">เพิ่ม priority ให้หน่อย
+• ระบบเดิมมี P1 / P2 / P3
+• Task ถูกเก็บใน localStorage
+• ต้อง filter ตาม priority ได้</div></div>
+      <div class="res good" data-s="4"><span class="v" style="margin:0">✓ คราวนี้ AI ต่อของเดิมได้ถูกทาง</span></div>
+    </div>
+  </div>
+  <div class="callout blue" data-s="5"><span class="ico">📚</span><span>ส่งเฉพาะข้อมูลที่ทำให้ตัดสินใจถูก ไม่ต้องยกทั้งบริษัทมา</span></div>
 </section>
 
-<section class="slide" data-source="https://support.claude.com/en/articles/12512180-use-skills-in-claude">
-<h2>เจอ Skill แล้ว อย่าเพิ่งกดใช้ทันที</h2>
-  <div class="numbered mt"><span class="n">01</span><div><b>ใครทำ?</b> มาจากทีมเรา Anthropic หรือที่อื่น</div><span class="n">02</span><div><b>มันทำอะไร?</b> อ่านคำอธิบายและขั้นตอนข้างใน</div><span class="n">03</span><div><b>แตะอะไร?</b> ใช้ไฟล์หรือ Connector ตัวไหน</div><span class="n">04</span><div><b>ตรงโจทย์ไหม?</b> ลองกับ Task App ตัวอย่างก่อน</div></div>
-  <div class="spacer"></div><div class="callout c-orange"><span class="ico">👀</span><div>Skill เป็นคู่มือให้ AI ทำงาน อ่านคู่มือก่อนชวนเข้าทีม</div></div>
+<!-- S15 -->
+<section class="scene" data-bg="br">
+  <div class="eyebrow a">📋 Prompt</div>
+  <h2 class="title a">Prompt คือบรีฟงานรอบนี้</h2>
+  <div class="body" style="gap:26px">
+    <div class="card blue fx-right" data-s="1" style="display:grid;grid-template-columns:300px 1fr;align-items:center"><div><span class="k" style="color:var(--blue)">Prompt</span><b style="font-size:34px">บรีฟรอบนี้</b></div><p class="t" style="font-size:40px">“ช่วยวิเคราะห์ requirement นี้”</p></div>
+    <div class="card fx-right" data-s="2" style="display:grid;grid-template-columns:300px 1fr;align-items:center"><div><span class="k">Context · Instructions</span><b style="font-size:34px">รู้ทุกครั้งที่เข้ามาทำงาน</b></div><p class="t" style="font-size:40px">“ระบบเราใช้ TypeScript และมี API convention แบบนี้”</p></div>
+  </div>
+  <div class="callout" data-s="3"><span class="ico">📋</span><span>บรีฟดีช่วยเยอะ แต่ถ้าไม่มีข้อมูลกับเครื่องมือ งานก็ยังติด</span></div>
 </section>
 
-<section class="slide" data-source="https://support.claude.com/en/articles/13837440-use-plugins-in-claude https://support.claude.com/en/articles/12512176-what-are-skills">
-<h2>จะใช้ Skill ใน Cowork ยังไง?</h2>
-  <div class="cols mt"><div><h3>เรียกตรง ๆ</h3><p>พิมพ์ <code>/</code> แล้วเลือก Skill ที่เปิดใช้อยู่</p></div><div><h3>เล่างานตามปกติ</h3><p>บอกว่าอยากให้ช่วยอะไร Cowork อาจหยิบ Skill ที่ตรงมาใช้เอง</p></div></div>
-  <div class="quote mt2">“ช่วย review บรีฟ Task App นี้ แล้วบอกคำถามที่ควรถามลูกค้าก่อนสร้าง”</div>
-  <div class="spacer"></div><div class="callout c-green"><span class="ico">📕</span><div>ถ้ายังไม่มี Skill ก็ทำงานต่อด้วย prompt ธรรมดาได้</div></div>
+<!-- S16 -->
+<section class="scene" data-bg="tr">
+  <h2 class="title a">สี่อย่างนี้ หน้าที่ไม่เหมือนกัน</h2>
+  <div class="body stack4">
+    <div class="layer fx-right" data-s="1"><div><span class="ix">งานวันนี้</span><b>Prompt</b></div><span class="t">“วันนี้ช่วยเพิ่ม priority filter”</span></div>
+    <div class="layer fx-right" data-s="2"><div><span class="ix">ความรู้ทีม</span><b>Context</b></div><span class="t">“Task ใช้ P1/P2/P3 และเก็บใน localStorage”</span></div>
+    <div class="layer fx-right" data-s="3"><div><span class="ix">กติกา</span><b>Instructions</b></div><span class="t">“ห้ามแตะ production data; แจ้งก่อนเปลี่ยน schema”</span></div>
+    <div class="layer fx-right" data-s="4" style="margin:0"><div><span class="ix">สูตรทำงานประจำ</span><b>Skill</b></div><span class="t">“ก่อนแก้ feature ให้ review requirement ตาม checklist นี้”</span></div>
+  </div>
+  <div class="callout" data-s="5"><span class="ico">🏢</span><span><b>งานวันนี้</b> · <b>ความรู้ทีม</b> · <b>กติกา</b> · <b>สูตรทำงานประจำ</b></span></div>
 </section>
 
-<section class="slide" data-source="https://support.claude.com/en/articles/12512198-how-to-create-custom-skills">
-<h2>อยากทำ Skill เอง? คิดแค่สามข้อ</h2>
-  <div class="numbered mt"><span class="n">01</span><div><b>ใช้เมื่อไร?</b> เช่น ได้บรีฟที่ยังไม่ชัด</div><span class="n">02</span><div><b>ทำอะไร?</b> แยกเรื่องที่รู้กับเรื่องที่กำลังเดา แล้วถามกลับ</div><span class="n">03</span><div><b>ส่งอะไร?</b> คำถามสำคัญกับเกณฑ์ตรวจงาน</div></div>
-  <div class="spacer"></div><div class="callout c-blue"><span class="ico">✍️</span><div>ลองบอก Cowork ว่า “ช่วยทำขั้นตอนนี้เป็น Skill ใช้ซ้ำให้หน่อย” แล้วอ่านก่อนเปิดใช้</div></div>
+<!-- S17 -->
+<section class="scene" data-bg="r">
+  <div class="eyebrow a">📕 Skill · 🛠️ Tool</div>
+  <h2 class="title a">Skill บอกวิธีทำ · Tool ให้ลงมือ</h2>
+  <div class="split grow" style="grid-template-columns:1fr 1.05fr">
+    <div class="col" style="gap:8px">
+      <div class="ba" data-s="1"><span><span class="tag green">Tool</span></span><p class="t">บอกว่า AI <b>ทำอะไรได้</b></p></div>
+      <div class="ba" data-s="2"><span><span class="tag orange">Skill</span></span><p class="t">บอกว่า<b>ควรทำงานนั้นอย่างไร</b></p></div>
+      <p class="t mt" data-s="3" style="color:var(--muted)">เช่น Tool เปิดไฟล์ได้ ส่วน Skill บอกว่าต้องเช็กอะไรบ้าง</p>
+    </div>
+    <div class="imgbox a fx-right"><img src="assets/tools-matter.png" alt="AI ช่างซ่อมรู้วิธีแก้ แต่ต้องมีเครื่องมือ"></div>
+  </div>
+  <div class="callout green" data-s="4"><span class="ico">🛠️</span><span>รู้วิธีซ่อมรถ แต่ไม่มีประแจ ก็ยังซ่อมไม่ได้</span></div>
 </section>
 
-<section class="slide" data-source="https://support.claude.com/en/articles/12512180-use-skills-in-claude">
-<h2>Skill ตัวอย่างเตรียมไว้ให้แล้ว</h2>
-  <div class="cols mt"><div><h3>อยากแค่ลองใช้</h3><p>ผู้สอนเปิดให้ดูว่ามันช่วยอ่านบรีฟ แล้วคืนคำถามกับเกณฑ์ตรวจงานยังไง</p></div><div><h3>อยากอัปโหลดเอง</h3><p><b>Customize → Skills → + → Create skill → Upload a skill</b> แล้วเลือก ZIP ที่เตรียมไว้</p></div></div>
-  <div class="spacer"></div><div class="callout c-purple"><span class="ico">📦</span><div>ไฟล์ตัวอย่างอยู่ในชุด workshop การอัปโหลดเป็นทางเลือก ไม่ต้องหยุดทั้งห้องรอ</div></div>
+<!-- S18 -->
+<section class="scene" data-bg="bl">
+  <h2 class="title a">Skill หน้าตาแบบไหน? ลองดูงาน BA</h2>
+  <div class="g2 grow" style="gap:60px;align-content:center">
+    <div class="card soft" data-s="1">
+      <span class="k">ถ้าไม่มี SOP</span>
+      <div class="mess">
+        <div class="fx-pop" data-s="1" data-d=".2" style="position:absolute;left:0;top:20px;"><div class="sticky" style="transform:rotate(-5deg)">วันนี้ถามเรื่องผู้ใช้</div></div>
+        <div class="fx-pop" data-s="1" data-d=".45" style="position:absolute;left:250px;top:100px;"><div class="sticky" style="transform:rotate(4deg)">พรุ่งนี้ลืมถาม</div></div>
+        <div class="fx-pop" data-s="1" data-d=".7" style="position:absolute;left:60px;top:200px;"><div class="sticky" style="transform:rotate(-2deg);background:#fbe4e4;color:#8f2222">บางทีกระโดดไปสร้างของเลย</div></div>
+      </div>
+    </div>
+    <div class="card blue" data-s="2">
+      <span class="k" style="color:var(--blue)">ถ้ามี Skill</span>
+      <div class="nlist">
+        <div class="tick" data-s="2" data-d=".1"><span class="chk"></span><span class="t">อ่าน requirement</span></div>
+        <div class="tick" data-s="2" data-d=".5"><span class="chk"></span><span class="t">แยก facts กับ assumptions</span></div>
+        <div class="tick" data-s="2" data-d=".9"><span class="chk"></span><span class="t">ถามไม่เกิน 5 เรื่องที่เปลี่ยนแบบระบบ</span></div>
+        <div class="tick" data-s="2" data-d="1.3" style="border:0"><span class="chk"></span><span class="t">ร่าง acceptance criteria</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="callout orange" data-s="3"><span class="ico">📕</span><span>เหมือนมีเช็กลิสต์ประจำทีม หยิบใช้ซ้ำได้</span></div>
 </section>
 
-<section class="slide">
-<h2>Skill ช่วยตรงไหน? ลองเทียบผล</h2>
-  <div class="cols mt"><div><h3>บรีฟกว้าง ๆ</h3><p>“ทำ Task App ให้หน่อย” แล้ว AI อาจเดาเองว่าใครใช้และข้อมูลเก็บที่ไหน</p></div><div><h3>ผ่าน Skill review requirement</h3><p>ได้คำถามที่ต้องถามก่อน พร้อมสิ่งที่เรากำลังสมมติ และวิธีตรวจงาน</p></div></div>
-  <div class="spacer"></div><div class="callout c-orange"><span class="ico">📌</span><div>Skill ช่วยให้ทีมไม่ข้ามขั้นสำคัญ แต่เรายังต้องตัดสินใจเอง</div></div>
+<!-- S19 -->
+<section class="scene" data-bg="tr">
+  <div class="eyebrow a">🛠️ Tools</div>
+  <h2 class="title a">AI มีเครื่องมืออะไรในกระเป๋าบ้าง?</h2>
+  <div class="body">
+    <div class="toolg">
+      <div class="tool fx-pop" data-s="1"><code>~/files</code><b>Files</b><span class="t">อ่านและแก้ไฟล์</span></div>
+      <div class="tool fx-pop" data-s="1"><code>$ npm test</code><b>Terminal</b><span class="t">รันคำสั่งและ tests</span></div>
+      <div class="tool fx-pop" data-s="1"><code>git diff</code><b>Git</b><span class="t">ดู diff และประวัติ</span></div>
+      <div class="tool fx-pop" data-s="1"><code>https://</code><b>Browser</b><span class="t">ดูหน้าเว็บจริง</span></div>
+      <div class="tool fx-pop" data-s="1"><code>search</code><b>Search</b><span class="t">หาข้อมูล</span></div>
+      <div class="tool fx-pop" data-s="1"><code>GET /tasks</code><b>API / Database</b><span class="t">เข้าถึงระบบที่ได้รับสิทธิ์</span></div>
+    </div>
+  </div>
+  <div class="callout orange" data-s="2"><span class="ico">🚧</span><span>ให้เครื่องมือเท่าที่งานต้องใช้ งานเสี่ยงให้คนกดโอเคก่อน</span></div>
 </section>
 
-<section class="slide" data-source="https://support.claude.com/en/articles/13345190-get-started-with-claude-cowork https://support.claude.com/en/articles/12512176-what-are-skills">
-<h2>วันนี้จะใช้ Tool อะไรจริง?</h2>
-  <div class="topic-grid mt"><div><b>Folder / Files</b><small>อ่าน brief และเขียนไฟล์งาน</small></div><div><b>Browser</b><small>เปิดแอปแล้วลองกด</small></div><div><b>Skill</b><small>ช่วยขั้นที่ทำซ้ำ เช่น review requirement</small></div><div><b>Connector / MCP</b><small>ใช้เมื่อข้อมูลอยู่ในบริการอื่น</small></div></div>
-  <div class="spacer"></div><div class="callout c-blue"><span class="ico">🛠️</span><div>โจทย์นี้มี brief อยู่ใน folder แล้ว เลยยังไม่ต้องต่อ Jira จริง</div></div>
+<!-- S20 -->
+<section class="scene" data-bg="low">
+  <div class="eyebrow a">🔌 MCP</div>
+  <h2 class="title a">MCP: หัวต่อให้ AI ไปหยิบของ</h2>
+  <p class="lead a">นึกถึงหัวต่อกลาง: อยากให้ AI ไปอ่านเอกสารหรือใช้บริการอื่น ก็มีทางเชื่อม</p>
+  <div class="body">
+    <div class="diag">
+      <svg viewBox="0 0 1620 420">
+        <path class="wire draw" data-s="2" pathLength="1" id="w0" d="M380 210 L730 210"/>
+        <path class="wire draw" data-s="3" pathLength="1" id="w1" d="M890 210 C1050 210 1080 60 1240 60"/>
+        <path class="wire draw" data-s="3" pathLength="1" data-d=".15" id="w2" d="M890 210 L1240 210"/>
+        <path class="wire draw" data-s="3" pathLength="1" data-d=".3" id="w3" d="M890 210 C1050 210 1080 360 1240 360"/>
+        <g class="fx-fade" data-s="3" data-d="1">
+          <circle class="pk" r="9"><animateMotion dur="2.2s" repeatCount="indefinite" path="M380 210 L730 210"/></circle>
+          <circle class="pk" r="9"><animateMotion dur="2.2s" begin=".5s" repeatCount="indefinite" path="M890 210 C1050 210 1080 60 1240 60"/></circle>
+          <circle class="pk" r="9"><animateMotion dur="2.2s" begin="1s" repeatCount="indefinite" path="M1240 210 L890 210"/></circle>
+          <circle class="pk" r="9"><animateMotion dur="2.2s" begin="1.4s" repeatCount="indefinite" path="M890 210 C1050 210 1080 360 1240 360"/></circle>
+          <circle class="pk" r="9" style="fill:var(--green)"><animateMotion dur="2.2s" begin="1.1s" repeatCount="indefinite" path="M730 210 L380 210"/></circle>
+        </g>
+      </svg>
+      <div class="dn fx-left" data-s="1" style="left:0;top:140px;width:380px;height:140px;flex-direction:column"><span class="tag" style="margin-bottom:6px">คิด · ทำงาน</span>AI application</div>
+      <div class="fx-pop" data-s="2" data-d=".5" style="position:absolute;inset:0;pointer-events:none"><div class="hub"><div class="pingring"></div><small>🔌</small>MCP</div></div>
+      <div class="dn fx-right" data-s="3" data-d=".5" style="left:1240px;top:10px;width:380px;height:100px">Files</div>
+      <div class="dn fx-right" data-s="3" data-d=".65" style="left:1240px;top:160px;width:380px;height:100px">API</div>
+      <div class="dn fx-right" data-s="3" data-d=".8" style="left:1240px;top:310px;width:380px;height:100px">Services</div>
+    </div>
+  </div>
+  <div class="callout blue" data-s="4"><span class="ico">🔌</span><span><b>MCP คือทางเชื่อม</b> ส่วน AI ยังต้องคิดและทำงานเอง</span></div>
 </section>
 
-<section class="slide" data-source="https://support.claude.com/en/articles/13345190-get-started-with-claude-cowork">
-<h2>เช็กก่อนปล่อย Cowork ลงมือ</h2>
-  <div class="numbered mt"><span class="n">01</span><div>เลือกโฟลเดอร์ Task App ของตัวเอง</div><span class="n">02</span><div>เปิด <code>brief.md</code> ให้ Cowork อ่าน</div><span class="n">03</span><div>ดูว่าเครื่องมือขอสิทธิ์อะไร แล้วอนุญาตเฉพาะที่ต้องใช้</div><span class="n">04</span><div>ตั้งเป้าว่าจะได้ <code>index.html</code> ที่เปิดใช้ได้จริง</div></div>
-  <div class="spacer"></div><div class="callout c-green"><span class="ico">✅</span><div>ผู้สอนทำพร้อมทุกคนบนจอเดียวกัน แล้วค่อยไปทีละช่วง</div></div>
+<!-- S21 -->
+<section class="scene" data-bg="tr">
+  <h2 class="title a">AI จะอ่าน Jira ของทีมได้ยังไง?</h2>
+  <div class="body" style="gap:34px">
+    <div data-s="1">
+      <div class="klbl">ยังไม่เชื่อม</div>
+      <div class="lane"><span class="node">Jira</span><span class="bounce" style="font-size:44px">📄</span><span class="node">AI</span></div>
+      <p class="t" style="margin-top:14px">เราเปิด Jira แล้ว<b>คัดลอกข้อมูลมาแปะให้ AI ทุกครั้ง</b></p>
+    </div>
+    <div data-s="2">
+      <div class="klbl blue">เชื่อมผ่าน MCP server</div>
+      <div class="flow">
+        <span class="node lb fx-pop" data-s="2" data-d=".1">AI app</span><span class="arr blue fx-grow" data-s="2" data-d=".35"></span>
+        <span class="node blue fx-pop" data-s="2" data-d=".55">MCP server</span><span class="arr blue fx-grow" data-s="2" data-d=".8"></span>
+        <span class="node fx-pop" data-s="2" data-d="1">ข้อมูล / บริการ</span>
+      </div>
+      <p class="t" style="margin-top:14px">AI <b>เรียก tool ไปอ่านข้อมูลที่เราอนุญาต</b> แล้วเอามาช่วยทำงาน</p>
+    </div>
+  </div>
+  <div class="callout orange" data-s="3"><span class="ico">🔐</span><span>ต่อสายแล้ว ก็ยังต้องดูว่า AI มีสิทธิ์เห็นอะไรบ้าง</span></div>
 </section>
 
-<section class="slide">
-<h1>มาทำ Task App<br>ไปด้วยกัน</h1><p class="lead mt">ทุกคนเล่นทุกบทบาท ใช้ Claude Cowork ตัวเดียวกันต่อเนื่อง</p>
+<!-- S22 -->
+<section class="scene" data-bg="bl">
+  <h2 class="title a">สี่คำนี้ ใช้กับงานจริงยังไง?</h2>
+  <div class="body" style="gap:50px">
+    <div class="card soft" data-s="1" style="padding:44px 50px">
+      <p class="sent-hl">“<span class="hl hm st" data-s="2">ช่วย review requirement</span> <span class="hl hc ht st" data-s="4">ใน Jira<span class="pop">Tool เปิด issue</span></span> <span class="hl hk st" data-s="3">ตาม checklist ทีม</span> แล้ว<span class="hl hm st" data-s="2" data-d=".3">ส่งคำถามที่ต้องถามลูกค้า</span>”</p>
+    </div>
+    <div class="g4 map4">
+      <div class="card m" data-s="2"><h3>Model</h3><span class="s">ใครคิด? → ช่วยคิดและสรุปคำถาม</span></div>
+      <div class="card k" data-s="3"><h3>Skill</h3><span class="s">ทำตามวิธีไหน? → ให้เช็กลิสต์</span></div>
+      <div class="card c" data-s="4"><h3>MCP</h3><span class="s">ต่อข้อมูลภายนอกอย่างไร? → ต่อ Jira</span></div>
+      <div class="card tl" data-s="4" data-d=".3"><h3>Tool</h3><span class="s">ใช้ทำอะไรได้? → เปิด issue</span></div>
+    </div>
+  </div>
 </section>
 
-<section class="slide">
-<h2>โจทย์ตั้งต้น มีแค่นี้</h2>
-  <div class="quote mt2">“ทีมเราอยากได้ Task Management App เล็ก ๆ ใช้ใน browser”</div>
-  <p class="lead mt2">ยังไม่มีใครบอกว่าหน้าตาเป็นยังไง ใครใช้ หรือเก็บข้อมูลแบบไหน</p>
-  <div class="spacer"></div><div class="callout c-orange"><span class="ico">❓</span><div>ถ้าเป็นคุณ คุณจะให้ Cowork ทำอะไรก่อน? คิดเองก่อนดูตัวอย่างหน้าใหม่</div></div>
+<style>
+.eqlabel{font-family:var(--mono);font-size:26px;letter-spacing:.14em;color:var(--muted);text-align:center;margin-bottom:26px}
+.eq{display:flex;align-items:flex-start;justify-content:center}
+.term{display:flex;flex-direction:column;align-items:center;gap:8px;padding:0 8px}
+.term b{font-size:52px;font-weight:600;line-height:1.2;transition:font-size 1.1s var(--ease-io),color .8s}
+.term small{font-size:24px;color:var(--muted);white-space:nowrap}
+.plus{font-size:52px;color:var(--faint);font-weight:300;padding:0 8px;line-height:1.2}
+.xp{max-width:0;opacity:0;overflow:hidden;transform:none;transition:max-width 1.1s var(--ease-io) var(--delay,0s),opacity .6s var(--ease) calc(var(--delay,0s) + .25s)}
+.xp.on{max-width:460px;opacity:1}
+.xp>div{display:flex;align-items:flex-start;white-space:nowrap}
+.shrink b{font-size:190px;color:var(--blue);letter-spacing:-.03em}
+.shrink.on b{font-size:52px;color:var(--ink);letter-spacing:0}
+.shrink small{transition:font-size 1.1s var(--ease-io)}
+.frow{display:grid;grid-template-columns:300px 1fr;gap:40px;align-items:center;padding:36px 0;border-bottom:2px solid var(--line)}
+.frow .klbl{margin:0}
+.frow .s{margin-top:14px}
+.loopbox{position:relative;width:540px;height:540px;flex:none}
+.loopbox svg{position:absolute;inset:0}
+.loopbox .orb2{position:absolute;inset:60px;border-radius:50%;animation:spin 7s linear infinite}
+.loopbox .orb2::before{content:"";position:absolute;left:50%;top:-12px;width:24px;height:24px;margin-left:-12px;border-radius:50%;background:var(--blue);box-shadow:0 0 0 8px var(--blue-bg)}
+.lp{position:absolute;transform:translate(-50%,-50%)}
+.lp .node{font-size:30px;padding:14px 26px}
+.lp .node.lb{font-weight:600}
+.resp{display:flex;flex-direction:column;gap:12px;margin-top:6px}
+.resp li{font-size:30px;color:var(--ink2);list-style:none;padding-left:34px;position:relative;line-height:1.45}
+.resp li::before{content:"";position:absolute;left:4px;top:.55em;width:14px;height:14px;border-radius:50%;background:var(--blue)}
+.resp.h li::before{background:var(--ink)}
+ul.resp{margin:0;padding:0}
+.bc{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.bc .chip{font-size:28px;padding:12px 26px}
+.bc .sep{font-size:28px;color:var(--faint)}
+.bigico{width:96px;height:96px;border-radius:26px;display:grid;place-items:center;font-size:52px;background:var(--blue-bg);margin-bottom:24px}
+.slash{font-family:var(--mono);font-size:70px;font-weight:600;color:var(--blue);line-height:1;margin-bottom:22px}
+.tile4{display:grid;grid-template-columns:repeat(4,1fr);gap:26px}
+.tile4 .tool b{font-size:34px}
+</style>
+
+<!-- S23 -->
+<section class="scene divider" data-chapter="03 · Prompt Is Not Everything" data-title="Prompt Is Not Everything">
+  <div class="num a">CHAPTER 03</div>
+  <h1><span class="mask a"><span>Prompt Is Not</span></span><span class="mask a"><span>Everything</span></span></h1>
+  <p class="lead a">บรีฟเก่งอย่างเดียว งานก็ยังพังได้</p>
+  <div class="bignum a fx-zoom">03</div>
 </section>
 
-<section class="slide" data-source="https://academy.claude.com/tutorials/get-started-in-claude-cowork-in-three-steps">
-<h2>เริ่มจากโฟลเดอร์เดียวกันในเครื่องตัวเอง</h2>
-  <div class="flow mt2"><span class="box">Claude Desktop</span><span class="arr">→</span><span class="box">Cowork</span><span class="arr">→</span><span class="box">Work in a folder</span></div>
-  <div class="cols mt2"><div><h3>ในโฟลเดอร์มี</h3><p><code>brief.md</code> ซึ่งมีโจทย์หนึ่งประโยค</p></div><div><h3>ปลายทางที่อยากได้</h3><p><code>requirements.md</code> · <code>plan.md</code><br><code>design.md</code> · <code>index.html</code><br><code>test-cases.md</code></p></div></div>
-  <div class="spacer"></div><div class="callout c-blue"><span class="ico">📁</span><div>เราจะพิมพ์ต่อใน Cowork งานเดิมทีละช่วง เพื่อให้มันจำสิ่งที่ตัดสินใจไว้</div></div>
+<!-- S24 -->
+<section class="scene" data-bg="low">
+  <h2 class="title a">พิมพ์ Prompt เก่งอย่างเดียว ยังไม่พอ</h2>
+  <div class="body">
+    <div class="eqlabel" data-s="1">คุณภาพงาน =</div>
+    <div class="eq">
+      <div class="a fx-pop"><div class="term shrink st" data-s="1"><b>Prompt</b><small>งานวันนี้</small></div></div>
+      <div class="xp" data-s="1"><div><span class="plus">+</span><div class="term"><b>Context</b><small>ความรู้เกี่ยวกับบริษัท</small></div></div></div>
+      <div class="xp" data-s="1"><div><span class="plus">+</span><div class="term"><b>Instructions</b><small>กฎของทีม</small></div></div></div>
+      <div class="xp" data-s="1"><div><span class="plus">+</span><div class="term"><b>Skill</b><small>SOP</small></div></div></div>
+      <div class="xp" data-s="1"><div><span class="plus">+</span><div class="term"><b>Tools</b><small>เครื่องมือ</small></div></div></div>
+      <div class="xp" data-s="1"><div><span class="plus">+</span><div class="term"><b>Model</b><small>สมอง</small></div></div></div>
+    </div>
+  </div>
+  <div class="callout blue" data-s="2"><span class="ico">🧩</span><span>ให้ข้อมูลที่ใช่ บอกกติกา แล้ว<b>ขอดูหลักฐานก่อนรับงาน</b></span></div>
 </section>
 
-<section class="slide">
-<h2>เริ่มแบบ BA: ถามให้โจทย์ชัดก่อน</h2>
-  <p class="lead">ลองเขียนคำสั่งของตัวเองก่อน แล้วค่อยดูตัวอย่าง</p>
-  <pre class="mt"><code>อ่าน brief.md แล้วช่วยทำตัวเป็น BA
+<!-- S25 -->
+<section class="scene" data-bg="br">
+  <div class="eyebrow a">✍️ วอร์มมือ</div>
+  <h2 class="title a">ลองสั่งงานสั้น ๆ ใน Claude Cowork</h2>
+  <p class="lead a">หยิบงานจริงของคุณหนึ่งงาน แล้วพิมพ์ตามสไตล์ตัวเอง</p>
+  <div class="split grow" style="grid-template-columns:1.1fr 1fr;gap:60px">
+    <div class="win a"><div class="wbody type" data-s="1" style="font-size:36px">“ช่วยฉันเริ่มงานนี้หน่อย ก่อนลงมือ คุณต้องรู้อะไรจากฉันบ้าง?”</div></div>
+    <div class="nlist">
+      <div class="nrow" data-s="2"><span class="n">01</span><span class="t">ดูว่า Cowork <b>ถามกลับ</b>เรื่องไหน</span></div>
+      <div class="nrow" data-s="3"><span class="n">02</span><span class="t">ตอบเพิ่มเฉพาะข้อมูลที่ทำให้งานชัดขึ้น</span></div>
+      <div class="nrow" data-s="4" style="border:0"><span class="n">03</span><span class="t">สังเกตว่าเราเริ่ม<b>กำหนดขอบเขตงาน</b>แล้ว</span></div>
+    </div>
+  </div>
+  <div class="callout" data-s="5"><span class="ico">✍️</span><span>นี่คือวอร์มมือ เดี๋ยวเราใช้ Cowork ทำโปรเจกต์เดียวกันทั้งห้อง</span></div>
+</section>
+
+<!-- S26 -->
+<section class="scene divider" data-chapter="04 · From Chat to Agent" data-title="From Chat to Agent">
+  <div class="num a">CHAPTER 04</div>
+  <h1><span class="mask a"><span>From Chat</span></span><span class="mask a"><span>to Agent</span></span></h1>
+  <p class="lead a">จากคนตอบคำถาม สู่คนที่ช่วยทำงานต่อ</p>
+  <div class="bignum a fx-zoom">04</div>
+</section>
+
+<!-- S27 -->
+<section class="scene" data-bg="tr">
+  <h2 class="title a">แชตตอบกลับ กับ Agent ทำงานต่อ</h2>
+  <div class="body">
+    <div class="frow" data-s="1">
+      <div><div class="klbl">Chat</div><p class="s">เหมาะกับช่วยคิดหรือช่วยร่าง</p></div>
+      <div class="flow">
+        <span class="node fx-pop" data-s="1" data-d=".1">ถาม</span><span class="arr fx-grow" data-s="1" data-d=".35"></span>
+        <span class="node fx-pop" data-s="1" data-d=".55">ตอบ</span><span class="arr fx-grow" data-s="1" data-d=".8"></span>
+        <span class="node fx-pop" data-s="1" data-d="1" style="border-style:dashed">คนทำต่อ</span>
+      </div>
+    </div>
+    <div class="frow" data-s="2" style="border:0">
+      <div><div class="klbl blue">Agentic workflow</div><p class="s">เหมาะกับงานที่มีหลายขั้นและขอบเขตชัด</p></div>
+      <div class="flow">
+        <span class="node lb fx-pop" data-s="2" data-d=".1">เป้าหมาย</span><span class="arr blue fx-grow" data-s="2" data-d=".35"></span>
+        <span class="node lb fx-pop" data-s="2" data-d=".55">วางแผน</span><span class="arr blue fx-grow" data-s="2" data-d=".8"></span>
+        <span class="node lb fx-pop" data-s="2" data-d="1">ใช้ Tool</span><span class="arr blue fx-grow" data-s="2" data-d="1.25"></span>
+        <span class="node blue fx-pop" data-s="2" data-d="1.45">ตรวจ</span>
+      </div>
+    </div>
+  </div>
+  <div class="callout blue" data-s="3"><span class="ico">👨‍💻</span><span>Agent รับเป้าหมาย ใช้เครื่องมือ แล้วเอางานมาให้เราตรวจ</span></div>
+</section>
+
+<!-- S28 -->
+<section class="scene" data-bg="bl" data-t="zoom">
+  <h2 class="title a">Agent ทำงานวนรอบยังไง?</h2>
+  <div class="grow" style="display:grid;grid-template-columns:540px 1fr;gap:80px;align-items:center">
+    <div class="loopbox">
+      <svg viewBox="0 0 540 540"><g transform="rotate(-90 270 270)"><circle class="draw" data-s="1" pathLength="1" cx="270" cy="270" r="210" fill="none" stroke="#d3e5f7" stroke-width="4"/></g></svg>
+      <div class="fx-fade" data-s="1" data-d="1" style="position:absolute;inset:0"><div class="orb2"></div></div>
+      <div class="lp" style="left:270px;top:60px"><span class="node blue fx-pop" data-s="1" data-d=".1" style="display:inline-block">Goal</span></div>
+      <div class="lp" style="left:470px;top:205px"><span class="node lb fx-pop" data-s="1" data-d=".3" style="display:inline-block">Plan</span></div>
+      <div class="lp" style="left:393px;top:440px"><span class="node lb fx-pop" data-s="1" data-d=".5" style="display:inline-block">Act</span></div>
+      <div class="lp" style="left:147px;top:440px"><span class="node lb fx-pop" data-s="1" data-d=".7" style="display:inline-block">Observe</span></div>
+      <div class="lp" style="left:70px;top:205px"><span class="node lb fx-pop" data-s="1" data-d=".9" style="display:inline-block">Verify</span></div>
+    </div>
+    <div class="g2" style="gap:30px">
+      <div class="card blue fx-right" data-s="2"><span class="k" style="color:var(--blue)">AI รับผิดชอบ</span><ul class="resp"><li>เสนอแผน</li><li>ใช้ tools ตามสิทธิ์</li><li>รายงานผลและหลักฐาน</li></ul></div>
+      <div class="card fx-right" data-s="3"><span class="k">Human รับผิดชอบ</span><ul class="resp h"><li>กำหนดเป้าหมายและขอบเขต</li><li>อนุมัติจุดเสี่ยง</li><li>ตรวจงานสำคัญ</li></ul></div>
+      <div class="callout orange" data-s="4" style="grid-column:1/-1;margin-top:10px"><span class="ico">⚠️</span><span>AI ทำงานให้ได้ แต่คนยังต้องดูว่างานใช้ได้จริงไหม</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- S29 -->
+<section class="scene" data-bg="tr" data-chapter="05 · Setting up Cowork">
+  <h2 class="title a">ก่อนเริ่มงาน ให้ Cowork มีโต๊ะทำงาน</h2>
+  <div class="g2 grow" style="gap:48px;align-content:center">
+    <div class="card fx-left" data-s="1"><div class="bigico">📁</div><h3>โฟลเดอร์งาน</h3><p class="t">ใช้ <b>Work in a folder</b> เลือกโฟลเดอร์ Task App ของตัวเอง Cowork จะอ่านและเขียนไฟล์ในพื้นที่ที่เราให้สิทธิ์</p></div>
+    <div class="card fx-right" data-s="2"><div class="bigico" style="background:var(--orange-bg)">📜</div><h3>กติกาประจำงาน</h3><p class="t">บอกไว้ว่า “<b>ถามก่อนเมื่อโจทย์ไม่ชัด</b>” และ “<b>สร้างไฟล์เฉพาะในโฟลเดอร์นี้</b>”</p></div>
+  </div>
+  <div class="callout blue" data-s="3"><span class="ico">📁</span><span>วันนี้เราจะเห็น Cowork สร้างไฟล์จริง ไม่ได้คุยแล้วจบในช่องตอบ</span></div>
+</section>
+
+<!-- S30 -->
+<section class="scene" data-bg="br">
+  <h2 class="title a">Skill หาใน Cowork ก่อน</h2>
+  <div class="bc a mb"><span class="chip fx-pop a">Customize</span><span class="sep a">→</span><span class="chip blue fx-pop a">Skills</span><span class="lead a" style="margin-left:14px">แล้วดูว่ามีอะไรให้ใช้กับงานนี้บ้าง</span></div>
+  <div class="body nlist">
+    <div class="kv" data-s="1"><b>ของที่เปิดใช้อยู่</b><span>Skill ของเรา ของทีม หรือของ Anthropic</span></div>
+    <div class="kv" data-s="1"><b>Browse skills</b><span>หาเพิ่มจากไดเรกทอรีใน Claude</span></div>
+    <div class="kv" data-s="1"><b>ไม่เจอที่ตรงงาน</b><span>ลองบรีฟเองก่อน แล้วค่อยทำ Skill</span></div>
+    <div class="kv" data-s="1" style="border:0"><b>ก่อนใช้จริง</b><span>อ่านว่ามันจะทำอะไรและใช้อะไรบ้าง</span></div>
+  </div>
+  <div class="callout blue" data-s="2"><span class="ico">🔎</span><span>ตอนทำ BA ลองมองหา Skill ที่ช่วย review requirement หรือร่างเอกสาร</span></div>
+</section>
+
+<!-- S31 -->
+<section class="scene" data-bg="tl">
+  <h2 class="title a">เจอ Skill แล้ว อย่าเพิ่งกดใช้ทันที</h2>
+  <div class="body nlist">
+    <div class="nrow" data-s="1"><span class="n">01</span><span class="t"><b>ใครทำ?</b>มาจากทีมเรา Anthropic หรือที่อื่น</span></div>
+    <div class="nrow" data-s="2"><span class="n">02</span><span class="t"><b>มันทำอะไร?</b>อ่านคำอธิบายและขั้นตอนข้างใน</span></div>
+    <div class="nrow" data-s="3"><span class="n">03</span><span class="t"><b>แตะอะไร?</b>ใช้ไฟล์หรือ Connector ตัวไหน</span></div>
+    <div class="nrow" data-s="4" style="border:0"><span class="n">04</span><span class="t"><b>ตรงโจทย์ไหม?</b>ลองกับ Task App ตัวอย่างก่อน</span></div>
+  </div>
+  <div class="callout orange" data-s="5"><span class="ico">👀</span><span>Skill เป็นคู่มือให้ AI ทำงาน อ่านคู่มือก่อนชวนเข้าทีม</span></div>
+</section>
+
+<!-- S32 -->
+<section class="scene" data-bg="br">
+  <h2 class="title a">จะใช้ Skill ใน Cowork ยังไง?</h2>
+  <div class="g2" style="gap:40px;margin-top:20px">
+    <div class="card fx-left" data-s="1"><div class="slash">/</div><h3>เรียกตรง ๆ</h3><p class="t">พิมพ์ <b>/</b> แล้วเลือก Skill ที่เปิดใช้อยู่</p></div>
+    <div class="card fx-right" data-s="2"><div class="slash">💬</div><h3>เล่างานตามปกติ</h3><p class="t">บอกว่าอยากให้ช่วยอะไร Cowork อาจหยิบ Skill ที่ตรงมาใช้เอง</p></div>
+  </div>
+  <div class="win mt" data-s="3"><div class="wbody type" data-s="3" data-d=".3">“ช่วย review บรีฟ Task App นี้ แล้วบอกคำถามที่ควรถามลูกค้าก่อนสร้าง”</div></div>
+  <div class="callout" data-s="4" style="margin-top:28px"><span class="ico">📕</span><span>ถ้ายังไม่มี Skill ก็ทำงานต่อด้วย prompt ธรรมดาได้</span></div>
+</section>
+
+<!-- S33 -->
+<section class="scene" data-bg="tr">
+  <h2 class="title a">อยากทำ Skill เอง? คิดแค่สามข้อ</h2>
+  <div class="body nlist">
+    <div class="nrow" data-s="1"><span class="n">01</span><span class="t"><b>ใช้เมื่อไร?</b>เช่น ได้บรีฟที่ยังไม่ชัด</span></div>
+    <div class="nrow" data-s="2"><span class="n">02</span><span class="t"><b>ทำอะไร?</b>แยกเรื่องที่รู้กับเรื่องที่กำลังเดา แล้วถามกลับ</span></div>
+    <div class="nrow" data-s="3" style="border:0"><span class="n">03</span><span class="t"><b>ส่งอะไร?</b>คำถามสำคัญกับเกณฑ์ตรวจงาน</span></div>
+  </div>
+  <div class="callout blue" data-s="4"><span class="ico">✍️</span><span>ลองบอก Cowork ว่า “<b>ช่วยทำขั้นตอนนี้เป็น Skill ใช้ซ้ำให้หน่อย</b>” แล้วอ่านก่อนเปิดใช้</span></div>
+</section>
+
+<!-- S34 -->
+<section class="scene" data-bg="bl">
+  <h2 class="title a">Skill ตัวอย่างเตรียมไว้ให้แล้ว</h2>
+  <div class="body" style="gap:32px">
+    <div class="card fx-left" data-s="1"><span class="k">อยากแค่ลองใช้</span><p class="t">ผู้สอนเปิดให้ดูว่ามันช่วยอ่านบรีฟ แล้วคืนคำถามกับเกณฑ์ตรวจงานยังไง</p></div>
+    <div class="card blue fx-left" data-s="2"><span class="k" style="color:var(--blue)">อยากอัปโหลดเอง</span>
+      <div class="bc" style="margin-top:8px">
+        <span class="chip fx-pop" data-s="2" data-d=".2">Customize</span><span class="sep fx-fade" data-s="2" data-d=".35">→</span>
+        <span class="chip fx-pop" data-s="2" data-d=".5">Skills</span><span class="sep fx-fade" data-s="2" data-d=".65">→</span>
+        <span class="chip fx-pop" data-s="2" data-d=".8">+</span><span class="sep fx-fade" data-s="2" data-d=".95">→</span>
+        <span class="chip fx-pop" data-s="2" data-d="1.1">Create skill</span><span class="sep fx-fade" data-s="2" data-d="1.25">→</span>
+        <span class="chip blue fx-pop" data-s="2" data-d="1.4">Upload a skill</span>
+      </div>
+      <p class="t" style="margin-top:18px">แล้วเลือก ZIP ที่เตรียมไว้</p>
+    </div>
+  </div>
+  <div class="callout" data-s="3"><span class="ico">📦</span><span>ไฟล์ตัวอย่างอยู่ในชุด workshop การอัปโหลดเป็นทางเลือก ไม่ต้องหยุดทั้งห้องรอ</span></div>
+</section>
+
+<!-- S35 -->
+<section class="scene" data-bg="tr">
+  <h2 class="title a">Skill ช่วยตรงไหน? ลองเทียบผล</h2>
+  <div class="g2 grow" style="gap:48px;align-content:center">
+    <div class="card fx-left" data-s="1"><span class="k">บรีฟกว้าง ๆ</span><p class="t" style="font-size:36px">“ทำ Task App ให้หน่อย”</p><div class="res bad">AI อาจเดาเองว่าใครใช้และข้อมูลเก็บที่ไหน</div></div>
+    <div class="card blue fx-right" data-s="2"><span class="k" style="color:var(--blue)">ผ่าน Skill review requirement</span><p class="t" style="font-size:36px">ได้ของที่ต้องใช้ตัดสินใจ</p><div class="res good">คำถามที่ต้องถามก่อน · สิ่งที่เรากำลังสมมติ · วิธีตรวจงาน</div></div>
+  </div>
+  <div class="callout orange" data-s="3"><span class="ico">📌</span><span>Skill ช่วยให้ทีมไม่ข้ามขั้นสำคัญ แต่<b>เรายังต้องตัดสินใจเอง</b></span></div>
+</section>
+
+<!-- S36 -->
+<section class="scene" data-bg="br">
+  <h2 class="title a">วันนี้จะใช้ Tool อะไรจริง?</h2>
+  <div class="body">
+    <div class="tile4">
+      <div class="tool fx-pop" data-s="1"><code>~/task-app</code><b>Folder / Files</b><span class="t">อ่าน brief และเขียนไฟล์งาน</span></div>
+      <div class="tool fx-pop" data-s="1"><code>index.html</code><b>Browser</b><span class="t">เปิดแอปแล้วลองกด</span></div>
+      <div class="tool fx-pop" data-s="1"><code>/review</code><b>Skill</b><span class="t">ช่วยขั้นที่ทำซ้ำ เช่น review requirement</span></div>
+      <div class="tool fx-pop" data-s="1" style="border-style:dashed"><code>mcp</code><b>Connector / MCP</b><span class="t">ใช้เมื่อข้อมูลอยู่ในบริการอื่น</span></div>
+    </div>
+  </div>
+  <div class="callout" data-s="2"><span class="ico">🛠️</span><span>โจทย์นี้มี brief อยู่ใน folder แล้ว เลยยังไม่ต้องต่อ Jira จริง</span></div>
+</section>
+
+<!-- S37 -->
+<section class="scene" data-bg="tl">
+  <h2 class="title a">เช็กก่อนปล่อย Cowork ลงมือ</h2>
+  <div class="body nlist">
+    <div class="tick" data-s="1"><span class="chk"></span><span class="t">เลือกโฟลเดอร์ Task App ของตัวเอง</span></div>
+    <div class="tick" data-s="2"><span class="chk"></span><span class="t">เปิด <span class="mono blue">brief.md</span> ให้ Cowork อ่าน</span></div>
+    <div class="tick" data-s="3"><span class="chk"></span><span class="t">ดูว่าเครื่องมือขอสิทธิ์อะไร แล้ว<b>อนุญาตเฉพาะที่ต้องใช้</b></span></div>
+    <div class="tick" data-s="4" style="border:0"><span class="chk"></span><span class="t">ตั้งเป้าว่าจะได้ <span class="mono blue">index.html</span> ที่เปิดใช้ได้จริง</span></div>
+  </div>
+  <div class="callout green" data-s="5"><span class="ico">✅</span><span>ผู้สอนทำพร้อมทุกคนบนจอเดียวกัน แล้วค่อยไปทีละช่วง</span></div>
+</section>
+
+<style>
+.pipe{display:flex;align-items:center;margin-top:60px}
+.pipe .pn{padding:16px 30px;border-radius:999px;border:2px solid rgba(255,255,255,.55);font-family:var(--mono);font-size:28px;font-weight:600;color:#fff}
+.pipe .pa{width:60px;height:3px;background:rgba(255,255,255,.55);margin:0 4px}
+.prole{display:grid;grid-template-columns:1fr 440px;gap:70px;align-items:center}
+.side{display:flex;flex-direction:column;gap:40px}
+.out .klbl{margin-bottom:12px}
+.tree{display:flex;flex-direction:column;gap:14px}
+.tree .file{align-self:flex-start}
+.tree .indent{padding-left:44px;display:flex;flex-direction:column;gap:14px}
+.qtag{display:inline-flex;align-items:center;gap:12px;font-size:30px;padding:14px 26px;border-radius:16px;background:var(--orange-bg);color:#9b4a00;font-weight:500}
+.app{background:#fff;border:2px solid var(--line);border-radius:26px;box-shadow:0 40px 90px -40px rgba(18,52,96,.4);overflow:hidden}
+.app .top{display:flex;justify-content:space-between;align-items:center;padding:30px 38px;border-bottom:2px solid var(--line)}
+.app h4{font-size:38px;margin:0;font-weight:600}
+.app .cnt{font-size:23px;color:var(--muted);position:relative;display:block;height:34px}
+.swap{position:relative;display:inline-block}
+.swap>span{transition:opacity .45s var(--ease) calc(var(--delay,0s) + .5s)}
+.swap>span:last-child{position:absolute;left:0;top:0;opacity:0;white-space:nowrap}
+.swap.on>span:first-child{opacity:0}.swap.on>span:last-child{opacity:1}
+.app .btn{background:var(--blue);color:#fff;padding:14px 26px;border-radius:14px;font-size:25px;font-weight:600}
+.trow{display:grid;grid-template-columns:50px 1fr 70px 120px;gap:18px;align-items:center;padding:22px 38px;border-bottom:2px solid var(--line);font-size:29px}
+.trow:last-child{border:0}
+.cb{width:34px;height:34px;border-radius:9px;border:3px solid var(--faint);display:grid;place-items:center;color:#fff;font-size:20px;font-weight:700;transition:all .4s var(--ease) calc(var(--delay,0s) + .2s)}
+.cb.done{background:var(--green);border-color:var(--green)}
+.flip.on .cb{background:var(--green);border-color:var(--green)}
+.cb::after{content:"✓";opacity:0;transition:opacity .3s calc(var(--delay,0s) + .35s)}
+.cb.done::after,.flip.on .cb::after{opacity:1}
+.nm{transition:color .4s calc(var(--delay,0s) + .3s)}
+.flip.on .nm,.nm.done{color:var(--faint);text-decoration:line-through}
+.trow .tag{text-align:center}
+.cburst{position:relative}
+.burst{position:absolute;left:58px;top:50%;width:0;height:0}
+.burst i{position:absolute;width:14px;height:14px;margin:-7px;border-radius:50%;background:var(--blue);opacity:0}
+.burst i:nth-child(3n){background:var(--orange)}.burst i:nth-child(4n){background:var(--green)}
+.cburst.on .burst i{animation:bst 1.2s var(--ease) calc(var(--delay,0s) + .25s) both}
+@keyframes bst{0%{opacity:1;transform:translate(0,0) scale(.3)}100%{opacity:0;transform:translate(var(--x),var(--y)) scale(1)}}
+.bug{font-size:120px;line-height:1;animation:wig 2.4s ease-in-out infinite}
+@keyframes wig{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg) translateY(-8px)}}
+</style>
+
+<!-- S38 -->
+<section class="scene divider" data-chapter="06 · Build the Task App" data-title="มาทำ Task App ไปด้วยกัน">
+  <div class="num a">CHAPTER 06 · WORKSHOP</div>
+  <h1><span class="mask a"><span>มาทำ Task App</span></span><span class="mask a"><span>ไปด้วยกัน</span></span></h1>
+  <p class="lead a">ทุกคนเล่นทุกบทบาท ใช้ Claude Cowork ตัวเดียวกันต่อเนื่อง</p>
+  <div class="pipe">
+    <span class="pn fx-pop a">BA</span><span class="pa fx-grow a"></span>
+    <span class="pn fx-pop a">SA</span><span class="pa fx-grow a"></span>
+    <span class="pn fx-pop a">UX</span><span class="pa fx-grow a"></span>
+    <span class="pn fx-pop a">DEV</span><span class="pa fx-grow a"></span>
+    <span class="pn fx-pop a" style="background:#fff;color:var(--blue)">TESTER</span>
+  </div>
+  <div class="bignum a fx-zoom">06</div>
+</section>
+
+<!-- S39 -->
+<section class="scene" data-bg="tr">
+  <h2 class="title a">โจทย์ตั้งต้น มีแค่นี้</h2>
+  <div class="body" style="gap:40px">
+    <div class="win a" data-label="brief.md"><div class="wbody type" data-s="1" style="font-size:46px;font-weight:500;padding:44px 50px">“ทีมเราอยากได้ Task Management App เล็ก ๆ ใช้ใน browser”</div></div>
+    <div>
+      <p class="t" data-s="2" style="margin-bottom:20px">ยังไม่มีใครบอกว่า…</p>
+      <div class="row">
+        <span class="qtag fx-pop" data-s="2" data-d=".2">? หน้าตาเป็นยังไง</span>
+        <span class="qtag fx-pop" data-s="2" data-d=".4">? ใครใช้</span>
+        <span class="qtag fx-pop" data-s="2" data-d=".6">? เก็บข้อมูลแบบไหน</span>
+      </div>
+    </div>
+  </div>
+  <div class="callout blue" data-s="3"><span class="ico">❓</span><span>ถ้าเป็นคุณ คุณจะให้ Cowork ทำอะไรก่อน? <b>คิดเองก่อนดูตัวอย่างหน้าใหม่</b></span></div>
+</section>
+
+<!-- S40 -->
+<section class="scene" data-bg="br">
+  <h2 class="title a">เริ่มจากโฟลเดอร์เดียวกันในเครื่องตัวเอง</h2>
+  <div class="split grow" style="grid-template-columns:1fr 560px">
+    <div class="col" style="gap:34px">
+      <div class="flow">
+        <span class="node fx-pop" data-s="1">Claude Desktop</span><span class="arr fx-grow" data-s="1" data-d=".25"></span>
+        <span class="node fx-pop" data-s="1" data-d=".45">Cowork</span><span class="arr fx-grow" data-s="1" data-d=".7"></span>
+        <span class="node blue fx-pop" data-s="1" data-d=".9">Work in a folder</span>
+      </div>
+      <p class="t" data-s="2">ในโฟลเดอร์มี <span class="mono blue">brief.md</span> ซึ่งมีโจทย์หนึ่งประโยค ส่วนเส้นประคือ<b>ปลายทางที่อยากได้</b></p>
+    </div>
+    <div class="card soft tree" data-s="2">
+      <span class="file dir">task-app/</span>
+      <div class="indent">
+        <span class="file fx-left" data-s="2" data-d=".15">brief.md</span>
+        <span class="file ghost fx-left" data-s="2" data-d=".35">requirements.md</span>
+        <span class="file ghost fx-left" data-s="2" data-d=".5">plan.md</span>
+        <span class="file ghost fx-left" data-s="2" data-d=".65">design.md</span>
+        <span class="file ghost fx-left" data-s="2" data-d=".8">index.html</span>
+        <span class="file ghost fx-left" data-s="2" data-d=".95">test-cases.md</span>
+      </div>
+    </div>
+  </div>
+  <div class="callout" data-s="3"><span class="ico">📁</span><span>เราจะพิมพ์ต่อใน Cowork <b>งานเดิม</b>ทีละช่วง เพื่อให้มันจำสิ่งที่ตัดสินใจไว้</span></div>
+</section>
+
+<!-- S41 -->
+<section class="scene" data-bg="tl" data-role="ba">
+  <div class="eyebrow a">Role 1 / 5 · BA</div>
+  <h2 class="title a">เริ่มแบบ BA: ถามให้โจทย์ชัดก่อน</h2>
+  <p class="lead a">ลองเขียนคำสั่งของตัวเองก่อน แล้วค่อยดูตัวอย่าง</p>
+  <div class="prole grow">
+    <div class="win a"><div class="wbody type" data-s="1">อ่าน brief.md แล้วช่วยทำตัวเป็น BA
 อย่าเพิ่งสร้างแอป
 บอกว่าคุณเข้าใจโจทย์ยังไง
-และมีคำถามสำคัญอะไรที่ต้องถามฉันก่อน</code></pre>
-  <div class="spacer"></div><div class="callout c-purple"><span class="ico">🔎</span><div>ดูว่า Cowork อ่านไฟล์จริงไหม แล้วคำถามช่วยให้เราตัดสินใจได้หรือเปล่า</div></div>
+และมีคำถามสำคัญอะไรที่ต้องถามฉันก่อน</div></div>
+    <div class="side"><div class="role a fx-pop"><div class="rb">BA</div><span class="rn">Business Analyst</span></div><p class="s a">ผลที่รอดู: Cowork อ่านไฟล์ แล้วถามกลับ</p></div>
+  </div>
+  <div class="callout blue" data-s="2"><span class="ico">🔎</span><span>ดูว่า Cowork อ่านไฟล์จริงไหม แล้วคำถามช่วยให้เราตัดสินใจได้หรือเปล่า</span></div>
 </section>
 
-<section class="slide">
-<h2>BA ต่อ: ตอบคำถาม แล้วให้เขียนไฟล์</h2>
-  <pre><code>จากคำถามเมื่อกี้ เราตกลงกันว่า:
-[ใส่คำตอบของคุณ]
+<!-- S42 -->
+<section class="scene" data-bg="tl" data-role="ba">
+  <div class="eyebrow a">Role 1 / 5 · BA</div>
+  <h2 class="title a">BA ต่อ: ตอบคำถาม แล้วให้เขียนไฟล์</h2>
+  <div class="prole grow">
+    <div class="win a"><div class="wbody type" data-s="1">จากคำถามเมื่อกี้ เราตกลงกันว่า:
+<span class="fill">[ใส่คำตอบของคุณ]</span>
 ช่วยสรุปเป็น requirements.md ในโฟลเดอร์นี้
-แยกสิ่งที่ตกลงแล้วกับสิ่งที่ยังสมมติไว้</code></pre>
-  <div class="spacer"></div><div class="callout c-green"><span class="ico">📕</span><div>ใครมี Skill review requirement ลองเรียกใช้ตรงนี้ แล้วเทียบกับผลแบบไม่ใช้ Skill</div></div>
+แยกสิ่งที่ตกลงแล้วกับสิ่งที่ยังสมมติไว้</div></div>
+    <div class="side"><div class="role a fx-pop"><div class="rb">BA</div><span class="rn">Business Analyst</span></div>
+      <div class="out"><div class="klbl" data-s="2">ไฟล์ใหม่ในโฟลเดอร์</div><span class="file new fx-pop" data-s="2" data-d=".2">requirements.md<span class="nb">NEW</span></span></div></div>
+  </div>
+  <div class="callout orange" data-s="3"><span class="ico">📕</span><span>ใครมี Skill review requirement ลองเรียกใช้ตรงนี้ แล้วเทียบกับผลแบบไม่ใช้ Skill</span></div>
 </section>
 
-<section class="slide">
-<h2>ตกลงกติกากลาง เพื่อไปต่อพร้อมกัน</h2>
-  <div class="topic-grid mt"><div><b>ผู้ใช้</b><small>คนเดียว ยังไม่ต้อง login</small></div><div><b>Task</b><small>ชื่อ รายละเอียด และวันที่สร้าง</small></div><div><b>Priority</b><small>P1 / P2 / P3</small></div><div><b>Status</b><small>To do / Doing / Done</small></div><div><b>ข้อมูล</b><small>เก็บใน browser เปิดใหม่แล้วยังอยู่</small></div><div><b>งานที่ต้องทำได้</b><small>เพิ่ม แก้ เปลี่ยนสถานะ และกรองรายการ</small></div></div>
-  <div class="spacer"></div><div class="callout c-orange"><span class="ico">📌</span><div>ไอเดียอื่นไม่ผิด แต่เพื่อไปต่อพร้อมกัน ให้ Cowork อัปเดต <code>requirements.md</code> ตามกติกากลางนี้</div></div>
+<!-- S43 -->
+<section class="scene" data-bg="br" data-role="ba">
+  <div class="eyebrow a">Role 1 / 5 · BA</div>
+  <h2 class="title a">ตกลงกติกากลาง เพื่อไปต่อพร้อมกัน</h2>
+  <div class="body nlist">
+    <div class="kv" data-s="1"><b>ผู้ใช้</b><span>คนเดียว ยังไม่ต้อง login</span></div>
+    <div class="kv" data-s="1"><b>Task</b><span>ชื่อ รายละเอียด และวันที่สร้าง</span></div>
+    <div class="kv" data-s="1"><b>Priority</b><span><span class="tag red">P1</span> <span class="tag orange">P2</span> <span class="tag">P3</span></span></div>
+    <div class="kv" data-s="1"><b>Status</b><span><span class="tag">To do</span> <span class="tag blue">Doing</span> <span class="tag green">Done</span></span></div>
+    <div class="kv" data-s="1"><b>ข้อมูล</b><span>เก็บใน browser เปิดใหม่แล้วยังอยู่</span></div>
+    <div class="kv" data-s="1" style="border:0"><b>งานที่ต้องทำได้</b><span>เพิ่ม แก้ เปลี่ยนสถานะ และกรองรายการ</span></div>
+  </div>
+  <div class="callout" data-s="2" style="margin-top:20px"><span class="ico">📌</span><span>ไอเดียอื่นไม่ผิด แต่เพื่อไปต่อพร้อมกัน ให้ Cowork อัปเดต <span class="mono">requirements.md</span> ตามกติกากลางนี้</span></div>
 </section>
 
-<section class="slide">
-<h2>ต่อแบบ SA: ทำให้ของที่คิด สร้างได้จริง</h2>
-  <pre><code>อ่าน requirements.md ที่เพิ่งเขียน
+<!-- S44 -->
+<section class="scene" data-bg="tl" data-role="sa">
+  <div class="eyebrow a">Role 2 / 5 · SA</div>
+  <h2 class="title a">ต่อแบบ SA: ทำให้ของที่คิด สร้างได้จริง</h2>
+  <div class="prole grow">
+    <div class="win a"><div class="wbody type" data-s="1">อ่าน requirements.md ที่เพิ่งเขียน
 ช่วยวางแผนทำแอปแบบง่ายที่สุด
 เปิดได้ด้วย index.html ไฟล์เดียว
 ไม่ใช้ package หรือ server
 บอกด้วยว่าข้อมูลจะเก็บยังไง
-เขียนแผนไว้ใน plan.md ยังไม่ต้องสร้างแอป</code></pre>
-  <div class="spacer"></div><div class="callout c-blue"><span class="ico">🧩</span><div>SA ช่วยเลือกขอบเขตที่พอดี ไม่ต้องพาทั้งห้องไป setup framework</div></div>
+เขียนแผนไว้ใน plan.md ยังไม่ต้องสร้างแอป</div></div>
+    <div class="side"><div class="role a fx-pop"><div class="rb">SA</div><span class="rn">System Analyst</span></div>
+      <div class="out"><div class="klbl" data-s="2">ไฟล์ใหม่ในโฟลเดอร์</div><span class="file new fx-pop" data-s="2" data-d=".2">plan.md<span class="nb">NEW</span></span></div></div>
+  </div>
+  <div class="callout blue" data-s="3"><span class="ico">🧩</span><span>SA ช่วยเลือกขอบเขตที่พอดี ไม่ต้องพาทั้งห้องไป setup framework</span></div>
 </section>
 
-<section class="slide">
-<h2>หยุดดูแผนก่อนกดให้สร้าง</h2>
-  <div class="numbered mt"><span class="n">01</span><div>แผนตรงกับ <code>requirements.md</code> ไหม?</div><span class="n">02</span><div>มีอะไรที่ Cowork แอบเพิ่มเอง เช่น login หรือ database?</div><span class="n">03</span><div>เปิดด้วย browser ได้เลยไหม?</div><span class="n">04</span><div>เวลาข้อมูลเปลี่ยน จะยังอยู่หลัง refresh ไหม?</div></div>
-  <div class="spacer"></div><div class="callout c-orange"><span class="ico">👀</span><div>ถ้าแผนหลุด ให้สั่งแก้ <code>plan.md</code> ตอนนี้ จะง่ายกว่าไปแก้แอปทีหลัง</div></div>
+<!-- S45 -->
+<section class="scene" data-bg="br" data-role="sa">
+  <div class="eyebrow a">Role 2 / 5 · SA</div>
+  <h2 class="title a">หยุดดูแผนก่อนกดให้สร้าง</h2>
+  <div class="body nlist">
+    <div class="tick q" data-s="1"><span class="chk"></span><span class="t">แผนตรงกับ <span class="mono blue">requirements.md</span> ไหม?</span></div>
+    <div class="tick q" data-s="2"><span class="chk"></span><span class="t">มีอะไรที่ Cowork <b>แอบเพิ่มเอง</b> เช่น login หรือ database?</span></div>
+    <div class="tick q" data-s="3"><span class="chk"></span><span class="t">เปิดด้วย browser ได้เลยไหม?</span></div>
+    <div class="tick q" data-s="4" style="border:0"><span class="chk"></span><span class="t">เวลาข้อมูลเปลี่ยน จะยังอยู่หลัง refresh ไหม?</span></div>
+  </div>
+  <div class="callout orange" data-s="5"><span class="ico">👀</span><span>ถ้าแผนหลุด ให้สั่งแก้ <span class="mono">plan.md</span> ตอนนี้ จะง่ายกว่าไปแก้แอปทีหลัง</span></div>
 </section>
 
-<section class="slide">
-<h2>ต่อแบบ UX: ให้คนกดแล้วเข้าใจ</h2>
-  <pre><code>ใช้ requirements.md กับ plan.md
+<!-- S46 -->
+<section class="scene" data-bg="tl" data-role="ux">
+  <div class="eyebrow a">Role 3 / 5 · UX</div>
+  <h2 class="title a">ต่อแบบ UX: ให้คนกดแล้วเข้าใจ</h2>
+  <div class="prole grow">
+    <div class="win a"><div class="wbody type" data-s="1">ใช้ requirements.md กับ plan.md
 ช่วยออกแบบหน้าจอ Task App หนึ่งหน้า
 อธิบายตำแหน่งปุ่มเพิ่ม Task วิธีแก้ไข
 การเปลี่ยน priority/status และการกรอง
-เขียนไว้ใน design.md ก่อน ยังไม่ต้องเขียนแอป</code></pre>
-  <div class="spacer"></div><div class="callout c-purple"><span class="ico">🎨</span><div>ลองหา Skill ด้าน design ใน Cowork ถ้ามี แล้วดูว่ามันช่วยอะไรเพิ่ม</div></div>
-</section>
-
-<section class="slide">
-<h2>UX review: ลองเป็นคนใช้จริง</h2>
-  <div class="cols mt"><div><h3>ลองถามตัวเอง</h3><ul><li>เปิดมาแล้วรู้ไหมว่าต้องกดตรงไหน</li><li>เพิ่ม Task แล้วเห็นผลทันทีไหม</li><li>Done กับลบต่างกันชัดไหม</li></ul></div><div><h3>ถ้าติดตรงไหน</h3><p>บอก Cowork ให้แก้ <code>design.md</code> และอธิบายเหตุผลสั้น ๆ</p></div></div>
-  <div class="spacer"></div><div class="callout c-blue"><span class="ico">💬</span><div>ใครมีไอเดียหน้าจอไม่เหมือนตัวอย่าง เอาแบบของตัวเองได้</div></div>
-</section>
-
-<section class="slide">
-<h2>ตัวอย่างภาพในหัว ก่อนลงมือสร้าง</h2>
-  <div style="border:1px solid var(--line);border-radius:5px;padding:1em 1.2em;background:#fff;max-width:85%" class="mt">
-    <div class="row"><div><b>Team Tasks</b><p class="sub">4 tasks · 1 completed</p></div><span class="pill">+ New task</span></div>
-    <div class="line"></div><div class="row"><div>◻ Review onboarding flow</div><span class="pill" style="background:var(--orange-bg);color:var(--orange)">P1</span><span class="pill">Doing</span></div>
-    <div class="line"></div><div class="row"><div>◻ Add task filters</div><span class="pill" style="background:var(--blue-bg);color:var(--blue)">P2</span><span class="pill">To do</span></div>
-    <div class="line"></div><div class="row"><div>✓ Draft acceptance criteria</div><span class="pill" style="background:var(--green-bg);color:var(--green)">Done</span></div>
+เขียนไว้ใน design.md ก่อน ยังไม่ต้องเขียนแอป</div></div>
+    <div class="side"><div class="role a fx-pop"><div class="rb">UX</div><span class="rn">UX/UI Designer</span></div>
+      <div class="out"><div class="klbl" data-s="2">ไฟล์ใหม่ในโฟลเดอร์</div><span class="file new fx-pop" data-s="2" data-d=".2">design.md<span class="nb">NEW</span></span></div></div>
   </div>
-  <div class="spacer"></div><p class="sub">หน้าตาไม่ต้องเหมือนกันเป๊ะ ขอให้คนใช้รู้ว่ากดแล้วเกิดอะไร</p>
+  <div class="callout" data-s="3"><span class="ico">🎨</span><span>ลองหา Skill ด้าน design ใน Cowork ถ้ามี แล้วดูว่ามันช่วยอะไรเพิ่ม</span></div>
 </section>
 
-<section class="slide">
-<h2>ต่อแบบ Dev: ให้ Cowork สร้างแอป</h2>
-  <pre><code>อ่าน requirements.md, plan.md และ design.md
+<!-- S47 -->
+<section class="scene" data-bg="br" data-role="ux">
+  <div class="eyebrow a">Role 3 / 5 · UX</div>
+  <h2 class="title a">UX review: ลองเป็นคนใช้จริง</h2>
+  <div class="g2 grow" style="gap:48px;align-content:center;grid-template-columns:1.2fr 1fr">
+    <div class="card fx-left" data-s="1"><span class="k">ลองถามตัวเอง</span>
+      <div class="nlist">
+        <div class="tick q" data-s="1" data-d=".1"><span class="chk"></span><span class="t">เปิดมาแล้วรู้ไหมว่าต้องกดตรงไหน</span></div>
+        <div class="tick q" data-s="1" data-d=".4"><span class="chk"></span><span class="t">เพิ่ม Task แล้วเห็นผลทันทีไหม</span></div>
+        <div class="tick q" data-s="1" data-d=".7" style="border:0"><span class="chk"></span><span class="t">Done กับลบต่างกันชัดไหม</span></div>
+      </div></div>
+    <div class="card blue fx-right" data-s="2"><span class="k" style="color:var(--blue)">ถ้าติดตรงไหน</span><p class="t" style="font-size:36px">บอก Cowork ให้แก้ <span class="mono blue">design.md</span> และอธิบายเหตุผลสั้น ๆ</p></div>
+  </div>
+  <div class="callout" data-s="3"><span class="ico">💬</span><span>ใครมีไอเดียหน้าจอไม่เหมือนตัวอย่าง เอาแบบของตัวเองได้</span></div>
+</section>
+
+<!-- S48 -->
+<section class="scene" data-bg="r" data-role="ux" data-t="zoom">
+  <div class="eyebrow a">Role 3 / 5 · UX</div>
+  <h2 class="title a">ตัวอย่างภาพในหัว ก่อนลงมือสร้าง</h2>
+  <div class="grow" style="display:grid;grid-template-columns:1020px 1fr;gap:70px;align-items:center">
+    <div class="app a fx-zoom">
+      <div class="top"><div><h4>Team Tasks</h4><span class="cnt"><span class="swap st" data-s="2"><span>4 tasks · 1 completed</span><span>4 tasks · 2 completed</span></span></span></div><span class="btn">+ New task</span></div>
+      <div class="fx-left" data-s="1"><div class="trow flip st" data-s="2"><span class="cb"></span><span class="nm">Review onboarding flow</span><span class="tag red">P1</span><span class="swap st"><span class="tag blue">Doing</span><span class="tag green">Done</span></span></div></div>
+      <div class="trow fx-left" data-s="1"><span class="cb"></span><span class="nm">Add task filters</span><span class="tag orange">P2</span><span class="tag">To do</span></div>
+      <div class="trow fx-left" data-s="1"><span class="cb"></span><span class="nm">Write test cases</span><span class="tag orange">P2</span><span class="tag">To do</span></div>
+      <div class="trow fx-left" data-s="1"><span class="cb done"></span><span class="nm done">Draft acceptance criteria</span><span class="tag">P3</span><span class="tag green">Done</span></div>
+    </div>
+    <p class="t" data-s="3" style="font-size:38px;line-height:1.5">หน้าตา<b>ไม่ต้องเหมือนกันเป๊ะ</b> ขอให้คนใช้รู้ว่ากดแล้วเกิดอะไร</p>
+  </div>
+</section>
+
+<!-- S49 -->
+<section class="scene" data-bg="tl" data-role="dev">
+  <div class="eyebrow a">Role 4 / 5 · DEV</div>
+  <h2 class="title a">ต่อแบบ Dev: ให้ Cowork สร้างแอป</h2>
+  <div class="prole grow">
+    <div class="win a"><div class="wbody type" data-s="1">อ่าน requirements.md, plan.md และ design.md
 ช่วยสร้าง Task App เป็น index.html ไฟล์เดียว
 ใช้ HTML/CSS/JavaScript ธรรมดา
 เก็บข้อมูลใน browser และเปิดใช้ได้ทันที
-ทำเสร็จบอกฉันว่าเปิดไฟล์ไหนและลองอะไร</code></pre>
-  <div class="spacer"></div><div class="callout c-green"><span class="ico">🛠️</span><div>ดูว่า Cowork เขียนไฟล์จริงในโฟลเดอร์ของเรา ไม่ใช่ส่งโค้ดมาให้ copy เอง</div></div>
+ทำเสร็จบอกฉันว่าเปิดไฟล์ไหนและลองอะไร</div></div>
+    <div class="side"><div class="role a fx-pop"><div class="rb">DEV</div><span class="rn">Developer</span></div>
+      <div class="out"><div class="klbl" data-s="2">ไฟล์ใหม่ในโฟลเดอร์</div><span class="file new fx-pop" data-s="2" data-d=".2">index.html<span class="nb">NEW</span></span></div></div>
+  </div>
+  <div class="callout blue" data-s="3"><span class="ico">🛠️</span><span>ดูว่า Cowork <b>เขียนไฟล์จริงในโฟลเดอร์ของเรา</b> ไม่ใช่ส่งโค้ดมาให้ copy เอง</span></div>
 </section>
 
-<section class="slide" data-source="https://support.claude.com/en/articles/15520349-use-claude-cowork-on-web-desktop-and-mobile">
-<h2>เปิดแอปของตัวเอง แล้วลองกด</h2>
-  <div class="numbered mt"><span class="n">01</span><div>เปิด <code>index.html</code> ใน browser</div><span class="n">02</span><div>เพิ่ม Task แล้วเปลี่ยน priority/status</div><span class="n">03</span><div>กด refresh ดูว่าข้อมูลยังอยู่ไหม</div><span class="n">04</span><div>ถ้ามี Browser tool ให้ Cowork ช่วยลองกด แล้วเราลองเองซ้ำ</div></div>
-  <div class="spacer"></div><div class="callout c-orange"><span class="ico">👀</span><div>ไฟล์เปิดได้เป็นแค่จุดเริ่ม เราต้องลองใช้เหมือนผู้ใช้จริง</div></div>
+<!-- S50 -->
+<section class="scene" data-bg="br" data-role="dev">
+  <div class="eyebrow a">Role 4 / 5 · DEV</div>
+  <h2 class="title a">เปิดแอปของตัวเอง แล้วลองกด</h2>
+  <div class="body nlist">
+    <div class="nrow" data-s="1"><span class="n">01</span><span class="t">เปิด <span class="mono blue">index.html</span> ใน browser</span></div>
+    <div class="nrow" data-s="2"><span class="n">02</span><span class="t">เพิ่ม Task แล้วเปลี่ยน priority/status</span></div>
+    <div class="nrow" data-s="3"><span class="n">03</span><span class="t">กด <b>refresh</b> ดูว่าข้อมูลยังอยู่ไหม</span></div>
+    <div class="nrow" data-s="4" style="border:0"><span class="n">04</span><span class="t">ถ้ามี Browser tool ให้ Cowork ช่วยลองกด แล้วเราลองเองซ้ำ</span></div>
+  </div>
+  <div class="callout" data-s="5"><span class="ico">👀</span><span>ไฟล์เปิดได้เป็นแค่จุดเริ่ม เราต้องลองใช้เหมือนผู้ใช้จริง</span></div>
 </section>
 
-<section class="slide">
-<h2>ต่อแบบ Tester: คิดเคสที่เรามักลืม</h2>
-  <pre><code>อ่าน requirements.md แล้วออก test cases
+<!-- S51 -->
+<section class="scene" data-bg="tl" data-role="tester">
+  <div class="eyebrow a">Role 5 / 5 · TESTER</div>
+  <h2 class="title a">ต่อแบบ Tester: คิดเคสที่เรามักลืม</h2>
+  <div class="prole grow">
+    <div class="win a"><div class="wbody type" data-s="1">อ่าน requirements.md แล้วออก test cases
 สำหรับแอปที่ Cowork เพิ่งสร้าง
 รวมเคสปกติและเคสแปลก ๆ
 เขียนใน test-cases.md
-บอกด้วยว่าเคสไหนควรลองเองใน browser</code></pre>
-  <div class="spacer"></div><div class="callout c-purple"><span class="ico">🧪</span><div>ตรงนี้ก็เป็นจังหวะดีที่จะลอง Skill ด้าน testing ถ้ามี</div></div>
+บอกด้วยว่าเคสไหนควรลองเองใน browser</div></div>
+    <div class="side"><div class="role a fx-pop"><div class="rb" style="font-size:34px">TEST</div><span class="rn">Software Tester</span></div>
+      <div class="out"><div class="klbl" data-s="2">ไฟล์ใหม่ในโฟลเดอร์</div><span class="file new fx-pop" data-s="2" data-d=".2">test-cases.md<span class="nb">NEW</span></span></div></div>
+  </div>
+  <div class="callout" data-s="3"><span class="ico">🧪</span><span>ตรงนี้ก็เป็นจังหวะดีที่จะลอง Skill ด้าน testing ถ้ามี</span></div>
 </section>
 
-<section class="slide">
-<h2>Tester ลงมือ: สี่อย่างที่ต้องลอง</h2>
-  <div class="numbered mt"><span class="n">01</span><div>เพิ่ม Task ที่ชื่อว่าง ระบบเตือนหรือเปล่า?</div><span class="n">02</span><div>แก้ชื่อ Task แล้วข้อมูลใหม่อยู่ไหม?</div><span class="n">03</span><div>เปลี่ยน status แล้ว refresh ยังอยู่ไหม?</div><span class="n">04</span><div>กรอง P1 แล้วเห็นเฉพาะ P1 ไหม?</div></div>
-  <div class="spacer"></div><div class="callout c-blue"><span class="ico">🔍</span><div>เปิดแอปจริงแล้วติ๊กผลใน <code>test-cases.md</code> อย่าตัดสินจากคำว่า “น่าจะผ่าน”</div></div>
+<!-- S52 -->
+<section class="scene" data-bg="br" data-role="tester">
+  <div class="eyebrow a">Role 5 / 5 · TESTER</div>
+  <h2 class="title a">Tester ลงมือ: สี่อย่างที่ต้องลอง</h2>
+  <div class="body nlist">
+    <div class="tick" data-s="1"><span class="chk"></span><span class="t">เพิ่ม Task ที่<b>ชื่อว่าง</b> ระบบเตือนหรือเปล่า?</span></div>
+    <div class="tick" data-s="2"><span class="chk"></span><span class="t">แก้ชื่อ Task แล้วข้อมูลใหม่อยู่ไหม?</span></div>
+    <div class="tick" data-s="3"><span class="chk"></span><span class="t">เปลี่ยน status แล้ว <b>refresh</b> ยังอยู่ไหม?</span></div>
+    <div class="tick" data-s="4" style="border:0"><span class="chk"></span><span class="t">กรอง <span class="tag red">P1</span> แล้วเห็นเฉพาะ P1 ไหม?</span></div>
+  </div>
+  <div class="callout blue" data-s="5"><span class="ico">🔍</span><span>เปิดแอปจริงแล้วติ๊กผลใน <span class="mono">test-cases.md</span> อย่าตัดสินจากคำว่า “น่าจะผ่าน”</span></div>
 </section>
 
-<section class="slide">
-<h2>ถ้าเจอบั๊ก ส่งกลับแบบคนทำงานจริง</h2>
-  <pre><code>ฉันลองเปลี่ยน status แล้ว refresh
+<!-- S53 -->
+<section class="scene" data-bg="tl" data-role="tester">
+  <div class="eyebrow a">Role 5 / 5 · TESTER</div>
+  <h2 class="title a">ถ้าเจอบั๊ก ส่งกลับแบบคนทำงานจริง</h2>
+  <div class="prole grow">
+    <div class="win a"><div class="wbody type" data-s="1">ฉันลองเปลี่ยน status แล้ว refresh
 ค่ากลับไปเหมือนเดิม
 ช่วยหาสาเหตุใน index.html แล้วแก้
 ก่อนบอกว่าเสร็จ ให้ลองทำซ้ำเคสเดิม
-และบอกฉันว่าตรวจยังไง</code></pre>
-  <div class="spacer"></div><div class="callout c-orange"><span class="ico">🐛</span><div>ถ้าของคุณไม่เจอบั๊ก ให้เลือก test case ที่ยังไม่มั่นใจ แล้วขอให้ Cowork ช่วยตรวจ</div></div>
+และบอกฉันว่าตรวจยังไง</div></div>
+    <div class="side" style="align-items:center"><div class="a fx-pop"><div class="bug">🐛</div></div><p class="s a" style="text-align:center">อาการ · ขั้นตอนที่ทำ · สิ่งที่คาดหวัง</p></div>
+  </div>
+  <div class="callout red" data-s="2"><span class="ico">🐛</span><span>ถ้าของคุณไม่เจอบั๊ก ให้เลือก test case ที่ยังไม่มั่นใจ แล้วขอให้ Cowork ช่วยตรวจ</span></div>
 </section>
 
-<section class="slide">
-<h2>คำว่า “แก้แล้ว” ขอหลักฐานด้วย</h2>
-  <div class="cols mt"><div><h3>Cowork ควรบอก</h3><ul><li>บั๊กเกิดยังไง</li><li>แก้ส่วนไหนของไฟล์</li><li>ลองซ้ำแล้วเป็นยังไง</li></ul></div><div><h3>เราควรทำ</h3><ul><li>เปิดแอปใหม่</li><li>กดตามขั้นตอนเดิม</li><li>เช็กว่าเคสอื่นยังใช้ได้</li></ul></div></div>
-  <div class="spacer"></div><div class="callout c-green"><span class="ico">✅</span><div>ให้ AI ช่วยทำได้เต็มที่ แต่คนรับงานต้องกดดูเอง</div></div>
+<!-- S54 -->
+<section class="scene" data-bg="br" data-role="tester">
+  <div class="eyebrow a">Role 5 / 5 · TESTER</div>
+  <h2 class="title a">คำว่า “แก้แล้ว” ขอหลักฐานด้วย</h2>
+  <div class="g2 grow" style="gap:48px;align-content:center">
+    <div class="card blue fx-left" data-s="1"><span class="k" style="color:var(--blue)">Cowork ควรบอก</span><ul class="resp"><li>บั๊กเกิดยังไง</li><li>แก้ส่วนไหนของไฟล์</li><li>ลองซ้ำแล้วเป็นยังไง</li></ul></div>
+    <div class="card fx-right" data-s="2"><span class="k">เราควรทำ</span><ul class="resp h"><li>เปิดแอปใหม่</li><li>กดตามขั้นตอนเดิม</li><li>เช็กว่าเคสอื่นยังใช้ได้</li></ul></div>
+  </div>
+  <div class="callout green" data-s="3"><span class="ico">✅</span><span>ให้ AI ช่วยทำได้เต็มที่ แต่<b>คนรับงานต้องกดดูเอง</b></span></div>
 </section>
 
-<section class="slide">
-<h2>Skill ที่ควรเก็บไว้ใช้รอบหน้า</h2>
-  <div class="cols mt"><div><h3>BA Skill</h3><p>อ่านบรีฟที่ยังไม่ชัด แล้วคืนคำถามกับ assumption</p></div><div><h3>Tester Skill</h3><p>อ่าน requirement แล้วออกเคสที่ทดสอบได้</p></div></div>
-  <div class="quote mt2">“จากวิธีที่เราทำเมื่อกี้ ช่วยร่าง Skill สั้น ๆ ที่จะใช้ซ้ำกับงานหน้า”</div>
-  <div class="spacer"></div><div class="callout c-purple"><span class="ico">📕</span><div>วันนี้เห็นประโยชน์จากงานจริงก่อน ค่อยตัดสินใจว่าจะสร้าง Skill เก็บไว้ไหม</div></div>
+<!-- S55 -->
+<section class="scene" data-bg="tr" data-role="done">
+  <h2 class="title a">Skill ที่ควรเก็บไว้ใช้รอบหน้า</h2>
+  <div class="g2" style="gap:40px;margin-top:20px">
+    <div class="card fx-left" data-s="1"><span class="k">BA Skill</span><p class="t">อ่านบรีฟที่ยังไม่ชัด แล้วคืนคำถามกับ assumption</p></div>
+    <div class="card fx-right" data-s="2"><span class="k">Tester Skill</span><p class="t">อ่าน requirement แล้วออกเคสที่ทดสอบได้</p></div>
+  </div>
+  <div class="win mt2" data-s="3"><div class="wbody type" data-s="3" data-d=".3">“จากวิธีที่เราทำเมื่อกี้ ช่วยร่าง Skill สั้น ๆ ที่จะใช้ซ้ำกับงานหน้า”</div></div>
+  <div class="callout orange" data-s="4" style="margin-top:28px"><span class="ico">📕</span><span>วันนี้เห็นประโยชน์จากงานจริงก่อน ค่อยตัดสินใจว่าจะสร้าง Skill เก็บไว้ไหม</span></div>
 </section>
 
-<section class="slide">
-<h2>เมื่อกี้ Cowork ใช้ Tool ตรงไหนบ้าง?</h2>
-  <div class="topic-grid mt"><div><b>อ่านไฟล์</b><small>brief, requirements, plan, design</small></div><div><b>เขียนไฟล์</b><small>index.html และ test-cases.md</small></div><div><b>Browser</b><small>เปิดหน้าแอปและลองกด</small></div><div><b>Skill</b><small>สูตรที่ช่วย BA หรือ Tester</small></div></div>
-  <div class="spacer"></div><div class="callout c-blue"><span class="ico">🔌</span><div>ถ้าบรีฟอยู่ใน Jira แทนไฟล์ เราค่อยเพิ่ม Connector หรือ MCP ให้ไปอ่านจากที่นั่น</div></div>
+<!-- S56 -->
+<section class="scene" data-bg="bl" data-role="done">
+  <h2 class="title a">เมื่อกี้ Cowork ใช้ Tool ตรงไหนบ้าง?</h2>
+  <div class="body">
+    <div class="tile4">
+      <div class="tool fx-pop" data-s="1"><code>read</code><b>อ่านไฟล์</b><span class="t">brief, requirements, plan, design</span></div>
+      <div class="tool fx-pop" data-s="1"><code>write</code><b>เขียนไฟล์</b><span class="t">index.html และ test-cases.md</span></div>
+      <div class="tool fx-pop" data-s="1"><code>browser</code><b>Browser</b><span class="t">เปิดหน้าแอปและลองกด</span></div>
+      <div class="tool fx-pop" data-s="1"><code>skill</code><b>Skill</b><span class="t">สูตรที่ช่วย BA หรือ Tester</span></div>
+    </div>
+  </div>
+  <div class="callout blue" data-s="2"><span class="ico">🔌</span><span>ถ้าบรีฟอยู่ใน Jira แทนไฟล์ เราค่อยเพิ่ม Connector หรือ MCP ให้ไปอ่านจากที่นั่น</span></div>
 </section>
 
-<section class="slide">
-<h2>จบด้วยของที่เปิดใช้ได้จริง</h2>
-  <div class="numbered mt"><span class="n">01</span><div>มี <code>index.html</code> ในโฟลเดอร์ของตัวเอง</div><span class="n">02</span><div>เปิดใน browser แล้วเพิ่ม Task ได้</div><span class="n">03</span><div>เปลี่ยน status หรือ priority แล้วข้อมูลยังอยู่หลัง refresh</div><span class="n">04</span><div>มี <code>test-cases.md</code> ที่บอกว่าอะไรผ่าน อะไรยังค้าง</div></div>
-  <div class="spacer"></div><div class="callout c-green"><span class="ico">🎉</span><div>ไม่ต้องเหมือนแอปของผู้สอน ขอให้คุณเล่าได้ว่าตัดสินใจอะไร และตรวจอะไรมาแล้ว</div></div>
+<!-- S57 -->
+<section class="scene" data-bg="br" data-role="done">
+  <h2 class="title a">จบด้วยของที่เปิดใช้ได้จริง</h2>
+  <div class="body nlist">
+    <div class="tick" data-s="1"><span class="chk"></span><span class="t">มี <span class="mono blue">index.html</span> ในโฟลเดอร์ของตัวเอง</span></div>
+    <div class="tick" data-s="2"><span class="chk"></span><span class="t">เปิดใน browser แล้วเพิ่ม Task ได้</span></div>
+    <div class="tick" data-s="3"><span class="chk"></span><span class="t">เปลี่ยน status หรือ priority แล้วข้อมูลยังอยู่หลัง refresh</span></div>
+    <div class="tick" data-s="4" style="border:0"><span class="chk"></span><span class="t">มี <span class="mono blue">test-cases.md</span> ที่บอกว่าอะไรผ่าน อะไรยังค้าง</span></div>
+  </div>
+  <div class="callout green cburst" data-s="5"><span class="burst"><i style="--x:-60px;--y:-70px"></i><i style="--x:10px;--y:-90px"></i><i style="--x:70px;--y:-60px"></i><i style="--x:95px;--y:5px"></i><i style="--x:60px;--y:70px"></i><i style="--x:-5px;--y:90px"></i><i style="--x:-70px;--y:55px"></i><i style="--x:-95px;--y:-5px"></i></span><span class="ico">🎉</span><span>ไม่ต้องเหมือนแอปของผู้สอน ขอให้คุณเล่าได้ว่า<b>ตัดสินใจอะไร และตรวจอะไรมาแล้ว</b></span></div>
 </section>
 
-<section class="slide">
-<h1>The AI<br>Working Loop</h1><p class="lead mt">เมื่อกี้เราเพิ่งทำครบหนึ่งรอบ จากบรีฟจนได้แอป</p>
+<style>
+.track{display:flex;align-items:flex-start}
+.stn{width:280px;flex:none;display:flex;flex-direction:column;align-items:center;text-align:center;gap:22px}
+.stn .c{width:110px;height:110px;border-radius:50%;background:var(--blue);color:#fff;display:grid;place-items:center;font-family:var(--mono);font-weight:600;font-size:28px;box-shadow:0 0 0 12px var(--blue-bg)}
+.stn .t{font-size:28px;line-height:1.45}
+.seg{flex:1;height:4px;background:var(--blue);margin-top:53px}
+.team{display:grid;grid-template-columns:repeat(4,1fr);gap:24px}
+.team .card{padding:28px 30px}
+.team .card b{font-size:30px;display:block;margin-bottom:8px}
+.team .card .s{font-size:25px}
+.team .msg{background:var(--ink);border-color:var(--ink);color:#fff;display:flex;flex-direction:column;justify-content:center}
+.team .msg p{font-size:30px;line-height:1.35;color:rgba(255,255,255,.7)}
+.team .msg p b{color:#fff}
+.loop5{display:grid;grid-template-columns:repeat(5,1fr);gap:0}
+.l5{position:relative;padding:0 26px;border-left:3px solid var(--line)}
+.l5:first-child{border-left-color:var(--ink)}
+.l5 .n{font-family:var(--mono);font-size:22px;color:var(--muted)}
+.l5 b{display:block;font-family:var(--mono);font-size:50px;font-weight:600;letter-spacing:-.01em;margin:14px 0 18px;color:var(--ink)}
+.l5 .t{font-size:30px}
+.l5.last b{color:var(--blue)}
+.l5 .ar{position:absolute;right:-18px;top:62px;font-size:30px;color:var(--faint)}
+.close-big{font-size:112px;font-weight:600;line-height:1.1;letter-spacing:-.03em}
+.close-big .muted{font-weight:300}
+.stairs{display:grid;grid-template-columns:repeat(3,1fr);gap:40px;align-items:end;height:460px}
+.stair{display:flex;flex-direction:column;justify-content:flex-end}
+.stair .lbl{margin-bottom:18px}
+.stair .lbl b{display:block;font-size:34px}.stair .lbl span{font-size:28px;color:var(--muted)}
+.stair .blk{border-radius:20px 20px 0 0;background:var(--blue-bg);border:2px solid var(--blue-line);border-bottom:0}
+.stair:nth-child(2) .blk{background:#cfe3f8}
+.stair:nth-child(3) .blk{background:var(--blue);border-color:var(--blue)}
+.docs{position:relative;height:300px;display:flex;align-items:flex-end;justify-content:center}
+.pg{position:absolute;width:190px;height:240px;border-radius:12px;background:#fff;border:2px solid var(--line);box-shadow:0 8px 20px -14px rgba(0,0,0,.3)}
+.pg::before{content:"";position:absolute;left:24px;right:24px;top:30px;height:90px;background:repeating-linear-gradient(var(--line) 0 5px,transparent 5px 22px)}
+.meterbig{height:22px;border-radius:99px;background:var(--soft);overflow:hidden;margin-top:26px}
+.meterbig i{display:block;height:100%;width:var(--w);border-radius:99px;background:var(--blue);transform:scaleX(0);transform-origin:left;transition:transform 1.4s var(--ease-io) calc(var(--delay,0s) + .3s)}
+.on>.meterbig i,.on .meterbig i{transform:scaleX(1)}
+.fl{display:flex;flex-direction:column;gap:14px}
+.fl .file{align-self:flex-start;transition:all .5s var(--ease) var(--delay,0s)}
+.fl .file.st.on{border-color:var(--blue);background:var(--blue-bg2);color:var(--blue-d)}
+.fl.no .file.st.on{opacity:.4;text-decoration:line-through;border-style:dashed}
+.retry{display:flex;align-items:baseline;gap:18px;font-family:var(--mono)}
+.retry .big{font-size:120px;font-weight:600;color:var(--red);line-height:1}
+.retry span{font-size:30px;color:var(--muted)}
+.cash{font-size:40px;letter-spacing:4px;height:56px;overflow:hidden;white-space:nowrap}
+.cash span{display:inline-block;opacity:0;transform:translateY(20px);transition:all .4s var(--spring)}
+.cash.on span{opacity:1;transform:none}
+.form .fr{display:grid;grid-template-columns:300px 1fr;align-items:end;padding:22px 0}
+.form .fr b{font-family:var(--mono);font-size:32px;font-weight:500}
+.form .fr .ln2{height:3px;background:var(--ink);opacity:.8}
+</style>
+
+<!-- S58 -->
+<section class="scene divider" data-chapter="07 · The AI Working Loop" data-title="The AI Working Loop">
+  <div class="num a">CHAPTER 07</div>
+  <h1><span class="mask a"><span>The AI</span></span><span class="mask a"><span>Working Loop</span></span></h1>
+  <p class="lead a">เมื่อกี้เราเพิ่งทำครบหนึ่งรอบ จากบรีฟจนได้แอป</p>
+  <div class="bignum a fx-zoom">07</div>
 </section>
 
-<section class="slide">
-<h2>มองย้อนกลับไป เราทำอะไรบ้าง?</h2>
-  <div class="numbered mt"><span class="n">01</span><div><b>BA</b> ถามจนโจทย์พอจะตัดสินใจได้</div><span class="n">02</span><div><b>SA</b> วางแผนที่พอดีกับเวลาและเครื่องมือ</div><span class="n">03</span><div><b>UX</b> ทำให้คนใช้เข้าใจว่าจะกดอะไร</div><span class="n">04</span><div><b>Dev</b> ให้ Cowork ลงมือสร้างไฟล์ที่รันได้</div><span class="n">05</span><div><b>Tester</b> ลองใช้จริง เจอบั๊ก แล้วส่งกลับไปแก้</div></div>
+<!-- S59 -->
+<section class="scene" data-bg="low">
+  <h2 class="title a">มองย้อนกลับไป เราทำอะไรบ้าง?</h2>
+  <div class="body">
+    <div class="track">
+      <div class="stn" data-s="1"><div class="c fx-pop" data-s="1">BA</div><p class="t">ถามจนโจทย์<b>พอจะตัดสินใจได้</b></p></div>
+      <div class="seg fx-grow" data-s="2"></div>
+      <div class="stn" data-s="2" data-d=".3"><div class="c fx-pop" data-s="2" data-d=".3">SA</div><p class="t">วางแผนที่<b>พอดีกับเวลาและเครื่องมือ</b></p></div>
+      <div class="seg fx-grow" data-s="3"></div>
+      <div class="stn" data-s="3" data-d=".3"><div class="c fx-pop" data-s="3" data-d=".3">UX</div><p class="t">ทำให้คนใช้<b>เข้าใจว่าจะกดอะไร</b></p></div>
+      <div class="seg fx-grow" data-s="4"></div>
+      <div class="stn" data-s="4" data-d=".3"><div class="c fx-pop" data-s="4" data-d=".3">DEV</div><p class="t">ให้ Cowork ลงมือ<b>สร้างไฟล์ที่รันได้</b></p></div>
+      <div class="seg fx-grow" data-s="5"></div>
+      <div class="stn" data-s="5" data-d=".3"><div class="c fx-pop" data-s="5" data-d=".3" style="font-size:22px">TEST</div><p class="t">ลองใช้จริง เจอบั๊ก <b>แล้วส่งกลับไปแก้</b></p></div>
+    </div>
+  </div>
 </section>
 
-<section class="slide">
-<h2>เปิดแอปของคุณดูอีกที</h2>
-  <p class="lead">ลองเพิ่ม Task หนึ่งรายการ แล้วเล่าให้คนข้าง ๆ ฟังว่า AI ช่วยตรงไหน และตรงไหนคุณต้องตัดสินใจเอง</p>
-  <div class="spacer"></div><div class="huge">AI ช่วยทำงานได้<br><span class="blue">เราเป็นคนพางานไปถึงเส้นชัย</span></div>
+<!-- S60 -->
+<section class="scene" data-bg="tr">
+  <h2 class="title a">AI ช่วยได้ทุกบทบาทในทีม</h2>
+  <div class="body">
+    <div class="team">
+      <div class="card fx-pop" data-s="1"><b>BA</b><span class="s">Requirement Analyst</span></div>
+      <div class="card fx-pop" data-s="1"><b>SA</b><span class="s">Analysis / Architecture Assistant</span></div>
+      <div class="card fx-pop" data-s="1"><b>UX/UI</b><span class="s">Research / Ideation Assistant</span></div>
+      <div class="card fx-pop" data-s="1"><b>Developer</b><span class="s">Coding Agent</span></div>
+      <div class="card fx-pop" data-s="1"><b>Tester</b><span class="s">Test Assistant</span></div>
+      <div class="card fx-pop" data-s="1"><b>Data Engineer</b><span class="s">Data / SQL / Investigation Assistant</span></div>
+      <div class="card fx-pop" data-s="1"><b>Cloud Native Engineer</b><span class="s">Infrastructure / Troubleshooting Assistant</span></div>
+      <div class="card msg fx-zoom" data-s="2"><p>AI is not a Developer Tool.<br><b>AI is a Work Tool.</b></p></div>
+    </div>
+  </div>
 </section>
 
-<section class="slide divider">
-<h1>Why Did I Run Out<br>of AI Credits?</h1><p class="lead mt">ใช้ให้คุ้ม แบบไม่เผาเครดิตเล่น</p>
+<!-- S61 -->
+<section class="scene" data-bg="bl">
+  <div class="eyebrow a">กรอบเดียวที่พากลับไปใช้พรุ่งนี้</div>
+  <h2 class="title a">Define → Context → Equip → Delegate → Verify</h2>
+  <div class="body">
+    <div class="loop5">
+      <div class="l5" data-s="1"><span class="n">01</span><b>DEFINE</b><p class="t">งานคืออะไร?</p><span class="ar">→</span></div>
+      <div class="l5" data-s="2"><span class="n">02</span><b>CONTEXT</b><p class="t">AI ต้องรู้อะไร?</p><span class="ar">→</span></div>
+      <div class="l5" data-s="3"><span class="n">03</span><b>EQUIP</b><p class="t">AI ต้องมี Tools / Skills อะไร?</p><span class="ar">→</span></div>
+      <div class="l5" data-s="4"><span class="n">04</span><b>DELEGATE</b><p class="t">เรามอบหมายอะไรให้ AI?</p><span class="ar">→</span></div>
+      <div class="l5 last" data-s="5"><span class="n">05</span><b>VERIFY</b><p class="t">มนุษย์ต้องตรวจอะไร?</p></div>
+    </div>
+  </div>
 </section>
 
-<section class="slide">
-  <h2>อย่าเรียก CTO มาเปลี่ยนชื่อไฟล์</h2>
-  <div class="topic-grid mt"><div><b>งานง่าย</b><small>Fast / cheap model</small></div><div><b>งานปานกลาง</b><small>Capable model</small></div><div><b>งานยาก</b><small>Strong reasoning model</small></div><div><b>ทุกงาน</b><small>เลือกจากคุณภาพที่ต้องการ</small></div></div>
-  <div class="spacer"></div><div class="callout c-blue"><span class="ico">💰</span><div>งานง่ายใช้ตัวไว งานยากค่อยเรียกตัวคิดหนัก</div></div>
+<!-- S62 -->
+<section class="scene" data-bg="br">
+  <h2 class="title a">เปิดแอปของคุณดูอีกที</h2>
+  <p class="lead a" style="max-width:1300px">ลองเพิ่ม Task หนึ่งรายการ แล้วเล่าให้คนข้าง ๆ ฟังว่า AI ช่วยตรงไหน และตรงไหนคุณต้องตัดสินใจเอง</p>
+  <div class="body">
+    <div class="close-big"><span class="mask" data-s="1"><span class="muted">AI ช่วยทำงานได้</span></span><span class="mask" data-s="1" data-d=".25"><span>เราเป็นคน<span class="blue">พางานไปถึงเส้นชัย</span></span></span></div>
+  </div>
 </section>
 
-<section class="slide">
-  <h2>ยัดข้อมูลเยอะ ก็จ่ายเยอะ</h2>
-  <div class="cols mt2"><div><h3>อ่าน memo 2 หน้า</h3><p>เฉพาะส่วนที่เกี่ยวกับงานวันนี้</p></div><div><h3>อ่านทั้งบริษัททุกครั้ง</h3><p>อ่านเหนื่อยทั้ง AI ทั้งกระเป๋าเรา</p></div></div>
-  <div class="spacer"></div><div class="callout c-orange"><span class="ico">📚</span><div>ส่งเรื่องที่เกี่ยวพอ ทั้งชัดกว่าและประหยัดกว่า</div></div>
+<!-- S63 -->
+<section class="scene" data-bg="hero" data-t="zoom" data-title="Don't just prompt AI">
+  <div class="card blue a fx-down" style="align-self:flex-start;max-width:1100px"><span class="k" style="color:var(--blue)">คำถามสุดท้าย · ตอบใน chat</span><p class="t" style="font-size:38px">จากงานที่คุณทำอยู่ทุกวัน <b>1 งานที่คุณอยากให้ AI ช่วยตั้งแต่พรุ่งนี้</b> คืออะไร?</p></div>
+  <div class="body">
+    <div class="close-big" style="font-size:130px"><span class="mask" data-s="1"><span class="muted">Don't just prompt AI.</span></span><span class="mask" data-s="1" data-d=".3"><span>Learn how to <span class="blue">work with AI.</span></span></span></div>
+  </div>
 </section>
 
-<section class="slide">
-  <h2>ส่งให้ AI อ่านเท่าที่เกี่ยว</h2>
-  <div class="cols mt"><div><h3>เพิ่ม priority filter</h3><p>อ่าน requirement, component รายการ Task, data model และ test ที่เกี่ยวข้อง</p></div><div><h3>มักไม่ต้องอ่าน</h3><p><code>node_modules/</code>, <code>dist/</code>, logs เก่า, รูปขนาดใหญ่ และไฟล์ที่ไม่เกี่ยว</p></div></div>
-  <div class="spacer"></div><div class="callout c-blue"><span class="ico">💰</span><div>ข้อมูลพอดี ๆ ช่วยให้ AI ไม่หลงทาง</div></div>
+<!-- S64 -->
+<section class="scene divider" data-chapter="Bonus · AI Cost" data-title="Why Did I Run Out of AI Credits?">
+  <div class="num a">BONUS</div>
+  <h1><span class="mask a"><span>Why Did I Run Out</span></span><span class="mask a"><span>of AI Credits?</span></span></h1>
+  <p class="lead a">ใช้ให้คุ้ม แบบไม่เผาเครดิตเล่น</p>
+  <div class="bignum a fx-zoom">+</div>
 </section>
 
-<section class="slide">
-  <h2>AI วนแก้ไม่จบ? บอกจุดหยุดไว้</h2>
-  <div class="split"><div><p class="big">ถ้างานล้มเหลวซ้ำ ให้หยุด เก็บหลักฐาน และขอคนช่วยตัดสินใจ</p><ul class="mt2"><li>Scope ชัด</li><li>Stop condition ชัด</li><li>Verification ชัด</li><li>Human checkpoint ชัด</li></ul></div><img src="assets/agent-loop.png" alt="การ์ตูน AI วิ่งวนรอบงานที่พังและทำเหรียญหล่น"></div>
-  <div class="callout c-red"><span class="ico">💸</span><div>วนแก้สิบรอบแต่ไม่เข้าเป้า ก็พักแล้วถามคนเถอะ</div></div>
+<!-- S65 -->
+<section class="scene" data-bg="tr">
+  <h2 class="title a">อย่าเรียก CTO มาเปลี่ยนชื่อไฟล์</h2>
+  <p class="lead a">คุณคงไม่จ้าง CTO มานั่ง rename variable 300 ไฟล์</p>
+  <div class="grow" style="display:flex;flex-direction:column;justify-content:flex-end">
+    <div class="stairs">
+      <div class="stair"><div class="lbl" data-s="1" data-d=".4"><b>งานง่าย</b><span>Fast / cheap model</span></div><div class="blk fx-growy" data-s="1" style="height:130px"></div></div>
+      <div class="stair"><div class="lbl" data-s="2" data-d=".4"><b>งานปานกลาง</b><span>Capable model</span></div><div class="blk fx-growy" data-s="2" style="height:230px"></div></div>
+      <div class="stair"><div class="lbl" data-s="3" data-d=".4"><b>งานยาก</b><span>Strong reasoning model</span></div><div class="blk fx-growy" data-s="3" style="height:330px"></div></div>
+    </div>
+  </div>
+  <div class="row" data-s="4" style="justify-content:space-between;margin-top:26px">
+    <p class="t"><b>ทุกงาน</b> เลือกจากคุณภาพที่ต้องการ · Use the cheapest model that can reliably do the job</p>
+  </div>
+  <div class="callout blue" data-s="5" style="margin-top:22px"><span class="ico">💰</span><span>งานง่ายใช้ตัวไว งานยากค่อยเรียกตัวคิดหนัก</span></div>
 </section>
 
-<section class="slide">
-<h2>ถ้ามีงบ AI จำกัด จะจัดงานยังไง?</h2>
-  <pre><code>Model:        ______________________________
-Context:      ______________________________
-Tools:        ______________________________
-Steps:        ______________________________
-Human review: ______________________________</code></pre>
-  <div class="spacer"></div><div class="callout c-green"><span class="ico">✅</span><div>แบ่งงานเป็นช่วงสั้น ๆ แล้วดูผลก่อนสั่งต่อ</div></div>
+<!-- S66 -->
+<section class="scene" data-bg="bl">
+  <h2 class="title a">ยัดข้อมูลเยอะ ก็จ่ายเยอะ</h2>
+  <div class="g2 grow" style="gap:80px;align-content:center">
+    <div class="card" data-s="1">
+      <div class="docs">
+        <div class="pg" style="transform:translate(-20px,-10px) rotate(-4deg)"></div>
+        <div class="pg" style="transform:translate(20px,0) rotate(3deg)"></div>
+      </div>
+      <h3 style="margin-top:20px">อ่าน memo 2 หน้า</h3><p class="t">เฉพาะส่วนที่เกี่ยวกับงานวันนี้</p>
+      <div class="meterbig" style="--w:12%"><i></i></div>
+    </div>
+    <div class="card" data-s="2">
+      <div class="docs">
+        <div class="pg fx-down" data-s="2" data-d=".05" style="left:60px;bottom:0"></div>
+        <div class="pg fx-down" data-s="2" data-d=".12" style="left:110px;bottom:14px"></div>
+        <div class="pg fx-down" data-s="2" data-d=".19" style="left:160px;bottom:28px"></div>
+        <div class="pg fx-down" data-s="2" data-d=".26" style="left:210px;bottom:42px"></div>
+        <div class="pg fx-down" data-s="2" data-d=".33" style="left:260px;bottom:56px"></div>
+        <div class="pg fx-down" data-s="2" data-d=".40" style="left:310px;bottom:70px"></div>
+      </div>
+      <h3 style="margin-top:20px">อ่านทั้งบริษัททุกครั้ง</h3><p class="t">อ่านเหนื่อยทั้ง AI ทั้งกระเป๋าเรา</p>
+      <div class="meterbig" style="--w:100%"><i style="background:var(--red)"></i></div>
+    </div>
+  </div>
+  <div class="callout blue" data-s="3"><span class="ico">📚</span><span>More context ≠ Better context · ส่งเรื่องที่เกี่ยวพอ ทั้งชัดกว่าและประหยัดกว่า</span></div>
 </section>
 
+<!-- S67 -->
+<section class="scene" data-bg="br">
+  <h2 class="title a">ส่งให้ AI อ่านเท่าที่เกี่ยว</h2>
+  <div class="row a" style="margin-bottom:20px"><span class="tag blue" style="font-size:24px">งาน</span><span class="t"><b>เพิ่ม priority filter</b></span></div>
+  <div class="g2 grow" style="gap:60px;align-content:center">
+    <div><div class="klbl blue" data-s="1">อ่าน</div>
+      <div class="fl">
+        <span class="file st" data-s="1">requirements.md</span>
+        <span class="file st" data-s="1">TaskList component</span>
+        <span class="file st" data-s="1">data model</span>
+        <span class="file st" data-s="1">tests ที่เกี่ยวข้อง</span>
+      </div></div>
+    <div><div class="klbl" data-s="2">มักไม่ต้องอ่าน</div>
+      <div class="fl no">
+        <span class="file dir st" data-s="2">node_modules/</span>
+        <span class="file dir st" data-s="2">dist/</span>
+        <span class="file st" data-s="2">logs เก่า</span>
+        <span class="file st" data-s="2">รูปขนาดใหญ่</span>
+        <span class="file st" data-s="2">ไฟล์ที่ไม่เกี่ยว</span>
+      </div></div>
+  </div>
+  <div class="callout blue" data-s="3"><span class="ico">💰</span><span>ข้อมูลพอดี ๆ ช่วยให้ AI ไม่หลงทาง</span></div>
+</section>
+
+<!-- S68 -->
+<section class="scene" data-bg="r">
+  <h2 class="title a">AI วนแก้ไม่จบ? บอกจุดหยุดไว้</h2>
+  <p class="lead a">ถ้างานล้มเหลวซ้ำ ให้หยุด เก็บหลักฐาน และขอคนช่วยตัดสินใจ</p>
+  <div class="grow" style="display:grid;grid-template-columns:820px 1fr;gap:70px;align-items:center">
+    <div class="imgbox a fx-left"><img src="assets/agent-loop.png" alt="Agent วิ่งวนกับงานที่พังและใช้ budget ไปเรื่อย ๆ"></div>
+    <div class="col">
+      <div data-s="1"><div class="retry"><span>Retry ×</span><span class="big" data-s="1" data-to="10" data-dur="2.4">0</span></div>
+        <div class="cash st" data-s="1"><span style="transition-delay:.3s">💸</span><span style="transition-delay:.6s">💸</span><span style="transition-delay:.9s">💸</span><span style="transition-delay:1.2s">💸</span><span style="transition-delay:1.5s">💸</span><span style="transition-delay:1.8s">💸</span><span style="transition-delay:2.1s">💸</span></div></div>
+      <div class="nlist mt" data-s="2">
+        <div class="tick" data-s="2" data-d=".05" style="padding:12px 0"><span class="chk"></span><span class="t" style="font-size:30px">Scope ชัด</span></div>
+        <div class="tick" data-s="2" data-d=".25" style="padding:12px 0"><span class="chk"></span><span class="t" style="font-size:30px">Stop condition ชัด</span></div>
+        <div class="tick" data-s="2" data-d=".45" style="padding:12px 0"><span class="chk"></span><span class="t" style="font-size:30px">Verification ชัด</span></div>
+        <div class="tick" data-s="2" data-d=".65" style="padding:12px 0;border:0"><span class="chk"></span><span class="t" style="font-size:30px">Human checkpoint ชัด</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="callout red" data-s="3" style="margin-top:20px"><span class="ico">💸</span><span>วนแก้สิบรอบแต่ไม่เข้าเป้า ก็พักแล้วถามคนเถอะ</span></div>
+</section>
+
+<!-- S69 -->
+<section class="scene" data-bg="tl">
+  <h2 class="title a">ถ้ามีงบ AI จำกัด จะจัดงานยังไง?</h2>
+  <p class="lead a">คุณมี AI budget จำกัด แต่ต้องทำงานนี้ให้เสร็จ ลองเติมแบบนี้</p>
+  <div class="body form">
+    <div class="fr" data-s="1"><b>Model:</b><div class="ln2 fx-grow" data-s="1" data-d=".2"></div></div>
+    <div class="fr" data-s="1" data-d=".2"><b>Context:</b><div class="ln2 fx-grow" data-s="1" data-d=".4"></div></div>
+    <div class="fr" data-s="1" data-d=".4"><b>Tools:</b><div class="ln2 fx-grow" data-s="1" data-d=".6"></div></div>
+    <div class="fr" data-s="1" data-d=".6"><b>Steps:</b><div class="ln2 fx-grow" data-s="1" data-d=".8"></div></div>
+    <div class="fr" data-s="1" data-d=".8"><b>Human review:</b><div class="ln2 fx-grow" data-s="1" data-d="1"></div></div>
+  </div>
+  <div class="callout green" data-s="2"><span class="ico">✅</span><span>แบ่งงานเป็นช่วงสั้น ๆ แล้วดูผลก่อนสั่งต่อ</span></div>
+</section>
+
+  <div id="hud">
+    <div id="hud-ch"><span></span></div>
+    <div id="roles">
+      <div class="r" data-r="ba"><i></i><b>BA</b><small>requirements</small></div><div class="ln"></div>
+      <div class="r" data-r="sa"><i></i><b>SA</b><small>plan</small></div><div class="ln"></div>
+      <div class="r" data-r="ux"><i></i><b>UX</b><small>design</small></div><div class="ln"></div>
+      <div class="r" data-r="dev"><i></i><b>DEV</b><small>index.html</small></div><div class="ln"></div>
+      <div class="r" data-r="tester"><i></i><b>TESTER</b><small>test-cases</small></div>
+    </div>
+    <div id="beats"></div>
+    <div id="hud-n"></div>
+    <div id="prog"></div>
+  </div>
 </div>
-<div id="hint">← → เปลี่ยนสไลด์ · F จอเต็ม · P พิมพ์ PDF</div>
-<div id="nav"><button id="prev" title="ก่อนหน้า">‹</button><span id="pos"></span><button id="next" title="ถัดไป">›</button></div>
+
+<div id="ov" class="ovl"><div class="top"><b>ภาพรวมทุกฉาก</b><small>คลิกเพื่อไป · Esc เพื่อปิด</small></div><div id="ov-list"></div></div>
+<div id="help" class="ovl"><div class="box"><h4>ปุ่มลัด</h4><table>
+<tr><td>→ · Space · PgDn · คลิก</td><td>จังหวะถัดไป</td></tr>
+<tr><td>← · PgUp</td><td>ย้อนหนึ่งจังหวะ</td></tr>
+<tr><td>↓ / ↑</td><td>ข้ามทั้งฉาก ไปถัดไป / ก่อนหน้า</td></tr>
+<tr><td>Home / End</td><td>ฉากแรก / ฉากสุดท้าย</td></tr>
+<tr><td>O · Esc</td><td>ภาพรวมทุกฉาก</td></tr>
+<tr><td>ตัวเลข + Enter</td><td>ไปฉากนั้น</td></tr>
+<tr><td>F</td><td>เต็มจอ</td></tr>
+<tr><td>B</td><td>พักจอ (ขาว)</td></tr>
+<tr><td>P</td><td>พิมพ์ / บันทึก PDF</td></tr>
+<tr><td>?</td><td>เปิด/ปิดหน้านี้</td></tr>
+</table></div></div>
+<div id="blank"></div>
+<div id="toast">กด <kbd>→</kbd> เพื่อไปต่อ · <kbd>O</kbd> ภาพรวม · <kbd>?</kbd> ปุ่มลัด</div>
+
 <script>
-document.body.classList.add('js');
-const slides=[...document.querySelectorAll('.slide')];let index=0;
-slides.forEach((s,i)=>{const foot=document.createElement('div');foot.className='foot';foot.innerHTML=`<span>Working in the Age of AI</span><span>${String(i+1).padStart(2,'0')}</span>`;s.append(foot)});
-function show(n){index=Math.max(0,Math.min(slides.length-1,n));slides.forEach((s,i)=>s.classList.toggle('active',i===index));document.getElementById('pos').textContent=`${index+1} / ${slides.length}`;document.getElementById('bar').style.width=`${(index+1)/slides.length*100}%`;history.replaceState(null,'',`#${index+1}`)}
-document.getElementById('prev').onclick=()=>show(index-1);document.getElementById('next').onclick=()=>show(index+1);
-document.addEventListener('keydown',e=>{if(['ArrowRight','ArrowDown',' ','PageDown'].includes(e.key)){e.preventDefault();show(index+1)}else if(['ArrowLeft','ArrowUp','PageUp'].includes(e.key)){e.preventDefault();show(index-1)}else if(e.key.toLowerCase()==='f'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}else if(e.key.toLowerCase()==='p'){window.print()}else if(e.key==='Home'){show(0)}else if(e.key==='End'){show(slides.length-1)}});
-show(Math.max(0,(parseInt(location.hash.slice(1),10)||1)-1));
+(()=>{
+const stage=document.getElementById('stage');
+const bg=document.getElementById('bg');
+const scenes=[...stage.querySelectorAll('.scene')];
+const $=id=>document.getElementById(id);
+const hudCh=$('hud-ch'),beatsEl=$('beats'),hudN=$('hud-n'),prog=$('prog'),roles=$('roles');
+const ICON_FILE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>';
+const ICON_DIR='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>';
+const ICON_CHK='<svg viewBox="0 0 24 24"><path pathLength="1" d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+const seg=(window.Intl&&Intl.Segmenter)?new Intl.Segmenter('th',{granularity:'grapheme'}):null;
+
+/* background presets: orb x,y,scale · ring x,y,scale · dot x,y,scale */
+const P={
+  hero:[1560,430,1.0, 1560,430,1.28, 1090,170,1],
+  tr:[1790,70,.52, 1790,70,.76, 1540,200,.6],
+  br:[1810,1010,.58, 1810,1010,.84, 1500,1010,.55],
+  bl:[70,1050,.5, 70,1050,.74, 390,1010,.55],
+  tl:[90,40,.36, 90,40,.56, 330,90,.45],
+  r:[1720,560,.82, 1720,560,1.04, 1230,250,.7],
+  center:[960,640,.62, 960,640,.84, 960,300,0],
+  low:[960,1560,1.25, 960,1560,1.45, 960,880,.6],
+  flood:[960,540,2.6, 960,540,3.3, 960,540,0]
+};
+const CYCLE=['tr','br','bl','tr','low','br','tl'];
+
+/* ---------- init ---------- */
+let chapter='';
+scenes.forEach((sc,i)=>{
+  if(sc.dataset.chapter) chapter=sc.dataset.chapter;
+  sc._ch=chapter;
+  sc.querySelectorAll('.file').forEach(f=>{ if(!f.querySelector('svg')) f.insertAdjacentHTML('afterbegin', f.classList.contains('dir')?ICON_DIR:ICON_FILE); });
+  sc.querySelectorAll('.chk').forEach(c=>{ if(!c.innerHTML.trim()) c.innerHTML=ICON_CHK; });
+  sc.querySelectorAll('.win').forEach(w=>{
+    if(!w.querySelector('.wbar')) w.insertAdjacentHTML('afterbegin',`<div class="wbar"><i></i><i></i><i></i><span>${w.dataset.label||'CLAUDE COWORK'}</span><span style="flex:1"></span><span class="send">↑</span></div>`);
+  });
+  sc.querySelectorAll('.type').forEach(prepType);
+  sc._els=[...sc.querySelectorAll('.a,[data-s],.mask')];
+  sc._els.forEach(el=>{el._s=+(el.dataset.s||0)});
+  sc._max=Math.max(0,...sc._els.map(e=>e._s));
+  sc._bg=sc.dataset.bg||(sc.classList.contains('divider')?'flood':CYCLE[i%CYCLE.length]);
+});
+
+function prepType(el){
+  const walk=node=>{
+    [...node.childNodes].forEach(n=>{
+      if(n.nodeType===3){
+        const frag=document.createDocumentFragment();
+        const parts=seg?[...seg.segment(n.textContent)].map(x=>x.segment):[...n.textContent];
+        parts.forEach(ch=>{const s=document.createElement('span');s.className='ch';s.textContent=ch;frag.appendChild(s)});
+        n.replaceWith(frag);
+      } else if(n.nodeType===1) walk(n);
+    });
+  };
+  walk(el);
+  el._chars=[...el.querySelectorAll('.ch')];
+}
+
+/* ---------- typing & counters ---------- */
+function typeStart(el,delay,instant){
+  typeStop(el);
+  const chars=el._chars, win=el.closest('.win');
+  if(instant){chars.forEach(c=>c.classList.add('v'));markCur(el,chars.length);win&&win.classList.add('sent');return}
+  chars.forEach(c=>c.classList.remove('v','cur'));win&&win.classList.remove('sent');
+  const per=Math.max(12,Math.min(38,2000/chars.length));
+  const t0=performance.now()+delay*1000+120;
+  el._typing=true;
+  const tick=now=>{
+    const n=Math.max(0,Math.min(chars.length,Math.floor((now-t0)/per)));
+    for(let k=0;k<n;k++) chars[k].classList.add('v');
+    markCur(el,n);
+    if(n<chars.length){el._raf=requestAnimationFrame(tick)} else {el._typing=false;win&&win.classList.add('sent')}
+  };
+  el._raf=requestAnimationFrame(tick);
+}
+function markCur(el,n){ el._chars.forEach(c=>c.classList.remove('cur')); const c=el._chars[Math.max(0,n-1)]; if(c&&n>0)c.classList.add('cur'); }
+function typeStop(el){ cancelAnimationFrame(el._raf); el._typing=false; }
+function typeReset(el){ typeStop(el); el._chars.forEach(c=>c.classList.remove('v','cur')); const w=el.closest('.win'); w&&w.classList.remove('sent'); }
+function typeFinish(el){ typeStart(el,0,true); }
+
+function countStart(el,delay,instant){
+  cancelAnimationFrame(el._raf);
+  const to=+el.dataset.to, from=+(el.dataset.from||0), suf=el.dataset.suffix||'', dur=+(el.dataset.dur||1.6)*1000;
+  if(instant){el.textContent=to+suf;return}
+  const t0=performance.now()+delay*1000;
+  const tick=now=>{const p=Math.max(0,Math.min(1,(now-t0)/dur)),e=1-Math.pow(1-p,3);el.textContent=Math.round(from+(to-from)*e)+suf;if(p<1)el._raf=requestAnimationFrame(tick)};
+  el._raf=requestAnimationFrame(tick);
+}
+
+/* ---------- step rendering ---------- */
+function setStep(sc,s,{animate=true,entering=false}={}){
+  const groups={};
+  sc._els.forEach(el=>{
+    const want=el._s<=s, has=el.classList.contains('on');
+    if(want&&!has){
+      const gi=groups[el._s]=(groups[el._s]||0); groups[el._s]++;
+      const d=animate?((entering?.3:0)+gi*.075+(+el.dataset.d||0)):0;
+      el.style.setProperty('--delay',d.toFixed(3)+'s');
+      el.classList.add('on');
+      if(el._chars) typeStart(el,d,!animate);
+      if(el.dataset.to!==undefined) countStart(el,d,!animate);
+    } else if(!want&&has){
+      el.style.setProperty('--delay','0s');
+      el.classList.remove('on');
+      if(el._chars) typeReset(el);
+      if(el.dataset.to!==undefined){cancelAnimationFrame(el._raf);el.textContent=(el.dataset.from||0)+(el.dataset.suffix||'')}
+    }
+  });
+  sc.dataset.step=s;
+}
+function resetScene(sc){
+  sc.classList.add('snap');
+  sc._els.forEach(el=>{el.classList.remove('on');if(el._chars)typeReset(el);if(el.dataset.to!==undefined){cancelAnimationFrame(el._raf);el.textContent=(el.dataset.from||0)+(el.dataset.suffix||'')}});
+  sc.dataset.step=-1; void sc.offsetWidth; sc.classList.remove('snap');
+}
+
+/* ---------- navigation ---------- */
+let cur=-1, step=0;
+function go(i,s,dir){
+  i=Math.max(0,Math.min(scenes.length-1,i));
+  const nx=scenes[i];
+  if(i!==cur){
+    const pv=scenes[cur];
+    if(pv){
+      pv.style.setProperty('--dir',dir);
+      pv.classList.remove('active'); pv.classList.add('leaving');
+      clearTimeout(pv._t);
+      pv._t=setTimeout(()=>{pv.classList.remove('leaving'); if(!pv.classList.contains('active')) resetScene(pv)},700);
+    }
+    clearTimeout(nx._t); nx.classList.remove('leaving');
+    resetScene(nx);
+    nx.style.setProperty('--dir',dir);
+    nx.classList.add('snap','enter','active'); void nx.offsetWidth; nx.classList.remove('snap','enter');
+    cur=i; step=s;
+    setStep(nx,s,{animate:true,entering:!!pv||true});
+    applyScene(nx,i);
+  } else { step=s; setStep(nx,s,{animate:true}); }
+  hud();
+}
+function busyType(){ const sc=scenes[cur]; return sc._els.filter(e=>e._chars&&e._typing); }
+function next(){
+  const t=busyType(); if(t.length){t.forEach(typeFinish);return}
+  const sc=scenes[cur];
+  if(step<sc._max){step++;setStep(sc,step);hud()}
+  else if(cur<scenes.length-1) go(cur+1,0,1);
+}
+function prev(){
+  const sc=scenes[cur];
+  if(step>0){step--;setStep(sc,step,{animate:false});hud()}
+  else if(cur>0) go(cur-1,scenes[cur-1]._max,-1);
+}
+
+function applyScene(sc,i){
+  const p=P[sc._bg]||P.tr, v=['ox','oy','os','rx','ry','rs','dx','dy','ds'];
+  v.forEach((k,j)=>bg.style.setProperty('--'+k, j%3===2?p[j]:p[j]+'px'));
+  bg.style.setProperty('--gx',(-(i*26)%520)+'px');
+  const dark=sc.classList.contains('divider');
+  bg.classList.toggle('flood',dark); stage.classList.toggle('dark',dark);
+  // chapter label
+  const txt=sc._ch;
+  if(hudCh._txt!==txt){
+    const old=hudCh.querySelector('span:not(.out)');
+    const n=document.createElement('span'); n.textContent=txt; n.className='in'; hudCh.appendChild(n);
+    if(old){old.classList.add('out');setTimeout(()=>old.remove(),700)}
+    requestAnimationFrame(()=>requestAnimationFrame(()=>n.classList.remove('in')));
+    hudCh._txt=txt;
+  }
+  // role tracker
+  const r=sc.dataset.role, order=['ba','sa','ux','dev','tester'];
+  roles.classList.toggle('show',!!r);
+  if(r){
+    const ix=r==='done'?5:order.indexOf(r);
+    roles.querySelectorAll('.r').forEach((el,k)=>{el.classList.toggle('done',k<ix);el.classList.toggle('cur',k===ix)});
+    roles.querySelectorAll('.ln').forEach((el,k)=>el.classList.toggle('done',k<ix));
+  }
+}
+function hud(){
+  const sc=scenes[cur];
+  hudN.textContent=String(cur+1).padStart(2,'0')+' / '+scenes.length;
+  prog.style.width=((cur+ (sc._max?step/sc._max:1)*.999)/scenes.length*100)+'%';
+  let h='';for(let k=1;k<=sc._max;k++)h+=`<i class="${k<=step?'on':''}${k===step?' now':''}"></i>`;
+  beatsEl.innerHTML=h;
+  try{history.replaceState(null,'','#'+(cur+1)+(step?'.'+step:''))}catch(e){}
+  if(ov.classList.contains('show')) buildOv();
+}
+
+/* ---------- scaling ---------- */
+function fit(){stage.style.setProperty('--k',Math.min(innerWidth/1920,innerHeight/1080))}
+addEventListener('resize',fit);fit();
+
+/* ---------- overlays ---------- */
+const ov=$('ov'),help=$('help'),blank=$('blank');
+function titleOf(sc){return sc.dataset.title||(sc.querySelector('.title,h1')||{}).textContent||''}
+function buildOv(){
+  let html='',ch=null;
+  scenes.forEach((sc,i)=>{
+    if(sc._ch!==ch){ if(ch!==null)html+='</div>'; ch=sc._ch; html+=`<h4>${ch}</h4><div class="grid">`; }
+    html+=`<button data-i="${i}" class="${i===cur?'cur':''}"><span>${String(i+1).padStart(2,'0')}</span>${titleOf(sc).replace(/\s+/g,' ').trim()}</button>`;
+  });
+  $('ov-list').innerHTML=html+'</div>';
+}
+$('ov-list').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const i=+b.dataset.i;ov.classList.remove('show');go(i,0,i>=cur?1:-1)});
+function toggle(el,force){const on=force!==undefined?force:!el.classList.contains('show');el.classList.toggle('show',on);if(el===ov&&on){buildOv();const c=ov.querySelector('.cur');c&&c.scrollIntoView({block:'center'})}}
+
+/* ---------- input ---------- */
+let num='';
+addEventListener('keydown',e=>{
+  if(e.metaKey||e.ctrlKey||e.altKey)return;
+  const k=e.key;
+  if(ov.classList.contains('show')||help.classList.contains('show')){ if(k==='Escape'||k==='o'||k==='O'||k==='?'){toggle(ov,false);toggle(help,false);e.preventDefault()} return; }
+  if(/^[0-9]$/.test(k)){num+=k;return}
+  if(k==='Enter'&&num){const n=+num;num='';go(n-1,0,n-1>=cur?1:-1);e.preventDefault();return}
+  num='';
+  switch(k){
+    case 'ArrowRight':case ' ':case 'PageDown':case 'Enter':e.preventDefault();next();break;
+    case 'ArrowLeft':case 'PageUp':case 'Backspace':e.preventDefault();prev();break;
+    case 'ArrowDown':e.preventDefault();if(cur<scenes.length-1)go(cur+1,0,1);break;
+    case 'ArrowUp':e.preventDefault();if(cur>0)go(cur-1,scenes[cur-1]._max,-1);break;
+    case 'Home':go(0,0,-1);break;
+    case 'End':go(scenes.length-1,0,1);break;
+    case 'o':case 'O':case 'Escape':toggle(ov);break;
+    case '?':case '/':toggle(help);break;
+    case 'f':case 'F':document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();break;
+    case 'b':case 'B':blank.classList.toggle('show');break;
+    case 'p':case 'P':window.print();break;
+  }
+});
+stage.addEventListener('click',e=>{ if(getSelection().toString())return; const r=stage.getBoundingClientRect(); (e.clientX-r.left)<r.width*.2?prev():next(); });
+blank.addEventListener('click',()=>blank.classList.remove('show'));
+let tx=null;
+addEventListener('touchstart',e=>{tx=e.touches[0].clientX},{passive:true});
+addEventListener('touchend',e=>{if(tx===null)return;const dx=e.changedTouches[0].clientX-tx;if(Math.abs(dx)>50)(dx<0?next:prev)();tx=null});
+
+/* print: show everything fully built */
+addEventListener('beforeprint',()=>scenes.forEach(sc=>{sc.classList.add('snap');setStep(sc,sc._max,{animate:false})}));
+addEventListener('afterprint',()=>scenes.forEach((sc,i)=>{sc.classList.remove('snap');if(i!==cur)resetScene(sc);else setStep(sc,step,{animate:false})}));
+
+/* ---------- start ---------- */
+const m=location.hash.match(/^#(\d+)(?:\.(\d+))?/);
+const si=m?Math.min(scenes.length,+m[1])-1:0, ss=m&&m[2]?Math.min(+m[2],scenes[si]._max):0;
+go(si,0,1); if(ss){step=ss;setStep(scenes[si],ss,{animate:false});hud()}
+const toast=$('toast');setTimeout(()=>toast.classList.add('show'),900);setTimeout(()=>toast.classList.remove('show'),5200);
+window.__deck={go,next,prev,scenes,get cur(){return cur},get step(){return step}};
+})();
 </script>
 </body>
 </html>
