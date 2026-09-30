@@ -9,214 +9,309 @@ medium_id: "b6c43a401fd7"
 
 # มาลองสร้าง AWS EC2 ด้วย Terraform กันเถอะ
 
-โอเคมาเริ่มจากรู้จัก Terraform คร่าว ๆ กันก่อน
+การสร้าง EC2 ผ่าน Console ครั้งเดียวไม่ยากครับ คลิกเลือก AMI, Instance type, Network แล้วกด Launch แต่พออยากสร้างเครื่องเหมือนเดิมอีกครั้ง เราจะเริ่มเล่นเกม “เมื่อวานเลือกอะไรไว้นะ” และถ้ามีหลาย Environment เกมนี้จะกลายเป็นรายการวาไรตี้ที่ไม่มีใครอยากดู
 
-**Terraform** เป็นเครื่องมือที่ใช้สำหรับการจัดการโครงสร้างพื้นฐาน (Infrastructure as Code — IaC) ซึ่งช่วยให้ผู้ดูแลระบบและนักพัฒนาสามารถกำหนดและจัดการทรัพยากร IT ในรูปแบบของโค้ด ทำให้สามารถสร้าง, ปรับปรุง, และลบทรัพยากรได้โดยอัตโนมัติและมีประสิทธิภาพ.
+Terraform เปลี่ยน Infrastructure ให้เป็น Code เราเก็บ Configuration ใน Git, Review การเปลี่ยนแปลง, ดู Plan ก่อนสร้าง และทำซ้ำได้ วันนี้เราจะสร้าง EC2 พร้อม Security Group และติดตั้ง NGINX ผ่าน `user_data` โดยหลีกเลี่ยงสามกับดักจากตัวอย่างยุคก่อน: ไม่ฝัง AWS key ในไฟล์, ไม่สร้าง Private key ลง State และไม่ใช้ SSH provisioner ถ้า Cloud-init ทำงานแทนได้ครับ
 
-Terraform สามารถใช้กับหลายๆ ผู้ให้บริการคลาวด์ (cloud providers) เช่น Amazon Web Services (AWS), Microsoft Azure, Google Cloud Platform (GCP), และอื่นๆ รวมทั้งบริหารจัดการทรัพยากรที่ตั้งอยู่ภายใน Provider ได้ด้วย เช่น เซิร์ฟเวอร์, ฐานข้อมูล, เครือข่าย, และการกำหนดค่าต่าง ๆ.
+> ตัวอย่างนี้สร้าง Resource ที่อาจมีค่าใช้จ่าย ตรวจ AWS pricing และรัน `terraform destroy` เมื่อทดลองเสร็จ
 
-โดยอันที่ผมยกมาเป็นตัวอย่างจะเป็นตัวอย่างง่าย ๆ นะครับ เป็นการสร้างเครื่อง EC2 บน AWS และติดตั้ง nginx พร้อมเอา index.html ที่เรามีขึ้นไปรันบนนั้นนะครับ
+## สิ่งที่ต้องมี
 
-## Prerequisites
+- AWS account และ IAM permission ที่เหมาะสม
+- AWS CLI ที่ Authentication แล้ว
+- Terraform CLI
+- VPC และ Public subnet สำหรับทดลอง
 
-1.   **AWS Account** ตรงนี้อาจจะต้องเช็คด้วยว่า account เรานั้นมี permission ที่จะสร้างหรือจัดการกับ services นั้น ๆ ได้หรือไม่นะครับ
-2.   **Terraform Installed** ติดตั้ง Terraform บนเครื่องของเรา โดยสามารถดาวน์โหลดและติดตั้งได้จาก [เว็บไซต์ของ Terraform.](https://developer.hashicorp.com/terraform/install)
+ตรวจเครื่องมือ:
 
-## Terraform Code
+```bash
+aws sts get-caller-identity
+terraform version
+```
 
-เราจะสร้างไฟล์ขึ้นมาหนึ่งไฟล์ชื่อว่า main.tf เพื่อใช้สำหรับการ config ต่าง ๆ โดยอันนี้ผมจะค่อย ๆ ไล่ไปทีละ section นะครับ จะได้มีพร้อมคำอธิบาย และเดี๋ยวจะมีโค้ดรวมทั้งหมดให้อีกทีครับ
+คำสั่งแรกควรแสดง Account และ ARN ที่เราตั้งใจใช้ ถ้า Account ผิด ให้หยุดตรงนี้ก่อน เพราะ Infrastructure as Code ทำงานไวมาก—รวมถึงตอนสร้างของผิดบ้านด้วยครับ
 
-- เริ่มต้นโดยการเราบอกก่อนว่าเราจะใช้อะไร provider เจ้าไหนหรือ service อะไรและเราจะใส่พวก provider config ลงไปในนี้เลย (จริง ๆ แล้วเป็นท่าที่ไม่ได้แนะนำนะครับ แนะนำให้เป็นการ config ผ่านเครื่องที่เราใช้ดีกว่า อันนี้แค่ตัวอย่างว่าทำได้)
+## อย่าใส่ Access key ใน main.tf
 
-terraform {  
- required_providers {  
- aws = {  
- source = "hashicorp/aws"  
- version = "~> 4.0"  
- }  
- }  
+ตัวอย่างเก่ามักเขียนแบบนี้:
+
+```hcl
+provider "aws" {
+  access_key = "AKIA..."
+  secret_key = "..."
 }
-provider "aws" {  
- region = "ap-southeast-1"  
- access_key = "AKXXXXXXXXXXXXXX"   
- secret_key = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"   
-}
+```
 
-- ต่อมาเป็นเรื่องของการ generate key pair เพื่อเอาไว้สำหรับการ connect เข้ามาที่เครื่องผ่าน SSH นะครับ โดยเราสามารถกำหนดให้มันเซฟไฟล์ PEM ลงมาที่เครื่องเราได้เลย
+ไม่ควรทำ เพราะ Secret จะติด Git, Log หรือไฟล์ที่แชร์ได้ ใช้ AWS profile, Environment variable, IAM role, OIDC หรือ Short-lived credential แทน
 
-  
-resource "tls_private_key" "rsa_4096" {  
- algorithm = "RSA"  
- rsa_bits = 4096  
-}
-variable "key_name" {  
- description = "Name of the SSH key pair"  
-}
+```bash
+aws configure sso
+export AWS_PROFILE=my-sandbox
+```
 
-resource "aws_key_pair" "key_pair" {  
- key_name = var.key_name  
- public_key = tls_private_key.rsa_4096.public_key_openssh  
-}
+ใน CI ใช้ OIDC เพื่อ Assume role ชั่วคราวแทน Long-lived access key เมื่อ Platform รองรับ หลักคิดคือให้ Terraform ยืมกุญแจเท่าที่จำเป็นและหมดอายุได้ ไม่ใช่สักสำเนากุญแจไว้ใน Source Code ครับ
 
-resource "local_file" "private_key" {  
- content = tls_private_key.rsa_4096.private_key_pem  
- filename = var.key_name  
-}
+## โครงไฟล์
 
-- ต่อไปเราจะมาสร้าง security group ของ aws นะครับเพื่อเอาไว้ผูกกับตัว instance นี้ โดยเราสามารถ config ที่เราต้องการได้เลยผ่านตัวโค้ดนี้ หรือหากใครมีตัว security group เดิมหรือที่ต้องการใช้ก็สามารถข้ามตรงนี้ไปได้ครับ
+```text
+terraform-ec2/
+├── terraform.tf
+├── variables.tf
+├── main.tf
+├── outputs.tf
+└── cloud-init.sh
+```
 
-  
-resource "aws_security_group" "sg_web" {  
- name = "sg_web"  
- description = "Allow inbound traffic from specified IP"
-ingress {  
- from_port = 80  
- to_port = 80  
- protocol = "tcp"  
- cidr_blocks = ["0.0.0.0/0"]  
- }
+จะแยกไฟล์หรือรวมไฟล์เดียว Terraform ก็อ่านได้ทั้งหมด การแยกมีไว้ช่วยคนอ่าน ไม่ใช่ข้อบังคับของเครื่องมือ
 
-egress {  
- from_port = 0  
- to_port = 0  
- protocol = "-1"  
- cidr_blocks = ["0.0.0.0/0"]   
- }  
+## กำหนด Terraform และ Provider
+
+ไฟล์ `terraform.tf`:
+
+```hcl
+terraform {
+  required_version = ">= 1.5"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.0"
+    }
+  }
 }
 
-- ต่อไปเราจะมาสร้าง ec2 instance กันครับ ขั้นตอนนี้ผมจะรวมการติดตั้ง nginx พร้อมกับการ copy file index.html ของเราเข้าไปแทนที่ของ nginx เลยนะครับ โดยวิธีที่ผมใช้จะเป็นการสร้างเครื่องขึ้นมาก่อน แล้วจึง ssh เข้าไปติดตั้งและทำ action อื่น ๆ ทีหลังนะครับ
+provider "aws" {
+  region = var.aws_region
 
-  
-resource "aws_instance" "test-terraform-instance" {  
- ami = "ami-078c1149d8ad719a7"  
- instance_type = "t2.micro"  
- key_name = aws_key_pair.key_pair.key_name  
- vpc_security_group_ids = [aws_security_group.sg_web.id]  
- tags = {  
- Name = "test-terraform-instance"  
- }
-provisioner "file" {  
- source = "index.html"  
- destination = "/tmp/index.html"
+  default_tags {
+    tags = {
+      Project     = "terraform-ec2-demo"
+      Environment = "sandbox"
+      ManagedBy   = "terraform"
+    }
+  }
+}
+```
 
-# Connection is necessary for file provisioner to work  
- connection {  
- type = "ssh"  
- host = self.public_ip  
- user = "ubuntu"  
- private_key = file("name_of_pem_file")  
- timeout = "4m"  
- }  
- }
+Provider version เปลี่ยนตามเวลา ตรวจ Release ที่ทีมทดสอบจริงแล้ว Lock ผ่าน `.terraform.lock.hcl` ตัวอย่าง `~> 6.0` แสดงแนวทางปี 2026 แต่ไม่ใช่คำสั่งให้กระโดด Major version โดยไม่อ่าน Upgrade guide ครับ
 
-provisioner "remote-exec" {  
- inline = [  
- "sudo apt-get update",  
- "sudo apt-get install -y docker.io",  
- "sudo docker run -d -p 80:80 --name my-nginx -v /tmp/index.html:/usr/share/nginx/html/index.html:ro nginx"  
- ]  
- }  
+## ประกาศตัวแปร
+
+ไฟล์ `variables.tf`:
+
+```hcl
+variable "aws_region" {
+  description = "AWS region for the demo"
+  type        = string
+  default     = "ap-southeast-1"
 }
 
-อันนี้เป็นโค้ดเต็ม ๆ ของไฟล์ main.tf นะครับ
-
-terraform {  
- required_providers {  
- aws = {  
- source = "hashicorp/aws"  
- version = "~> 4.0"  
- }  
- }  
-}
-provider "aws" {  
- region = "ap-southeast-1"  
- access_key = "AKXXXXXXXXXXXXXX"   
- secret_key = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"   
+variable "vpc_id" {
+  description = "VPC where the EC2 instance will run"
+  type        = string
 }
 
-resource "tls_private_key" "rsa_4096" {  
- algorithm = "RSA"  
- rsa_bits = 4096  
+variable "subnet_id" {
+  description = "Public subnet for the demo instance"
+  type        = string
 }
 
-variable "key_name" {  
- description = "Name of the SSH key pair"  
+variable "allowed_http_cidr" {
+  description = "CIDR allowed to reach port 80"
+  type        = string
+  default     = "0.0.0.0/0"
+}
+```
+
+สำหรับระบบจริง `0.0.0.0/0` อาจตั้งใจเปิดเว็บ Public แต่ SSH ไม่ควรเปิดทั้งโลก ถ้าต้องเข้าจัดการเครื่อง พิจารณา AWS Systems Manager Session Manager เพื่อลดการเปิด Port 22 และลดภาระจัดการ Key
+
+## หา AMI แบบไม่ฝัง ID ตายตัว
+
+AMI ID ต่างกันตาม Region และเปลี่ยนเมื่อมี Image ใหม่ ใช้ Parameter Store ของ AWS หา Amazon Linux 2023 ล่าสุด:
+
+```hcl
+data "aws_ssm_parameter" "amazon_linux_2023" {
+  name = "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64"
+}
+```
+
+ถ้าต้องการ Reproducibility แบบเป๊ะ ให้ Pin AMI ID ผ่าน Variable หรือ Pipeline ที่มีขั้นตอนอัปเดตและทดสอบ ไม่ว่าทางไหนควรเลือกโดยรู้ Trade-off ระหว่างความสดใหม่กับความทำซ้ำได้ครับ
+
+## สร้าง Security Group
+
+```hcl
+resource "aws_security_group" "web" {
+  name_prefix = "terraform-web-"
+  description = "Allow HTTP to the demo web server"
+  vpc_id      = var.vpc_id
+
+  ingress {
+    description = "HTTP"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = [var.allowed_http_cidr]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+```
+
+Security Group เป็น Stateful firewall ไม่ต้องเปิด Inbound port สำหรับ Response traffic แยก และทุก Rule ควรมีเหตุผล อย่าเปิด Port เผื่อไว้ “เดี๋ยวอาจใช้” เพราะ Rule ที่ไม่มีเจ้าของมักอยู่ยาวกว่าคนเขียนครับ
+
+## ติดตั้ง NGINX ผ่าน user_data
+
+ไฟล์ `cloud-init.sh`:
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+dnf install -y nginx
+
+cat >/usr/share/nginx/html/index.html <<'HTML'
+<!doctype html>
+<html lang="th">
+  <head><meta charset="utf-8"><title>Terraform EC2</title></head>
+  <body><h1>Hello from Terraform</h1></body>
+</html>
+HTML
+
+systemctl enable --now nginx
+```
+
+แล้วสร้าง EC2:
+
+```hcl
+resource "aws_instance" "web" {
+  ami                         = data.aws_ssm_parameter.amazon_linux_2023.value
+  instance_type               = "t3.micro"
+  subnet_id                   = var.subnet_id
+  vpc_security_group_ids      = [aws_security_group.web.id]
+  associate_public_ip_address = true
+
+  user_data                   = file("${path.module}/cloud-init.sh")
+  user_data_replace_on_change = true
+
+  metadata_options {
+    http_endpoint = "enabled"
+    http_tokens   = "required"
+  }
+
+  root_block_device {
+    encrypted   = true
+    volume_type = "gp3"
+    volume_size = 10
+  }
+
+  tags = {
+    Name = "terraform-web-demo"
+  }
+}
+```
+
+`http_tokens = "required"` บังคับใช้ IMDSv2 ส่วน Disk เปิด Encryption ไว้ตั้งแต่ต้น ค่าเหล่านี้ไม่ทำให้ Demo สนุกขึ้นทันที แต่ช่วยให้ตัวอย่างไม่สอนนิสัยที่ต้องตามแก้ตอนขึ้น Production ครับ
+
+เหตุผลที่ใช้ `user_data` แทน `remote-exec` คือ Terraform ส่ง Script ให้ EC2 ตอน Boot แล้วไม่ต้องเปิด SSH จากเครื่องที่รัน Terraform Provisioner ยังมีกรณีใช้งาน แต่ควรเป็นทางเลือกท้าย ๆ เพราะเชื่อมโลก Configuration management เข้ากับ Infrastructure lifecycle จน Failure และ Retry ซับซ้อนขึ้น
+
+## แสดง Public IP
+
+ไฟล์ `outputs.tf`:
+
+```hcl
+output "public_ip" {
+  description = "Public IP of the demo web server"
+  value       = aws_instance.web.public_ip
 }
 
-resource "aws_key_pair" "key_pair" {  
- key_name = var.key_name  
- public_key = tls_private_key.rsa_4096.public_key_openssh  
+output "website_url" {
+  description = "URL of the demo website"
+  value       = "http://${aws_instance.web.public_ip}"
 }
+```
 
-resource "local_file" "private_key" {  
- content = tls_private_key.rsa_4096.private_key_pem  
- filename = var.key_name  
-}
+## เริ่มใช้งาน
 
-resource "aws_security_group" "sg_web" {  
- name = "sg_web"  
- description = "Allow inbound traffic from specified IP"
+Format และ Validate ก่อน:
 
-ingress {  
- from_port = 80  
- to_port = 80  
- protocol = "tcp"  
- cidr_blocks = ["0.0.0.0/0"]  
- }
-
-egress {  
- from_port = 0  
- to_port = 0  
- protocol = "-1"  
- cidr_blocks = ["0.0.0.0/0"]  
- }  
-}
-
-resource "aws_instance" "test-terraform-instance" {  
- ami = "ami-078c1149d8ad719a7"  
- instance_type = "t2.micro"  
- key_name = aws_key_pair.key_pair.key_name  
- vpc_security_group_ids = [aws_security_group.sg_web.id]  
- tags = {  
- Name = "test-terraform-instance"  
- }
-
-provisioner "file" {  
- source = "index.html"  
- destination = "/tmp/index.html"
-
-# Connection is necessary for file provisioner to work  
- connection {  
- type = "ssh"  
- host = self.public_ip  
- user = "ubuntu"  
- private_key = file("name_of_pem_file")  
- timeout = "4m"  
- }  
- }
-
-provisioner "remote-exec" {  
- inline = [  
- "sudo apt-get update",  
- "sudo apt-get install -y docker.io",  
- "sudo docker run -d -p 80:80 --name my-nginx -v /tmp/index.html:/usr/share/nginx/html/index.html:ro nginx"  
- ]  
- }  
-}
-
-## Usage
-
-1.ทำการ initialize Terraform
-
+```bash
+terraform fmt -recursive
 terraform init
-2.ตรวจสอบข้อมูลทั้งหมดอีกครั้ง (plan, services ต่าง ๆ)
+terraform validate
+```
 
-terraform plan
-3.ทำการ apply
+ดูแผน:
 
-terraform apply
-4.เรียบร้อยครับ Terraform จะแสดงข้อมูลเกี่ยวกับสิ่งที่สร้างขึ้น, รวมถึงที่อยู่ IP public ของ EC2 instance ด้วย
+```bash
+terraform plan \
+  -var="vpc_id=vpc-xxxxxxxx" \
+  -var="subnet_id=subnet-xxxxxxxx" \
+  -out=tfplan
+```
 
-เรียบร้อยครับ เพียงเท่านี้เราก็จะได้ EC2 instance 1 เครื่อง พร้อม setting config ทุกอย่าง โดยจัดการผ่าน code หมดทุกอย่างเลย ซึ่งวิธีนี้ทำให้เราจัดการเครื่องได้ง่ายมาก ๆ ไม่ต้องเข้าไปทำในหน้าเว็บไซต์ให้ยุ่งยากเลย เดี๋ยวผมจะแปะ ref พวก command ต่าง ๆ เอาไว้ให้ด้วยนะครับ
+อ่าน Plan ว่าจะสร้างอะไร Region ถูกไหม และมี Resource ไหนถูกลบโดยไม่ตั้งใจหรือไม่ จากนั้น Apply แผนเดียวกัน:
 
-> ref : [https://developer.hashicorp.com/terraform/cli/commands](https://developer.hashicorp.com/terraform/cli/commands)
+```bash
+terraform apply tfplan
+```
+
+เมื่อเสร็จ Terraform จะแสดง `website_url` Cloud-init อาจใช้เวลาเล็กน้อยก่อน NGINX พร้อม ตรวจได้จาก:
+
+```bash
+curl "$(terraform output -raw website_url)"
+```
+
+## State คือข้อมูลสำคัญ ไม่ใช่ไฟล์ Cache ธรรมดา
+
+Terraform state เชื่อม Resource ใน Code กับของจริง และอาจมีข้อมูล Sensitive ต่อให้เราประกาศ Output เป็น Sensitive ข้อมูลก็ยังอยู่ใน State ได้
+
+สำหรับงานทีม:
+
+- เก็บ State ใน Remote backend ที่เข้ารหัส
+- เปิด Locking ตาม Backend ที่ใช้
+- จำกัด IAM access
+- เปิด Versioning และ Audit log
+- ห้าม Commit `terraform.tfstate` เข้า Git
+- แยก State ระหว่าง Environment
+
+นี่เป็นเหตุผลอีกข้อที่ไม่ควรสร้าง Private key ด้วย `tls_private_key` แล้วเขียนลง Local file แบบไม่วางแผน เพราะ Key จะเข้า State ด้วย เท่ากับเราย้ายกุญแจบ้านไปเก็บในสมุดบัญชี Infrastructure ครับ
+
+## เก็บของหลังทดลอง
+
+ดูแผน Destroy ก่อน:
+
+```bash
+terraform plan -destroy \
+  -var="vpc_id=vpc-xxxxxxxx" \
+  -var="subnet_id=subnet-xxxxxxxx"
+```
+
+จากนั้น:
+
+```bash
+terraform destroy \
+  -var="vpc_id=vpc-xxxxxxxx" \
+  -var="subnet_id=subnet-xxxxxxxx"
+```
+
+ตรวจ Console หรือ AWS CLI ว่า Instance และ Security Group ถูกลบครบ ค่า Cloud ที่ลืมปิดเป็นเหมือนก๊อกน้ำหยด—ดูทีละน้อย แต่สิ้นเดือนรวมแล้วชัดเจนครับ
+
+## สรุป
+
+Terraform ทำให้การสร้าง EC2 เปลี่ยนจากชุดคลิกที่จำยากเป็น Code ที่ Review และทำซ้ำได้ ตัวอย่างที่ดีควรแยก Provider, Variables, Resource และ Output ชัดเจน พร้อมรักษา Credential กับ State ตั้งแต่ต้น
+
+หัวใจของเวอร์ชันปี 2026 คือไม่ฝัง Access key, ไม่เก็บ SSH private key ใน State โดยไม่จำเป็น, ใช้ `user_data` หรือ Image pipeline แทน SSH provisioner และเปิด Security baseline อย่าง IMDSv2 กับ Encrypted volume มาเลย IaC ไม่ใช่แค่ทำของให้เกิดครับ แต่ทำให้การสร้าง แก้ และลบมีหลักฐานและคาดเดาได้
+
+อ่านต่อจากเอกสารทางการ:
+
+- [Terraform AWS get started](https://developer.hashicorp.com/terraform/tutorials/aws-get-started)
+- [Configure Terraform providers](https://developer.hashicorp.com/terraform/tutorials/configuration-language/configure-providers)

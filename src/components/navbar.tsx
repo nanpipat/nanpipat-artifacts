@@ -1,8 +1,8 @@
+import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { ReactNode } from 'react'
 import { Box, Container, Flex, Heading, HStack, Link as ChakraLink } from '@chakra-ui/react'
-import { IoCubeOutline } from 'react-icons/io5'
 import { useColorModeValue } from './ui/color-mode'
 import ThemeToggleButton from './theme-toggle-button'
 
@@ -45,10 +45,19 @@ const Navbar = () => {
       >
         <Flex justify="center" align="center">
           <Heading as="h1" size="lg" letterSpacing="tighter">
-            <ChakraLink as={Link} href="/" _hover={{ textDecoration: 'none' }}>
-              <HStack gap={1} color={logoColor}>
-                <IoCubeOutline aria-hidden />
-                <Box as="span" fontWeight="bold">Artifacts</Box>
+            {/* the logo leads back to the main site nanpipat.top */}
+            <ChakraLink href="https://nanpipat.top" _hover={{ textDecoration: 'none' }}>
+              <HStack gap={2} color={logoColor}>
+                <Image
+                  src="/images/logon.jpg"
+                  width={20}
+                  height={20}
+                  alt="NANPIPAT"
+                />
+                <Box as="span" fontWeight="bold">NANPIPAT</Box>
+                <Box as="span" fontSize="sm" fontWeight="normal" opacity={0.6} ml={1}>
+                  / Artifacts
+                </Box>
               </HStack>
             </ChakraLink>
           </Heading>

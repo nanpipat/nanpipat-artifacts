@@ -11,24 +11,234 @@ medium_id: "5f40d9955193"
 
 ![Image 2](https://miro.medium.com/v2/resize:fit:700/0*Gm8A79k_thPeVUdh.png)
 
-ปกติแล้วเวลาเราจะทำ service ซักตัว เราจะพบว่าในหลาย ๆ table นั้น จะมีการใช้คำสั่ง query ที่ค่อนข้างจะเป็นรูปแบบที่ซ้ำ ๆ กัน เช่น การทำ CRUD service ก็จะเป็นการ Create, Find, Update, Delete อะไรทำนองนี้ ซึ่งใน level ของการทำ repository ในโปรเจคเรานั้น หากมีหลาย table ก็อาจจะต้องมีการทำ repository ในหลายรอบที่ต่างออกไป แต่รวม ๆ แล้วคำสั่งข้างในก็จะคล้าย ๆ กัน
+พอ Service มีหลาย Table เรามักได้ Repository หน้าตาคล้ายกันเต็มโปรเจกต์: `CreateUser`, `CreateProduct`, `CreateOrder` ต่างกันแทบแค่ชื่อ Model การ Copy โค้ดช่วยให้เริ่มเร็ว แต่เมื่ออยากเพิ่ม Context, Transaction หรือ Error handling ทีหนึ่ง เราต้องเดินแก้เหมือนเปลี่ยนหลอดไฟในโรงแรม 200 ห้อง
 
-วันนี้เราเลยจะมาลองทำให้มี repository แค่หนึ่งไฟล์ แต่ใช้ได้กับหลาย ๆ models หรือหลาย ๆ table กันครับ โดยใช้ gorm กับ go generic กันครับ
+Go Generics ช่วยรวมพฤติกรรม CRUD ที่เหมือนกันไว้ใน Repository กลาง โดยยังรักษา Type ของ Model เอาไว้ แต่ก่อนเริ่มต้องอัปเดตข่าวสำคัญของปี 2026 ก่อนครับ: ตั้งแต่ GORM v1.30 ขึ้นไปมี **Generics API ทางการ** ผ่าน `gorm.G[T]` แล้ว เราจึงมีสองทางเลือก
 
-มาดูโค้ดในส่วนของ repository กันครับ
+1. ใช้ Generics API ของ GORM โดยตรง ถ้าต้องการ Query แบบ Type-safe โดยไม่เพิ่ม Abstraction
+2. สร้าง Repository ของเราเอง เมื่ออยากกำหนดขอบเขตของ Domain, ซ่อน GORM หรือรวม Policy ที่ทุก Query ต้องทำเหมือนกัน
 
-อธิบายโค้ดเพิ่มซักนิดนึงครับ ตรง function `NewRepository` คือการเรียกใช้ repository นี้ โดยการโยน models ใดก็ได้เข้ามา (go generic)
+Repository ไม่ควรถูกสร้างเพียงเพราะ Architecture diagram มีช่องว่างหนึ่งช่องครับ ถ้ามันแค่เปลี่ยนชื่อ `db.Create` เป็น `repo.Create` โดยไม่เพิ่มความหมาย เราอาจกำลังห่อของขวัญกล่องเปล่าอยู่
 
-และหลังจากนั้นผมจะสร้าง function อื่น ๆ เพิ่ม เช่นการ `Create` , `FindAll` พวกนี้คือการ override function ของ gorm เข้าไป โดยคุณอาจจะไม่ต้องตั้งชื่อตาม gorm ก็ได้ แต่ผมค่อนข้างจะชินในการตั้งแบบนี้ เพราะเวลาอ่าน document ของ gorm จะได้เอามาปรับใช้ได้เลยง่าย ๆ
+## เริ่มจาก Generics API ที่ GORM มีให้
 
-ส่วนถัดมาก็คือส่วนของ condition ต่าง ๆ เช่น `Where` , `Order` และอื่น ๆ ก็จะทำคล้าย ๆ กัน เพียงแค่การ return จะไม่เหมือนกัน เพราะเราสามารถทำได้หลาย ๆ condition มันจึงจะ stack ไปเรื่อย ๆ มากกว่า
+ตัวอย่าง Model:
 
-โดยการทำ function เหล่านี้ คุณสามารถ custom parameter ที่รับเข้ามาและส่งออกไปได้เลย ทำได้หลากหลายมากมาก ผมอาจจะไม่ได้ยกตัวอย่างที่แปลก ๆ ไว้ เพราะอยากให้เห็นภาพการใช้ go generic ในการรับ type อะไรเข้ามาก็ return สิ่งนั้นออกไปครับ
+```go
+type User struct {
+	ID    uint   `gorm:"primaryKey"`
+	Email string `gorm:"uniqueIndex"`
+	Name  string
+}
+```
 
-โอเคครับ ทีนี้มาถึงโค้ดตอนนำไปใช้ จะหน้าตาเป็นแบบนี้
+สร้างและค้นข้อมูลผ่าน API แบบ Generic:
 
-โดยผมจะไม่อธิบายถึงการ inject db เข้ามา หรือการวาง stucture ของโปรเจคนะครับ เพราะคิดว่าแต่ละคนคงมีรูปแบบที่ไม่เหมือนกัน อันนี้ก็จะเป็นตัวอย่างคร่าว ๆ โดยค่า db ที่ผมส่งไปก็จะเป็น type gorm.DB ตามที่ repository ของเราต้องการ และก็อีกค่าเป็นค่า context ที่เราอาจจะต้องใช้ถ้าเราใช้กับ framework หรือ third-party ที่เราอยากจะส่ง context ไปใช้นะครับ
+```go
+ctx := context.Background()
 
-ซึ่งทั้งหมดจะเป็นแค่ concept คร่าว ๆ ในการทำ go generic มาใช้กับการทำ gorm repository คุณสามารถ custom มันเองได้ทั้งหมดตามแต่ที่คุณต้องการครับ
+err := gorm.G[User](db).Create(ctx, &User{
+	Email: "gopher@example.com",
+	Name:  "Gopher",
+})
+if err != nil {
+	return err
+}
 
-อันนี้จะเป็นลิ้ง git ที่ผมทำไว้เป็นตัวอย่างสำหรับบทความนี้ครับ หากมีข้อสงสัยหรือมีข้อติติงตรงไหนคอมเม้นบอกได้เลยครับ ขอบคุณที่อ่านมาจนจบครับ 🙏🏻
+user, err := gorm.G[User](db).
+	Where("email = ?", "gopher@example.com").
+	First(ctx)
+if err != nil {
+	return err
+}
+```
+
+ผลลัพธ์ของ `First` เป็น `User` โดยตรง ไม่ต้องประกาศตัวแปรปลายทางแล้วส่ง Pointer เข้า `Find` แบบ API ดั้งเดิม นอกจากนี้ Context ถูกส่งเข้าทุก Operation อย่างชัดเจน
+
+ถ้าโจทย์มีแค่นี้ ใช้ของ GORM ตรง ๆ ก็เพียงพอและอ่านง่ายครับ
+
+## สร้าง Generic Repository เมื่อมีเหตุผลด้านระบบ
+
+สมมติทีมอยากให้ CRUD พื้นฐานอยู่หลัง Interface เพื่อ Mock ใน Unit test หรือเปลี่ยน Implementation ได้ เราเริ่มจาก Contract เล็ก ๆ:
+
+```go
+type Repository[T any, ID comparable] interface {
+	Create(ctx context.Context, value *T) error
+	FindByID(ctx context.Context, id ID) (T, error)
+	FindAll(ctx context.Context) ([]T, error)
+	DeleteByID(ctx context.Context, id ID) error
+}
+```
+
+ทำไมต้องมี `ID` แยกอีก Type เพราะ Primary key ไม่ได้เป็น `uint` เสมอ บางระบบใช้ UUID หรือ String การบังคับ Type เดียวเท่ากับสร้างรองเท้าเบอร์เดียวแล้วประกาศว่าทุกคนใส่ได้ครับ
+
+Implementation ด้วย GORM Generics API:
+
+```go
+type GormRepository[T any, ID comparable] struct {
+	db *gorm.DB
+}
+
+func NewGormRepository[T any, ID comparable](db *gorm.DB) *GormRepository[T, ID] {
+	return &GormRepository[T, ID]{db: db}
+}
+
+func (r *GormRepository[T, ID]) Create(ctx context.Context, value *T) error {
+	return gorm.G[T](r.db).Create(ctx, value)
+}
+
+func (r *GormRepository[T, ID]) FindByID(ctx context.Context, id ID) (T, error) {
+	return gorm.G[T](r.db).
+		Where("id = ?", id).
+		First(ctx)
+}
+
+func (r *GormRepository[T, ID]) FindAll(ctx context.Context) ([]T, error) {
+	return gorm.G[T](r.db).Find(ctx)
+}
+
+func (r *GormRepository[T, ID]) DeleteByID(ctx context.Context, id ID) error {
+	result := r.db.WithContext(ctx).
+		Where("id = ?", id).
+		Delete(new(T))
+
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+
+	return nil
+}
+```
+
+ใช้งานกับ `User`:
+
+```go
+userRepo := NewGormRepository[User, uint](db)
+
+user, err := userRepo.FindByID(ctx, 42)
+if err != nil {
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return ErrUserNotFound
+	}
+	return fmt.Errorf("find user: %w", err)
+}
+```
+
+Type ของ Repository ถูกกำหนดตั้งแต่สร้าง `NewGormRepository[User, uint]` จึงไม่มีทางเผลอรับ Product กลับจาก Repository นี้
+
+## อย่าทำ Generic จน Business Rule หายไป
+
+CRUD กลางเหมาะกับ Operation ทั่วไป แต่ Query จริงมักมีภาษาเฉพาะของ Domain เช่น “หา Order ที่ยังจ่ายไม่ครบ” หรือ “ล็อกบัญชีที่พยายาม Login ผิดเกินกำหนด” ถ้ายัดทุกอย่างเป็น `Where(query any, args ...any)` Repository จะกลายเป็น GORM ปลอมที่ Type safety หายไปครึ่งหนึ่ง
+
+สร้าง Repository เฉพาะ Domain ต่อจากของกลางได้:
+
+```go
+type UserRepository struct {
+	*GormRepository[User, uint]
+}
+
+func NewUserRepository(db *gorm.DB) *UserRepository {
+	return &UserRepository{
+		GormRepository: NewGormRepository[User, uint](db),
+	}
+}
+
+func (r *UserRepository) FindByEmail(
+	ctx context.Context,
+	email string,
+) (User, error) {
+	return gorm.G[User](r.db).
+		Where("email = ?", email).
+		First(ctx)
+}
+```
+
+ตอนนี้ชื่อ Method เล่าเจตนาของระบบได้ และถ้าวันหนึ่ง Schema เปลี่ยนจาก `email` ไปใช้ Normalized column ผู้เรียกไม่ต้องรู้รายละเอียด
+
+## Transaction ต้องส่ง DB ชุดเดียวกันไปตลอดทาง
+
+กับดักยอดนิยมคือเริ่ม Transaction แต่ Repository ยังใช้ `r.db` ตัวเดิมนอก Transaction เหมือนบอกทุกคนให้ขึ้นรถคันเดียวกัน แต่ Repository แอบขึ้น Taxi อีกคัน
+
+เพิ่ม Method สำหรับผูก Repository กับ `*gorm.DB` ใหม่:
+
+```go
+func (r *GormRepository[T, ID]) WithDB(db *gorm.DB) *GormRepository[T, ID] {
+	return &GormRepository[T, ID]{db: db}
+}
+```
+
+แล้วใช้ภายใน Transaction:
+
+```go
+err := db.Transaction(func(tx *gorm.DB) error {
+	txUsers := userRepo.GormRepository.WithDB(tx)
+
+	if err := txUsers.Create(ctx, &user); err != nil {
+		return err
+	}
+
+	return tx.Create(&auditLog).Error
+})
+```
+
+ถ้า Transaction ครอบหลาย Repository อาจสร้าง Unit of Work หรือส่ง `tx` ให้ Constructor ของแต่ละ Repositoryอย่างชัดเจน แนวไหนก็ได้ ขอเพียงทุก Operation ที่ต้อง Atomic ใช้ Transaction เดียวกันจริง ๆ
+
+## Pagination และ Order ต้องไม่เปิดประตูให้ SQL Injection
+
+ค่าที่ใช้ใน `WHERE` ส่งผ่าน Placeholder ได้ แต่ชื่อ Column และทิศทาง Sort มัก Parameterize ไม่ได้ อย่านำข้อความจาก Query string ไปต่อใน `Order` ตรง ๆ
+
+```go
+var allowedSort = map[string]string{
+	"name":       "name",
+	"created_at": "created_at",
+}
+
+func safeSort(input string) string {
+	column, ok := allowedSort[input]
+	if !ok {
+		return "created_at"
+	}
+	return column
+}
+```
+
+จากนั้นกำหนดเพดาน Page size ด้วย ไม่อย่างนั้น Endpoint `?limit=999999999` อาจเปลี่ยน Repository ให้กลายเป็นบริการย้ายฐานข้อมูลออกทาง HTTP ครับ
+
+## Test อะไรบ้าง
+
+Generic Repository ควรมี Integration test กับ Database จริงหรือ Container ชั่วคราว เพราะพฤติกรรมของ ORM ขึ้นกับ Driver, Constraint และ Transaction มากเกินกว่าจะมั่นใจจาก Mock อย่างเดียว
+
+อย่างน้อยทดสอบ:
+
+- Create แล้ว ID หรือ Generated field ถูกเติม
+- Find ข้อมูลที่มีและไม่มี
+- Delete แล้วตรวจ `RowsAffected`
+- Context timeout หรือ cancellation
+- Constraint violation
+- Transaction rollback
+- Soft delete ถ้า Model ใช้ `gorm.DeletedAt`
+
+ส่วน Service ที่พึ่ง Interface สามารถใช้ Fake repository เพื่อทดสอบ Business rule ได้เร็วขึ้น แบ่งหน้าที่ให้ Test แต่ละชั้นเหมือนทีมฟุตบอล—ผู้รักษาประตูไม่จำเป็นต้องวิ่งยิงทุกลูกเองครับ
+
+## Checklist ก่อนสร้าง Repository กลาง
+
+- ใช้ GORM Generics API ตรง ๆ เพียงพอหรือยัง
+- Generic Method เพิ่มความหมาย หรือแค่เปลี่ยนชื่อ API เดิม
+- รองรับ Context ทุก Operation
+- Error ถูกแปลงเป็น Domain error ที่ชั้นเหมาะสม
+- Transaction ใช้ `*gorm.DB` ชุดเดียวกัน
+- ไม่เปิด Query builder ดิบให้ทุกชั้นจน Abstraction รั่ว
+- Sort และ Filter ที่มาจากผู้ใช้ถูก Allowlist
+- มี Integration test กับ Database จริง
+- Public API ของ Repository เล็กพอที่จะดูแลระยะยาว
+
+## สรุป
+
+Go Generics ช่วยตัด CRUD ที่ซ้ำกันได้จริง แต่ในปี 2026 เราควรรู้ก่อนว่า GORM มี Generics API ของตัวเองแล้ว ถ้าเพียงอยากได้ Query แบบ Type-safe ใช้ `gorm.G[T]` ตรง ๆ อาจง่ายและชัดที่สุด
+
+สร้าง Generic Repository เพิ่มเมื่อมันรวม Policy ซ่อนรายละเอียด Persistence หรือทำให้ Domain อ่านง่ายขึ้นเท่านั้น ส่วน Query ที่มีความหมายทางธุรกิจควรมีชื่อของมันเอง อย่าบีบทุกปัญหาให้ผ่าน `FindAll` กับ `Where` จน Repository กลางกลายเป็นกล่องอเนกประสงค์ที่ใครก็เปิด แต่ไม่มีใครกล้าแก้ครับ
+
+อ่านต่อจากเอกสารทางการ: [GORM Generics API](https://gorm.io/docs/the_generics_way.html) และ [GORM Guides](https://gorm.io/docs/)

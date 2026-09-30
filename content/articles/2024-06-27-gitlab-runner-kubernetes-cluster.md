@@ -11,79 +11,242 @@ medium_id: "1d1b59971846"
 
 ![Image 2](https://miro.medium.com/v2/resize:fit:700/0*5FEMAOCat9fVvMsp.png)
 
-วันนี้เรามาพูดถึงวิธีการติดตั้ง GitLab Runner บน Kubernetes Cluster กันเถอะ 😎 ถ้าคุณใช้ GitLab เพื่อการ CI/CD อยู่แล้ว แต่ยังไม่ได้ใช้ Kubernetes เพื่อจัดการ Runner บทความนี้เหมาะสำหรับคุณเลย 💪
+GitLab Runner คือคนงานที่หยิบ Job จาก Pipeline มาทำ ส่วน Kubernetes executor ทำให้ Job แต่ละตัวได้ Pod ใหม่ของตัวเอง ทำเสร็จแล้วก็เก็บ Pod กลับ ไม่ต้องมีเครื่อง Build หนึ่งตัวที่สะสมไฟล์ Cache และเศษโปรเจกต์จนกลายเป็นห้องเก็บของใต้บันไดครับ
 
-### 1. เตรียมพร้อมก่อนเริ่ม 🚀
+ปี 2026 Helm chart ยังเป็นวิธีทางการสำหรับติดตั้ง GitLab Runner บน Kubernetes แต่ขั้นตอน Registration เปลี่ยนจากบทความยุคก่อนพอสมควร ปัจจุบันควรสร้าง Runner ใน GitLab UI ก่อน แล้วใช้ **Runner authentication token** ซึ่งมักขึ้นต้นด้วย `glrt-` แทน Workflow เก่าที่ใช้ Registration token
 
-ก่อนอื่นเราต้องแน่ใจว่าเรามีสิ่งต่อไปนี้พร้อมแล้ว:
+อีกจุดที่ต้องแก้คือไม่ควรเริ่มจาก `privileged: true` และ Mount `/var/run/docker.sock` โดยอัตโนมัติ เพราะเท่ากับยื่นกุญแจ Host ให้ Build job ทุกตัวครับ
 
-- Kubernetes Cluster ที่พร้อมใช้งาน 🏞️
-- GitLab Account 🐱‍💻
-- GitLab Project ที่ต้องการใช้ Runner 🛠️
+## ภาพการทำงาน
 
-### 2. ติดตั้ง Helm 🛳️
+```text
+GitLab Pipeline
+      ↓ รับ Job
+Runner manager Pod
+      ↓ สร้าง Pod ชั่วคราว
+Build Pod → ทำงาน → ส่งผลลัพธ์ → ถูกลบ
+```
 
-Helm เป็น package manager สำหรับ Kubernetes ถ้ายังไม่มี Helm ในเครื่องคุณ ติดตั้งได้ง่ายๆ ด้วยคำสั่งนี้:
+Runner manager ไม่ได้ Compile งานทั้งหมดใน Pod ตัวเอง มันคุยกับ Kubernetes API เพื่อสร้าง Pod ต่อ Job ตาม Config ที่กำหนด
 
-curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-ตรวจสอบว่า Helm ติดตั้งสำเร็จด้วยคำสั่ง:
+## สิ่งที่ต้องมี
 
-helm version
-### 3. ติดตั้ง GitLab Runner ด้วย Helm 🏃‍♂️
+- Kubernetes cluster และ `kubectl`
+- Helm CLI
+- GitLab project หรือ group ที่มีสิทธิ์สร้าง Runner
+- Namespace สำหรับ Runner
+- Network จาก Cluster ไป GitLab และ Container registry
+- Storage/Cache backend ถ้าต้องการ Cache ข้าม Job
 
-ใช้ Helm เพื่อเพิ่ม GitLab Runner chart repo:
+ตรวจ Context ก่อน:
 
-helm repo add gitlab https://charts.gitlab.io  
+```bash
+kubectl config current-context
+kubectl auth can-i create pods --namespace gitlab-runner
+```
+
+## สร้าง Runner ใน GitLab
+
+ไปที่ Project หรือ Group:
+
+```text
+Settings → CI/CD → Runners → New project/group runner
+```
+
+กำหนด Description, Tag, การรับ Untagged job และ Protection ตามที่ต้องการ แล้วเก็บ Runner authentication token ไว้ใน Secret manager Token นี้เป็น Credential ไม่ควร Commit ใน `values.yaml`
+
+ถ้าระบบของทีมยังแสดงคำว่า Registration token ให้ตรวจ GitLab version และ Migration guide เพราะ Workflow เก่าถูกทยอยยกเลิกไปแล้วครับ
+
+## เพิ่ม Helm repository
+
+```bash
+helm repo add gitlab https://charts.gitlab.io
 helm repo update
-จากนั้นเราจะติดตั้ง GitLab Runner ใน Kubernetes Cluster ด้วยคำสั่ง:
+helm search repo -l gitlab/gitlab-runner
+```
 
-helm install --namespace gitlab-runner --create-namespace gitlab-runner -f values.yaml gitlab/gitlab-runner
-**ตัวอย่างไฟล์**`values.yaml`
+เลือก Chart version และ Pin ไว้ใน Pipeline แทนติดตั้งล่าสุดแบบลอย ๆ เพื่อให้ Upgrade มีจังหวะ Review
 
-gitlabUrl: https://gitlab.com/  
-runnerRegistrationToken: "YOUR_REGISTRATION_TOKEN"  
-unregisterRunners: true  
-terminationGracePeriodSeconds: 3600  
-concurrent: 10  
-checkInterval: 30  
-rbac:  
- create: true  
-runners:  
- privileged: true  
- tags: "k8s-runner"  
- config: |  
- [[runners]]  
- [runners.kubernetes]  
- namespace = "gitlab-runner"  
- image = "alpine:3.12"  
- [[runners.kubernetes.volumes.empty_dir]]  
- name = "docker-certs"  
- [[runners.kubernetes.volumes.host_path]]  
- name = "docker-sock"  
- mount_path = "/var/run/docker.sock"  
- host_path = "/var/run/docker.sock"  
- [runners.docker]  
- tls_verify = false  
- image = "docker:latest"  
- privileged = true  
- disable_entrypoint_overwrite = false  
- oom_kill_disable = false  
- disable_cache = false  
- volumes = ["/cache"]  
- shm_size = 0
-ในไฟล์นี้ เราได้เพิ่มการตั้งค่า Docker ให้กับ GitLab Runner ด้วย โดยเฉพาะการตั้งค่า `docker` ในส่วน `config` ของ Runner และการ mount Docker socket เข้าไปใน pod ของ Runner
+## สร้าง Namespace และ Secret
 
-แทนที่ `"YOUR_REGISTRATION_TOKEN"` ด้วย token ที่คุณได้รับจาก GitLab เมื่อคุณตั้งค่า Runner
+```bash
+kubectl create namespace gitlab-runner
+```
 
-### 4. ตรวจสอบสถานะ 🧐
+สร้าง Secret โดยไม่เขียน Token ลงไฟล์:
 
-หลังจากติดตั้งเสร็จ เรามาตรวจสอบสถานะของ Runner กัน
+```bash
+kubectl create secret generic gitlab-runner-token \
+  --namespace gitlab-runner \
+  --from-literal=runner-token='glrt-REPLACE_ME' \
+  --from-literal=runner-registration-token=''
+```
 
-kubectl get pods --namespace gitlab-runner
-คุณควรจะเห็น pod ของ GitLab Runner กำลังรันอยู่
+ชื่อ Key อาจขึ้นกับ Chart version ที่ใช้งาน ตรวจ `values.yaml` ทางการของ Version นั้นเสมอ ถ้าองค์กรมี External Secrets ให้ดึง Token จาก Secret manager แทนการสร้างมือครับ
 
-### 5. ทดสอบการทำงาน 🎯
+## เขียน values.yaml แบบสิทธิ์พอดีตัว
 
-กลับไปที่ GitLab และตรวจสอบว่า Runner ได้ถูกลงทะเบียนเรียบร้อยแล้ว ไปที่ Project Settings > CI/CD > Runners คุณจะเห็น Runner ที่เราเพิ่งติดตั้งขึ้นมา
+```yaml
+gitlabUrl: https://gitlab.com/
 
-ลองสร้าง Pipeline และดูว่า Runner ของเราเริ่มทำงานหรือไม่ ถ้าใช่แปลว่าคุณได้ติดตั้งสำเร็จแล้ว! 🎉
+rbac:
+  create: true
+
+serviceAccount:
+  create: true
+
+concurrent: 5
+checkInterval: 10
+
+runners:
+  secret: gitlab-runner-token
+  tags: "kubernetes"
+  runUntagged: false
+  protected: true
+  config: |
+    [[runners]]
+      [runners.kubernetes]
+        namespace = "gitlab-runner"
+        image = "alpine:3.20"
+        privileged = false
+        poll_timeout = 600
+
+        cpu_request = "250m"
+        memory_request = "256Mi"
+        cpu_limit = "1"
+        memory_limit = "1Gi"
+
+      [runners.kubernetes.pod_security_context]
+        run_as_non_root = true
+        run_as_user = 1000
+```
+
+ตัวอย่าง Resource เป็นจุดเริ่มต้น ต้องวัดจาก Job จริง ถ้าต่ำเกิน Job ถูก OOMKilled ถ้าสูงเกิน Scheduler วาง Pod ได้น้อยเหมือนจองโต๊ะสิบที่ให้คนนั่งคนเดียวครับ
+
+Field ใน Helm chart เปลี่ยนได้ตาม Version ให้เทียบกับ Default `values.yaml` และเอกสารก่อน Apply โดยเฉพาะชื่อ Secret และ Runner token
+
+## ติดตั้ง Runner
+
+```bash
+helm upgrade --install gitlab-runner gitlab/gitlab-runner \
+  --namespace gitlab-runner \
+  --version <PINNED_CHART_VERSION> \
+  --values values.yaml \
+  --wait \
+  --timeout 5m
+```
+
+ตรวจ Resource:
+
+```bash
+kubectl get pods -n gitlab-runner
+kubectl logs deployment/gitlab-runner -n gitlab-runner
+helm status gitlab-runner -n gitlab-runner
+```
+
+กลับไปหน้า Runners ใน GitLab สถานะควร Online
+
+## ทดสอบด้วย Pipeline เล็ก ๆ
+
+ไฟล์ `.gitlab-ci.yml`:
+
+```yaml
+stages:
+  - test
+
+hello-runner:
+  stage: test
+  tags:
+    - kubernetes
+  image: alpine:3.20
+  script:
+    - echo "Hello from Kubernetes executor"
+    - cat /etc/os-release
+```
+
+เมื่อ Pipeline เริ่ม Runner manager จะสร้าง Build Pod ใหม่ ดูได้ด้วย:
+
+```bash
+kubectl get pods -n gitlab-runner --watch
+```
+
+ถ้า Job ค้างที่ Pending ให้ดู Event:
+
+```bash
+kubectl describe pod <job-pod> -n gitlab-runner
+```
+
+สาเหตุมักเป็น Image pull, Resource ไม่พอ, Admission policy, ServiceAccount หรือ Node selector ไม่ตรงครับ
+
+## ทำไมไม่ควร Mount Docker socket
+
+Config แบบเก่ามักมี:
+
+```text
+/var/run/docker.sock:/var/run/docker.sock
+privileged = true
+```
+
+เมื่อ Container ควบคุม Docker socket ของ Node ได้ มันอาจสร้าง Container ใหม่ Mount filesystem ของ Host หรือขยายสิทธิ์ออกนอก Job Pod ได้ Isolation ที่ Kubernetes เตรียมไว้จึงแทบหายไป
+
+ถ้าต้อง Build image พิจารณาทางเลือกที่ไม่ยื่น Socket ของ Host ให้ Job เช่น:
+
+- BuildKit แบบ Rootless
+- Buildah ตาม Environment ที่รองรับ
+- Cloud-native image builder ของ Platform
+- แยก Runner สำหรับงานที่ต้องสิทธิ์สูงออกจาก Runner ทั่วไป
+
+ถ้าจำเป็นต้อง Privileged จริง ให้ใช้ Dedicated node, Taint/Toleration, Network policy และไม่รับ Job จาก Repository ที่ไม่ไว้ใจ อย่าให้ Pull request จากคนแปลกหน้ารันบน Runner ที่ถือกุญแจ Cluster ครับ
+
+## จำกัด Blast radius
+
+Runner เป็นระบบประมวลผลโค้ดจาก Repository จึงควรมองเหมือนห้องทดลองที่อาจมีสารเคมี ไม่ใช่ Pod ธรรมดา
+
+แนวปฏิบัติที่ควรมี:
+
+- Namespace แยก
+- ServiceAccount และ RBAC ขั้นต่ำ
+- NetworkPolicy จำกัดปลายทาง
+- Pod Security Admission ระดับที่เหมาะสม
+- Resource requests/limits และ Namespace quota
+- Runner แยกตาม Trust boundary
+- Protected runner สำหรับ Branch/Tag สำคัญ
+- ไม่ส่ง Secret ให้ Job ที่ไม่ต้องใช้
+- Rotate Runner token เมื่อสงสัยว่ารั่ว
+
+## Cache และ Artifact คนละอย่าง
+
+- **Cache** ช่วยให้ Job รอบต่อไปเร็วขึ้น เช่น Dependency cache ลบได้และ Pipeline ควรสร้างใหม่ได้
+- **Artifact** คือผลลัพธ์ของ Job เช่น Binary, Test report หรือ Coverage ที่ต้องส่งต่อหรือตรวจย้อนหลัง
+
+สำหรับ Runner ที่ Pod หายหลังจบ Job Local cache ไม่ได้อยู่ถาวร ถ้าต้องแชร์ข้าม Pod ให้ตั้ง Object storage เช่น S3-compatible backend และกำหนด Lifecycle ไม่ให้ Cache เก่าสะสมจนค่าใช้จ่ายโตเงียบ ๆ
+
+## Upgrade อย่างไม่สะดุด
+
+ก่อน Upgrade:
+
+1. Pause Runner ใน GitLab ถ้าต้องการหยุดรับงานใหม่
+2. รอ Job ปัจจุบันจบ
+3. อ่าน Release note ของ Chart และ Runner
+4. `helm diff` หรือดูค่าที่เปลี่ยน
+5. Upgrade ด้วย Version ที่ Pin
+6. รัน Pipeline ทดสอบ
+
+```bash
+helm upgrade gitlab-runner gitlab/gitlab-runner \
+  --namespace gitlab-runner \
+  --version <NEW_CHART_VERSION> \
+  --values values.yaml \
+  --wait
+```
+
+## สรุป
+
+Helm chart ทำให้ติดตั้ง GitLab Runner บน Kubernetes ได้ไม่ยาก ส่วน Kubernetes executor ช่วยสร้าง Pod ใหม่ต่อ Job และเก็บกวาดหลังทำงานเสร็จ
+
+สิ่งสำคัญในปี 2026 คือใช้ Runner authentication token รุ่นใหม่ เก็บ Token ใน Secret, Pin Chart version และเริ่มจาก Runner ที่ไม่ Privileged อย่า Mount Docker socket เป็นค่าเริ่มต้น ความเร็วของ CI สำคัญครับ แต่ถ้า Pipeline หนึ่งตัวสามารถเปิดประตูทั้ง Node ได้ เรากำลังประหยัดเวลาสร้าง Imageแลกกับการยกกุญแจ Data center ให้ Job ไปถือเล่น
+
+อ่านต่อจากเอกสารทางการ:
+
+- [GitLab Runner Helm chart](https://docs.gitlab.com/runner/install/kubernetes/)
+- [Kubernetes executor](https://docs.gitlab.com/runner/executors/kubernetes/)

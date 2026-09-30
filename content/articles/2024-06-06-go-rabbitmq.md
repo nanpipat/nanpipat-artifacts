@@ -11,178 +11,240 @@ medium_id: "19c83fe9ddcf"
 
 ![Image 2](https://miro.medium.com/v2/resize:fit:500/0*KQuN5d9votmGJZLj.png)
 
-## RabbitMQ คืออะไร?
+สมมติระบบร้านค้าได้รับ Order แล้วต้องตัดสต็อก ส่ง Email ออกใบเสร็จ และแจ้งขนส่ง ถ้า Web API ทำทุกอย่างต่อกัน ลูกค้าจะยืนรอเหมือนต่อคิวร้านที่พนักงานคนเดียวรับออเดอร์ ชงกาแฟ ล้างแก้ว และขี่มอเตอร์ไซค์ไปส่งเอง
 
-RabbitMQ เป็นระบบตัวกลางในการส่งข้อความ (Message Broker) ที่ช่วยให้แอปพลิเคชันสามารถส่งและรับข้อความระหว่างกันได้ง่ายๆ โดยใช้คิว (Queue) 📨 RabbitMQ ช่วยให้แอปพลิเคชันคุยกันได้ดีขึ้น โดยไม่ต้องรู้รายละเอียดภายในของกันและกัน
+RabbitMQ ช่วยวาง “จุดรับฝากงาน” ไว้ตรงกลาง API ส่งข้อความแล้วตอบลูกค้าได้เร็วขึ้น ส่วน Worker แต่ละตัวมารับงานที่ตัวเองถนัด ระบบจึงแยกส่วนและรองรับ Load ได้ยืดหยุ่นขึ้นครับ
 
-## ทำไมต้องใช้ RabbitMQ?
+## RabbitMQ คืออะไร
 
-1.   **Decoupling**: RabbitMQ ช่วยแยกส่วนการทำงานของแอปพลิเคชันออกจากกัน ทำให้แต่ละส่วนสามารถพัฒนาและปรับปรุงได้โดยไม่กระทบส่วนอื่น 🔄
-2.   **Scalability**: ขยายระบบได้ง่ายๆ โดยการเพิ่มคิวและโหนด RabbitMQ เพื่อรองรับงานที่เพิ่มขึ้น 📈
-3.   **Reliability**: RabbitMQ มีระบบจัดการข้อความที่มั่นใจได้ว่าข้อความจะไม่หาย และเก็บไว้ในคิวจนกว่าจะมีผู้รับ 📥
+RabbitMQ เป็น Message broker รับ เก็บ และส่งต่อ Message ระหว่าง Producer กับ Consumer ผ่าน Queue และ Exchange
 
-## RabbitMQ ทำงานอย่างไร?
+- **Producer** สร้างและส่ง Message
+- **Exchange** ตัดสินว่าจะ Route Message ไป Queue ใด
+- **Queue** พัก Message รอ Consumer
+- **Binding** กติกาเชื่อม Exchange กับ Queue
+- **Consumer** รับและประมวลผล Message
 
-RabbitMQ ใช้คิวในการจัดการข้อความ โดยมีองค์ประกอบหลักดังนี้:
+เปรียบเหมือนไปรษณีย์ Producer หย่อนพัสดุ Exchange ดูรหัสปลายทาง Queue เป็นชั้นพักของ และ Consumer เป็นบุรุษไปรษณีย์ที่มารับไปส่ง ผู้ส่งไม่ต้องโทรหาคนส่งทุกคนโดยตรงครับ
 
-1.   **Producer**: ส่งข้อความไปยังคิว
-2.   **Queue**: เก็บข้อความที่ส่งมา รอให้มีผู้รับมารับไป
-3.   **Consumer**: รับข้อความจากคิว
-4.   **Exchange**: รับข้อความจาก Producer แล้วส่งไปยังคิวที่เหมาะสมตามกฎการกำหนดเส้นทาง (routing rules)
+## ทำไมไม่เรียก Service ตรง ๆ ทุกครั้ง
 
-## วิธีการทำงาน
+Message broker เหมาะเมื่อเราต้องการ:
 
-1.   **Producer ส่งข้อความ**: Producer ส่งข้อความไปยัง Exchange ของ RabbitMQ
-2.   **Exchange กำหนดเส้นทาง**: Exchange พิจารณากฎการกำหนดเส้นทางแล้วส่งข้อความไปยัง Queue ที่เหมาะสม
-3.   **Queue เก็บข้อความ**: ข้อความถูกเก็บไว้ใน Queue รอให้ Consumer มารับ
-4.   **Consumer รับข้อความ**: Consumer รับข้อความจาก Queue แล้วประมวลผลตามที่ต้องการ
+- แยก Producer กับ Consumer ไม่ให้รู้รายละเอียดกันมาก
+- รับ Load กระชากแล้วค่อยระบายงาน
+- Retry งานชั่วคราวที่ล้มเหลว
+- กระจายงานให้ Worker หลายตัว
+- ส่ง Event หนึ่งชุดไปหลายปลายทาง
 
-## ตัวอย่างการใช้งาน RabbitMQ กับ Go
+แต่ RabbitMQ ไม่ใช่ยาวิเศษ มันเพิ่มระบบที่ต้อง Monitor, Backup, Upgrade และออกแบบ Delivery semantics ถ้างานเป็น Request/Response ง่าย ๆ และต้องการคำตอบทันที HTTP หรือ gRPC อาจเหมาะกว่า อย่าสร้างที่ทำการไปรษณีย์เพื่อส่งกระดาษโน้ตจากโต๊ะหนึ่งไปอีกโต๊ะที่อยู่ข้างกันครับ
 
-สมมติเรามีระบบสั่งซื้อสินค้าออนไลน์ เมื่อมีการสั่งซื้อใหม่:
+## อัปเดต Library สำหรับ Go
 
-1.   **Producer**: แอปพลิเคชันเว็บส่งข้อมูลการสั่งซื้อไปยัง RabbitMQ
-2.   **Exchange**: RabbitMQ Exchange รับข้อมูลการสั่งซื้อและกำหนดเส้นทางไปยังคิวที่จัดการคำสั่งซื้อ
-3.   **Queue**: คิวเก็บข้อมูลการสั่งซื้อจนกว่าจะมีการประมวลผล
-4.   **Consumer**: แอปพลิเคชันที่จัดการคำสั่งซื้อรับข้อมูลจากคิวและทำการประมวลผล เช่น ยืนยันคำสั่งซื้อและเตรียมการจัดส่ง
+ตัวอย่างเก่าใช้ `github.com/streadway/amqp` ซึ่งไม่ได้เป็นตัวเลือกที่ควรเริ่มงานใหม่แล้ว ปัจจุบัน Tutorial ทางการของ RabbitMQ ใช้ Client:
 
-เอาหละ เรามาดูการใช้ RabbitMQ กับ Go กันดีกว่าครับ ไปกันต๊อออ
+```bash
+go get github.com/rabbitmq/amqp091-go
+```
 
-## การติดตั้ง RabbitMQ
+Import พร้อม Alias เพื่อให้โค้ดอ่านสั้น:
 
-ก่อนอื่นเราต้องติดตั้ง RabbitMQ มีหลากหลายวิธีมาก [สามารถดูได้จาก official website ได้เลย](https://www.rabbitmq.com/docs/download) เสร็จแล้วก็เปิดเซิร์ฟเวอร์ RabbitMQ 🐇🚀
+```go
+import amqp "github.com/rabbitmq/amqp091-go"
+```
 
-## การติดตั้งไลบรารี RabbitMQ สำหรับ Go
+ตัวอย่างนี้ใช้ AMQP 0-9-1 ส่วน RabbitMQ 4.x รองรับ AMQP 1.0 ด้วย เลือก Protocol และ Client ตาม Ecosystem ของระบบ อย่าผสม Tutorial คนละ Protocol แล้วสงสัยว่าชื่อ API ไม่ตรงกันครับ
 
-เราจะใช้ไลบรารี `streadway/amqp` ที่นิยมใช้กับ Go เพื่อติดตั้ง รันคำสั่งนี้:
+## เปิด RabbitMQ สำหรับทดลอง
 
-go get github.com/streadway/amqp
-## ส่งข้อความ
+ใช้ Container ที่มี Management UI:
 
-นี่คือตัวอย่างการส่งข้อความไปยังคิวใน RabbitMQ ด้วย Go:
+```bash
+docker run --rm \
+  --name rabbitmq \
+  -p 5672:5672 \
+  -p 15672:15672 \
+  rabbitmq:4-management
+```
 
-**Publisher (Send)**
+- Port 5672 สำหรับ AMQP
+- Port 15672 สำหรับ Management UI
 
+บัญชี `guest/guest` เหมาะกับ Local test และโดยค่าเริ่มต้นจำกัดการเชื่อมต่อจาก localhost Production ต้องสร้าง User, Virtual host, Permission และ TLS ให้เหมาะสม ห้ามเอารหัสตัวอย่างไปวางกลาง Internet ครับ
+
+## Publisher ส่ง Message
+
+```go
 package main
-import (  
- "log"  
- "github.com/streadway/amqp"  
+
+import (
+	"context"
+	"log"
+	"time"
+
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-func failOnError(err error, msg string) {  
- if err != nil {  
- log.Fatalf("%s: %s", msg, err)  
- }  
+func main() {
+	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	if err != nil {
+		log.Fatal("connect RabbitMQ: ", err)
+	}
+	defer conn.Close()
+
+	channel, err := conn.Channel()
+	if err != nil {
+		log.Fatal("open channel: ", err)
+	}
+	defer channel.Close()
+
+	queue, err := channel.QueueDeclare(
+		"orders",
+		true,  // durable
+		false, // auto-delete
+		false, // exclusive
+		false, // no-wait
+		nil,
+	)
+	if err != nil {
+		log.Fatal("declare queue: ", err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err = channel.PublishWithContext(
+		ctx,
+		"",         // default exchange
+		queue.Name, // routing key
+		false,      // mandatory
+		false,      // immediate
+		amqp.Publishing{
+			ContentType:  "application/json",
+			DeliveryMode: amqp.Persistent,
+			MessageId:    "order-123",
+			Timestamp:    time.Now().UTC(),
+			Body:         []byte(`{"order_id":"order-123"}`),
+		},
+	)
+	if err != nil {
+		log.Fatal("publish message: ", err)
+	}
+
+	log.Println("published order-123")
 }
+```
 
-func main() {  
- conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")  
- failOnError(err, "Failed to connect to RabbitMQ")  
- defer conn.Close()
+Queue ตั้ง `durable: true` และ Message ใช้ `DeliveryMode: Persistent` ช่วยให้ Broker พยายามเก็บ Message ลง Durable storage แต่ถ้าต้องรู้ว่า Broker รับ Message จริง ควรใช้ Publisher Confirms เพิ่ม การที่ `PublishWithContext` คืน `nil` หมายถึง Client ส่งได้ ไม่ได้แปลว่า Consumer ทำงานสำเร็จแล้วครับ
 
-ch, err := conn.Channel()  
- failOnError(err, "Failed to open a channel")  
- defer ch.Close()
+## Consumer รับงานและ Ack เอง
 
-q, err := ch.QueueDeclare(  
- "hello",   
- false,   
- false,   
- false,   
- false,   
- nil,   
- )  
- failOnError(err, "Failed to declare a queue")
-
-body := "Hello World!"  
- err = ch.Publish(  
- "",   
- q.Name,   
- false,   
- false,   
- amqp.Publishing{  
- ContentType: "text/plain",  
- Body: []byte(body),  
- })  
- failOnError(err, "Failed to publish a message")  
- log.Printf(" [x] Sent %s", body)  
-}
-
-โค้ดนี้จะส่งข้อความ “Hello World!” ไปยังคิวชื่อ “hello”
-
-## รับข้อความ
-
-นี่คือตัวอย่างการรับข้อความจากคิวใน RabbitMQ ด้วย Go:
-
-### Consumer (Receive)
-
+```go
 package main
-import (  
- "log"  
- "github.com/streadway/amqp"  
+
+import (
+	"log"
+
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-func failOnError(err error, msg string) {  
- if err != nil {  
- log.Fatalf("%s: %s", msg, err)  
- }  
+func main() {
+	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	if err != nil {
+		log.Fatal("connect RabbitMQ: ", err)
+	}
+	defer conn.Close()
+
+	channel, err := conn.Channel()
+	if err != nil {
+		log.Fatal("open channel: ", err)
+	}
+	defer channel.Close()
+
+	queue, err := channel.QueueDeclare("orders", true, false, false, false, nil)
+	if err != nil {
+		log.Fatal("declare queue: ", err)
+	}
+
+	if err := channel.Qos(10, 0, false); err != nil {
+		log.Fatal("set qos: ", err)
+	}
+
+	deliveries, err := channel.Consume(
+		queue.Name,
+		"order-worker",
+		false, // auto-ack ต้องเป็น false
+		false,
+		false,
+		false,
+		nil,
+	)
+	if err != nil {
+		log.Fatal("consume: ", err)
+	}
+
+	for delivery := range deliveries {
+		if err := processOrder(delivery.Body); err != nil {
+			log.Printf("process failed: %v", err)
+			_ = delivery.Nack(false, false)
+			continue
+		}
+
+		if err := delivery.Ack(false); err != nil {
+			log.Printf("ack failed: %v", err)
+		}
+	}
 }
 
-func main() {  
- conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")  
- failOnError(err, "Failed to connect to RabbitMQ")  
- defer conn.Close()
-
-ch, err := conn.Channel()  
- failOnError(err, "Failed to open a channel")  
- defer ch.Close()
-
-q, err := ch.QueueDeclare(  
- "hello",   
- false,   
- false,   
- false,   
- false,   
- nil,   
- )  
- failOnError(err, "Failed to declare a queue")
-
-msgs, err := ch.Consume(  
- q.Name,   
- "",   
- true,   
- false,   
- false,   
- false,   
- nil,   
- )  
- failOnError(err, "Failed to register a consumer")
-
-forever := make(chan bool)
-
-go func() {  
- for d := range msgs {  
- log.Printf("Received a message: %s", d.Body)  
- }  
- }()
-
-log.Printf(" [*] Waiting for messages. To exit press CTRL+C")  
- <-forever  
+func processOrder(body []byte) error {
+	log.Printf("received: %s", body)
+	return nil
 }
+```
 
-โค้ดนี้จะรับข้อความจากคิวชื่อ “hello” และพิมพ์ข้อความนั้นในคอนโซล
+จุดสำคัญคือ `autoAck: false` เรา Ack หลังงานเสร็จเท่านั้น ถ้า Worker ตายก่อน Ack Broker สามารถส่ง Message ใหม่ได้ ต่างจาก Auto Ack ที่เปรียบเหมือนพนักงานเซ็นรับพัสดุก่อนเปิดกล่อง แล้วทำกล่องหายระหว่างเดินกลับโต๊ะ
 
-## การรันตัวอย่าง
+ตัวอย่าง `Nack(false, false)` ไม่ Requeue Message ที่ล้มเหลว ปกติควรผูก Dead Letter Exchange เพื่อเก็บงานเสียไว้ตรวจหรือ Retry ตามรอบ ถ้า `requeue: true` ทันทีทุก Error อาจเกิด Poison message วิ่งวนกิน CPU ไม่จบครับ
 
-1.   ตรวจสอบให้แน่ใจว่า RabbitMQ กำลังทำงานอยู่
-2.   รันโปรแกรม publisher เพื่อส่งข้อความ:
+## Delivery เป็น At least once จึงต้อง Idempotent
 
-go run publisher.go
-3. รันโปรแกรม consumer เพื่อรับข้อความ:
+RabbitMQ ทั่วไปออกแบบให้ Message อาจถูกส่งซ้ำ เช่น Consumer ทำงานสำเร็จแต่ Connection หลุดก่อน Ack Broker ไม่รู้ว่างานจบแล้วจึงส่งอีกครั้ง
 
-go run consumer.go
-เมื่อเรารัน consumer เราจะเห็นข้อความ “Hello World!” ถูกพิมพ์ในคอนโซล 📬
+Consumer ควร Idempotent:
+
+- มี `message_id` หรือ Business key
+- เก็บสถานะว่า Event ไหนประมวลผลแล้ว
+- ใช้ Database unique constraint ป้องกันผลซ้ำ
+- ออกแบบ Operation ให้เรียกซ้ำแล้วได้ผลเดิม
+
+การสัญญาว่า “Exactly once” โดยไม่มี Transaction ครอบ Broker กับ Database เป็นเรื่องซับซ้อนมาก ในงานจริงเรามักยอมรับ At-least-once แล้วทำ Consumer ให้รับมือข้อความซ้ำครับ
+
+## Connection กับ Channel ใช้อย่างไร
+
+Connection เป็น TCP connection ที่มีราคาแพง ส่วน Channel เป็น Virtual connection ที่เบากว่า แนวทางทั่วไปคือ Reuse Connection และเปิด Channel ตามรูปแบบ Concurrency ที่ Client รองรับ ไม่สร้าง Connection ใหม่ทุก Message
+
+ต้องมีแผนรับ Connection ขาดด้วย Client Library ไม่ได้ทำ Reconnect และ Restore topology ให้ทุกอย่างโดยอัตโนมัติตามใจเราเสมอ Worker Production ควรมี Loop reconnect พร้อม Backoff, ประกาศ Exchange/Queue/Binding ใหม่อย่าง Idempotent และหยุดระบบอย่าง Graceful เมื่อรับ Signal
+
+## Reliability checklist
+
+- Queue และ Exchange ที่ต้องอยู่ข้าม Restart ตั้ง Durable
+- Message สำคัญใช้ Persistent delivery
+- Publisher ใช้ Confirm เมื่อจำเป็นต้องรู้ว่า Broker รับแล้ว
+- Consumer ปิด Auto Ack และ Ack หลังประมวลผลสำเร็จ
+- ตั้ง Prefetch/QoS ตามงานและ Memory
+- มี Dead Letter Queue และ Retry policy ที่จำกัดรอบ
+- Consumer เป็น Idempotent
+- ใช้ TLS, User และ Virtual host แยก Environment
+- Monitor Queue depth, Unacked message, Consumer count และ Disk alarm
+- วางแผน Reconnect, Shutdown และ Deploy แบบไม่ทำ Message หาย
 
 ## สรุป
 
-ตัวอย่างนี้แสดงวิธีส่งและรับข้อความโดยใช้ RabbitMQ กับ Go 🐇💌 RabbitMQ เป็นเครื่องมือเจ๋งๆ ที่ช่วยให้เราสร้างระบบที่ยืดหยุ่นและขยายตัวได้ดี 📈 ไลบรารี `streadway/amqp` ทำให้การใช้งาน RabbitMQ กับ Go ง่ายมากๆ เราสามารถขยายตัวอย่างนี้ต่อไปอีก เช่น การทำงานคิวงาน หรือ การแจ้งเตือนต่างๆ ได้ง่ายๆ เลย 🚀
+RabbitMQ ช่วยแยก Producer ออกจาก Consumer และทำให้ระบบรับงานกระชากได้ดีขึ้น แต่ความน่าเชื่อถือไม่ได้เกิดเพียงเพราะมี Queue อยู่ตรงกลาง เราต้องออกแบบ Durability, Acknowledgement, Retry, Dead letter และ Idempotency ให้ครบ
+
+สำหรับ Go ในปี 2026 ให้เริ่มจาก `github.com/rabbitmq/amqp091-go` ตาม Tutorial ทางการ แล้วค่อยขยายจาก Hello World ไปสู่ Publisher confirms และ Work queues เมื่อเข้าใจเส้นทาง Message จริง ๆ ก่อน กระต่ายส่งจดหมายได้เร็วครับ แต่เรายังต้องเขียนที่อยู่ให้ชัดและมีแผนตอนผู้รับไม่อยู่บ้านเสมอ
+
+อ่านต่อจากเอกสารทางการ:
+
+- [RabbitMQ tutorial for Go](https://www.rabbitmq.com/tutorials/tutorial-one-go)
+- [RabbitMQ tutorials](https://www.rabbitmq.com/tutorials)
