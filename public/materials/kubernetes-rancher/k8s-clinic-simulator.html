@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K8s Clinic — เกมฝึกวินิจฉัย (Simulator)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#191919;--ink2:#37352f;--muted:#787774;--line:#e9e9e7;--soft:#f7f7f5;
+--blue:#2383e2;--blue-bg:#e7f3f8;--orange:#d9730d;--orange-bg:#fbecdd;--red:#e03e3e;--red-bg:#fbe4e4;
+--green:#0f7b6c;--green-bg:#ddedea;--purple:#6940a5;--purple-bg:#eae4f2;--yellow-bg:#fbf3db}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'IBM Plex Sans Thai',-apple-system,sans-serif;color:var(--ink);background:#f7f7f5;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1120px;margin:0 auto;padding:20px 18px 60px}
+code,.mono{font-family:'IBM Plex Mono',monospace}
+h1{font-size:22px;font-weight:600;letter-spacing:-.01em}
+h2{font-size:17px;font-weight:600;margin-bottom:8px}
+h3{font-size:14px;font-weight:600;margin-bottom:6px}
+.sub{color:var(--muted);font-size:13px}
+.card{background:#fff;border:1px solid var(--line);border-radius:8px}
+/* header */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px}
+.brand .logo{width:30px;height:30px;border-radius:7px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px}
+.score{display:flex;gap:8px;align-items:center}
+.pill{border:1px solid var(--line);background:#fff;border-radius:20px;padding:5px 13px;font-size:13px}
+.pill b{font-size:15px}
+/* fake rancher chrome */
+.bar{display:flex;gap:10px;align-items:center;padding:9px 13px;border-bottom:1px solid var(--line);background:var(--soft);border-radius:8px 8px 0 0;flex-wrap:wrap;font-size:13px}
+select{font-family:inherit;font-size:13px;padding:5px 9px;border:1px solid var(--line);border-radius:5px;background:#fff;color:var(--ink)}
+.bar label{color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{text-align:left;padding:10px 13px;border-bottom:1px solid var(--line)}
+th{font-size:12px;font-weight:500;color:var(--muted);background:#fff}
+tr.row{cursor:pointer}
+tr.row:hover td{background:var(--soft)}
+tr.row.sel td{background:var(--blue-bg)}
+tbody tr:last-child td{border-bottom:none}
+.tag{display:inline-block;font-size:12px;padding:2px 9px;border-radius:20px;font-weight:500;white-space:nowrap}
+.t-ok{background:var(--green-bg);color:var(--green)}
+.t-warn{background:var(--yellow-bg);color:#8a6d1a}
+.t-bad{background:var(--red-bg);color:var(--red)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:middle}
+.d-ok{background:#0f9b7a}.d-warn{background:#e5a01a}.d-bad{background:var(--red)}
+.done{font-size:12px;color:var(--green);font-weight:500}
+/* detail */
+.detail{margin-top:16px}
+.tabs{display:flex;gap:2px;padding:0 13px;border-bottom:1px solid var(--line);background:var(--soft);border-radius:8px 8px 0 0;flex-wrap:wrap}
+.tab{padding:9px 14px;font-size:13px;cursor:pointer;border-bottom:2px solid transparent;color:var(--muted)}
+.tab.on{color:var(--ink);border-bottom-color:var(--blue);font-weight:500}
+.pane{padding:15px 16px;display:none}
+.pane.on{display:block}
+pre{background:#1f1f1e;color:#e8e8e6;border-radius:6px;padding:13px 15px;font-size:12.5px;line-height:1.75;overflow:auto;max-height:300px;white-space:pre-wrap;font-family:'IBM Plex Mono',monospace}
+pre .err{color:#ff8b8b}
+pre .ts{color:#8a8a87}
+.toggles{display:flex;gap:16px;margin-bottom:10px;font-size:13px;align-items:center;flex-wrap:wrap}
+.toggles label{display:flex;gap:6px;align-items:center;cursor:pointer}
+.hintbox{background:var(--blue-bg);border-radius:6px;padding:10px 13px;font-size:13px;margin-top:12px}
+.empty{padding:40px 20px;text-align:center;color:var(--muted);font-size:14px}
+.kv{display:grid;grid-template-columns:170px 1fr;gap:7px 14px;font-size:13.5px}
+.kv .k{color:var(--muted)}
+button{font-family:inherit;font-size:14px;padding:9px 17px;border-radius:6px;border:1px solid var(--ink);background:var(--ink);color:#fff;cursor:pointer;font-weight:500}
+button.ghost{background:#fff;color:var(--ink2);border-color:var(--line)}
+button:disabled{opacity:.4;cursor:not-allowed}
+/* quiz */
+.mask{position:fixed;inset:0;background:rgba(15,15,15,.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:50}
+.mask.on{display:flex}
+.modal{background:#fff;border-radius:10px;max-width:620px;width:100%;max-height:88vh;overflow:auto;padding:24px}
+.opt{display:block;border:1px solid var(--line);border-radius:6px;padding:11px 14px;margin-bottom:8px;cursor:pointer;font-size:14px}
+.opt:hover{background:var(--soft)}
+.opt input{margin-right:9px}
+.opt.right{background:var(--green-bg);border-color:#9ed6c8}
+.opt.wrong{background:var(--red-bg);border-color:#f0b3b3}
+.fb{border-radius:6px;padding:12px 15px;font-size:13.5px;margin:12px 0}
+.fb.ok{background:var(--green-bg)}
+.fb.no{background:var(--orange-bg)}
+.summary td,.summary th{font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <div class="brand"><div class="logo">🏥</div>
+      <div><h1>K8s Clinic</h1><div class="sub">โหมดจำลอง — ล่ารหัสลับ 4 คำ + ฝึกวินิจฉัย โดยไม่ต้องต่อ cluster จริง</div></div>
+    </div>
+    <div class="score">
+      <div class="pill">ตรวจแล้ว <b id="pDone">0</b>/5</div>
+      <div class="pill">คะแนน <b id="pScore">0</b>/15</div>
+      <button class="ghost" onclick="reset()">เริ่มใหม่</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="bar">
+      <label>Cluster</label>
+      <select id="cluster"><option>prod-th</option><option selected>training</option></select>
+      <label>Namespace</label>
+      <select id="ns" onchange="render()">
+        <option value="default">default</option>
+        <option value="k8s-clinic" selected>k8s-clinic</option>
+      </select>
+      <span class="sub" style="margin-left:auto">Workloads</span>
+    </div>
+    <div id="list"></div>
+  </div>
+
+  <div id="detail" class="detail"></div>
+
+  <div id="final" style="margin-top:18px"></div>
+</div>
+
+<div class="mask" id="mask"><div class="modal" id="modal"></div></div>
+
+<script>
+const P = [
+{
+ id:'A', name:'cash-register', ready:'1/1', status:'Running', restarts:0, age:'3h12m', level:'ok',
+ pod:'cash-register-7d4b8c9f5-x2k9p',
+ logs:{cur:['[cash-register] service started successfully','[cash-register] health check OK','[cash-register] >>> SECRET CODE 4 = LOGS <<<','[cash-register] transaction processed, status=OK'],prev:null},
+ events:[{t:'Normal',r:'Scheduled',a:'3h',m:'Successfully assigned k8s-clinic/cash-register-... to node-02'},
+         {t:'Normal',r:'Pulled',a:'3h',m:'Container image "nginx:1.27-alpine" already present on machine'},
+         {t:'Normal',r:'Started',a:'3h',m:'Started container web'}],
+ cfg:{'Image':'nginx:1.27-alpine','Memory limit':'96Mi','CPU limit':'100m','Readiness probe':'—','Replicas':'1'},
+ q1:{q:'คนไข้รายนี้เป็นอะไร',
+     c:['ไม่ได้ป่วย ทำงานปกติดี','กำลังจะหมดหน่วยความจำ','ดึง image ไม่ได้','ยังไม่พร้อมรับ traffic'],ans:0,
+     why:'READY = 1/1, RESTARTS = 0, log เป็น access log ปกติ และ Events ไม่มีอะไรผิดปกติ → ไม่มีปัญหา · ในงานจริงต้องกล้าสรุปว่า "ตัวนี้ปกติ" ด้วย'},
+ q2:{q:'ควรทำอะไรต่อ',c:['ไม่ต้องทำอะไร','restart ไว้ก่อนเผื่อไว้','ส่งต่อให้ dev','ลบทิ้งแล้วสร้างใหม่'],ans:0,
+     why:'อย่า restart ของที่ยังดีอยู่ — ทุกการ restart มีความเสี่ยงและทำให้ log เดิมหาย'}
+},
+{
+ id:'B', name:'bean-grinder', ready:'0/1', status:'ImagePullBackOff', restarts:0, age:'12m', level:'bad',
+ pod:'bean-grinder-5f9c7d8b6-mn4tq',
+ logs:{cur:null,prev:null},
+ events:[{t:'Normal',r:'Scheduled',a:'12m',m:'Successfully assigned k8s-clinic/bean-grinder-... to node-01'},
+         {t:'Normal',r:'Pulling',a:'11m',m:'Pulling image "nginx:secret-code-EVENTS"'},
+         {t:'Warning',r:'Failed',a:'11m',m:'Failed to pull image "nginx:secret-code-EVENTS": manifest for nginx:secret-code-EVENTS not found'},
+         {t:'Warning',r:'Failed',a:'11m',m:'Error: ErrImagePull'},
+         {t:'Warning',r:'BackOff',a:'2m',m:'Back-off pulling image "nginx:secret-code-EVENTS"'}],
+ cfg:{'Image':'nginx:secret-code-EVENTS','Memory limit':'—','CPU limit':'—','Readiness probe':'—','Replicas':'1'},
+ q1:{q:'คนไข้รายนี้เป็นอะไร',
+     c:['แอปพังตอนเริ่มทำงาน','ดึง image ไม่ได้เพราะ tag ที่ระบุไม่มีอยู่จริง','หน่วยความจำไม่พอ','ไม่มี node ว่างให้รัน'],ans:1,
+     why:'Events บอกตรงๆ ว่า manifest for nginx:secret-code-EVENTS not found · สังเกตว่าไม่มี log ให้ดูเลย เพราะ container ยังไม่เคยเริ่มทำงาน — เคสแบบนี้ต้องดู Events เท่านั้น'},
+ q2:{q:'ควรทำอะไรต่อ',c:['restart ซ้ำจนกว่าจะขึ้น','ไม่ต้องทำอะไร','ส่งต่อ พร้อมแจ้งว่า image tag ไม่มีอยู่จริง','เข้า shell ไปแก้ไฟล์ข้างใน'],ans:2,
+     why:'การแก้ tag หรือแก้สิทธิ์ registry เป็นงานของทีมที่ deploy — เราช่วยได้มากที่สุดคือชี้สาเหตุให้ชัดพร้อมข้อความจาก Events'}
+},
+{
+ id:'C', name:'steam-wand', ready:'0/1', status:'CrashLoopBackOff', restarts:7, age:'18m', level:'bad',
+ pod:'steam-wand-6c8f9d7a5-k2p9w',
+ logs:{cur:['[steam-wand] starting version 2.3.1','[steam-wand] loading config from /etc/config'],
+       prev:['[steam-wand] starting version 2.3.1','[steam-wand] loading config from /etc/config',
+             'ERR:[steam-wand] ERROR: connect ECONNREFUSED postgres:5432','ERR:[steam-wand] >>> SECRET CODE 2 = PREVIOUS <<<','ERR:[steam-wand] fatal: cannot start without database, exiting']},
+ events:[{t:'Normal',r:'Pulled',a:'18m',m:'Successfully pulled image "alpine:3.20"'},
+         {t:'Normal',r:'Created',a:'2m',m:'Created container api'},
+         {t:'Warning',r:'BackOff',a:'40s',m:'Back-off restarting failed container api in pod steam-wand-...'}],
+ cfg:{'Image':'alpine:3.20','Memory limit':'64Mi','CPU limit':'100m','Readiness probe':'—','Replicas':'1'},
+ q1:{q:'คนไข้รายนี้เป็นอะไร',
+     c:['image tag ผิด','ต่อฐานข้อมูลไม่ได้ แอปเลยจบการทำงานเอง','node เต็ม','readiness probe ไม่ผ่าน'],ans:1,
+     why:'ต้องเปิด log ของรอบก่อนหน้า (Previous) ถึงจะเห็น ECONNREFUSED postgres:5432 · log ของรอบปัจจุบันจะมีแค่ 2 บรรทัดแรก เพราะมันเพิ่งเริ่มใหม่และยังไม่ทันพัง'},
+ q2:{q:'ควรทำอะไรต่อ',c:['restart ต่อไปเรื่อยๆ','ส่งต่อ พร้อมแนบ log รอบที่พัง และเวลาที่เริ่มเกิด','ไม่ต้องทำอะไร','scale เป็น 3 ตัวเผื่อมีตัวรอด'],ans:1,
+     why:'restart ไม่ช่วย เพราะสาเหตุคือ dependency ปลายทาง (database) · scale เพิ่มยิ่งทำให้ log รกและสิ้นเปลืองเปล่าๆ'}
+},
+{
+ id:'D', name:'ice-maker', ready:'1/1', status:'Running', restarts:14, age:'52m', level:'warn',
+ pod:'ice-maker-8b7d6c5f4-r7t2m',
+ logs:{cur:['[ice-maker] warming up...','[ice-maker] buffering print jobs into memory'],
+       prev:['[ice-maker] warming up...','[ice-maker] buffering print jobs into memory']},
+ events:[{t:'Normal',r:'Created',a:'90s',m:'Created container printer'},
+         {t:'Normal',r:'Started',a:'88s',m:'Started container printer'},
+         {t:'Warning',r:'BackOff',a:'30s',m:'Back-off restarting failed container'}],
+ cfg:{'Image':'alpine:3.20','Memory limit':'32Mi','CPU limit':'100m','Last State':'Terminated · Reason: OOMKilled · Exit Code: 137','Replicas':'1'},
+ q1:{q:'คนไข้รายนี้เป็นอะไร (สังเกตให้ดี สถานะขึ้นว่า Running)',
+     c:['ปกติดี เพราะ READY = 1/1','ใช้หน่วยความจำเกิน limit เลยถูกฆ่าและเกิดใหม่วนไป','ดึง image ไม่ได้','ไม่มีที่ให้ไปรัน'],ans:1,
+     why:'RESTARTS = 14 คือสัญญาณเตือน แม้สถานะจะเป็น Running · ในแท็บ Configuration จะเห็น Last State: OOMKilled · Exit Code 137 = ถูกฆ่าเพราะใช้ RAM เกิน limit 32Mi'},
+ q2:{q:'ควรทำอะไรต่อ',c:['ไม่ต้องทำอะไร เพราะยัง Running','ส่งต่อ พร้อมแจ้งว่าน่าจะต้องเพิ่ม memory limit','เข้าไปลบไฟล์ข้างใน container','restart ทุกชั่วโมง'],ans:1,
+     why:'การเปลี่ยน resource limit คือการแก้ config ระดับ deployment — ต้องมีคนอนุมัติ · แต่เราชี้สาเหตุได้ชัดเจนว่าเป็น OOM ไม่ใช่บั๊กของแอปเสมอไป'}
+},
+{
+ id:'F', name:'menu-screen', ready:'0/1', status:'Running', restarts:0, age:'41m', level:'warn',
+ pod:'menu-screen-4d5e6f7a8-q9z1c',
+ logs:{cur:['10.0.2.9 - - "GET /secret-code-3-is-READY HTTP/1.1" 404 153','10.0.2.9 - - "GET /secret-code-3-is-READY HTTP/1.1" 404 153','10.0.2.9 - - "GET /secret-code-3-is-READY HTTP/1.1" 404 153'],prev:null},
+ events:[{t:'Normal',r:'Started',a:'41m',m:'Started container web'},
+         {t:'Warning',r:'Unhealthy',a:'35s',m:'Readiness probe failed: HTTP probe failed with statuscode: 404'},
+         {t:'Warning',r:'Unhealthy',a:'25s',m:'Readiness probe failed: HTTP probe failed with statuscode: 404'}],
+ cfg:{'Image':'nginx:1.27-alpine','Memory limit':'96Mi','CPU limit':'100m','Readiness probe':'HTTP GET /secret-code-3-is-READY:80','Replicas':'1'},
+ q1:{q:'สถานะเขียนว่า Running แต่ลูกค้าใช้งานไม่ได้ เพราะอะไร',
+     c:['container ตายไปแล้ว','READY = 0/1 — ไม่ผ่าน readiness probe จึงยังไม่ถูกส่ง traffic เข้ามา','image ดึงไม่ได้','หน่วยความจำเต็ม'],ans:1,
+     why:'นี่คือกับดักที่ทำให้ตอบลูกค้าผิดบ่อยที่สุด · Running บอกแค่ว่า container เปิดอยู่ ส่วน READY บอกว่าพร้อมรับ traffic หรือยัง · Events ระบุชัดว่า Readiness probe failed 404'},
+ q2:{q:'ควรทำอะไรต่อ',c:['ตอบลูกค้าว่าระบบปกติ','ส่งต่อ พร้อมแจ้งว่า readiness probe ชี้ไป path ที่ไม่มีอยู่','restart แล้วจบ','scale เพิ่มเป็น 5'],ans:1,
+     why:'restart หรือ scale ไม่ช่วย เพราะ pod ใหม่ก็จะเจอ probe ตัวเดิมที่ผิดอยู่ดี'}
+}];
+
+let state = {};
+const $ = id => document.getElementById(id);
+const esc = t => String(t).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+
+function tagFor(p){
+  const cls = p.level==='ok' ? 't-ok' : (p.level==='warn' ? 't-warn' : 't-bad');
+  return `<span class="tag ${cls}">${p.status}</span>`;
+}
+function dotFor(p){
+  const cls = p.level==='ok' ? 'd-ok' : (p.level==='warn' ? 'd-warn' : 'd-bad');
+  return `<span class="dot ${cls}"></span>`;
+}
+
+function render(){
+  const ns = $('ns').value;
+  if(ns !== 'k8s-clinic'){
+    $('list').innerHTML = `<div class="empty">ไม่มี workload ใน namespace <code>default</code><br>
+      <span style="font-size:13px">💡 หาไม่เจอ? ลองเช็กก่อนว่าเลือก <b>namespace</b> ถูกหรือยัง — นี่คือสาเหตุอันดับหนึ่งของ "หาไม่เจอ" ในงานจริง</span></div>`;
+    $('detail').innerHTML=''; return;
+  }
+  let rows = P.map(p=>{
+    const s = state[p.id];
+    return `<tr class="row" onclick="open_('${p.id}')" id="row-${p.id}">
+      <td>${dotFor(p)}<b>${p.name}</b><div class="sub">Deployment · ${p.pod}</div></td>
+      <td class="mono">${p.ready}</td>
+      <td>${tagFor(p)}</td>
+      <td class="mono">${p.restarts}</td>
+      <td class="mono">${p.age}</td>
+      <td>${s?`<span class="done">✓ ${s.pts}/3 คะแนน</span>`:'<span class="sub">ยังไม่ตรวจ</span>'}</td>
+    </tr>`;
+  }).join('');
+  $('list').innerHTML = `<table><thead><tr>
+    <th>ชื่อ</th><th>READY</th><th>สถานะ</th><th>RESTARTS</th><th>AGE</th><th>ผลตรวจ</th>
+  </tr></thead><tbody>${rows}</tbody></table>`;
+  $('pDone').textContent = Object.keys(state).length;
+  $('pScore').textContent = Object.values(state).reduce((a,b)=>a+b.pts,0);
+  if(Object.keys(state).length === P.length) showFinal(); else $('final').innerHTML='';
+}
+
+let cur=null, tab='pods', prev=false, ts=false;
+function open_(id){
+  cur = P.find(x=>x.id===id); tab='pods'; prev=false;
+  document.querySelectorAll('tr.row').forEach(r=>r.classList.remove('sel'));
+  $('row-'+id).classList.add('sel');
+  drawDetail();
+  $('detail').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function drawDetail(){
+  const p = cur; if(!p) return;
+  const T = (k,label)=>`<div class="tab ${tab===k?'on':''}" onclick="tab='${k}';drawDetail()">${label}</div>`;
+  let body='';
+  if(tab==='pods'){
+    body = `<div class="kv">
+      <div class="k">Pod</div><div class="mono">${p.pod}</div>
+      <div class="k">READY</div><div class="mono">${p.ready}</div>
+      <div class="k">สถานะ</div><div>${tagFor(p)}</div>
+      <div class="k">RESTARTS</div><div class="mono">${p.restarts}</div>
+      <div class="k">AGE</div><div class="mono">${p.age}</div></div>
+      <div class="hintbox">💡 ยังไม่เริ่มทำงาน (Pending / ImagePull) → ดู <b>Events</b> · เริ่มแล้วล้ม (Crash / OOM) → ดู <b>Logs</b></div>`;
+  } else if(tab==='logs'){
+    const src = prev ? p.logs.prev : p.logs.cur;
+    let pre;
+    if(!src){
+      pre = `<div class="empty">ไม่มี log ให้แสดง${prev?' (ไม่มีรอบก่อนหน้า)':''}<br>
+        <span style="font-size:13px">container ยังไม่เคยเริ่มทำงาน จึงยังไม่มีอะไรถูกเขียนออกมา → ให้ไปดูที่แท็บ Events แทน</span></div>`;
+    } else {
+      pre = '<pre>' + src.map((l,i)=>{
+        const t = ts ? `<span class="ts">2026-08-13T09:${String(12+i).padStart(2,'0')}:41Z </span>` : '';
+        return l.startsWith('ERR:') ? t+`<span class="err">${esc(l.slice(4))}</span>` : t+esc(l);
+      }).join('\n') + '</pre>';
+    }
+    body = `<div class="toggles">
+      <label><input type="checkbox" ${prev?'checked':''} onchange="prev=this.checked;drawDetail()"> Previous (log ของรอบก่อนหน้า)</label>
+      <label><input type="checkbox" ${ts?'checked':''} onchange="ts=this.checked;drawDetail()"> Timestamps</label>
+    </div>${pre}`;
+  } else if(tab==='events'){
+    body = `<table><thead><tr><th style="width:90px">Type</th><th style="width:150px">Reason</th><th style="width:70px">Age</th><th>Message</th></tr></thead><tbody>` +
+      p.events.map(e=>`<tr><td>${e.t==='Warning'?'<span class="tag t-bad">Warning</span>':'<span class="tag t-ok">Normal</span>'}</td>
+      <td class="mono">${e.r}</td><td class="mono">${e.a}</td><td>${esc(e.m)}</td></tr>`).join('') + '</tbody></table>';
+  } else {
+    body = '<div class="kv">' + Object.entries(p.cfg).map(([k,v])=>`<div class="k">${k}</div><div class="mono">${esc(v)}</div>`).join('') + '</div>';
+  }
+  const s = state[p.id];
+  $('detail').innerHTML = `<div class="card">
+    <div class="tabs">${T('pods','Pods')}${T('logs','Logs')}${T('events','Events')}${T('cfg','Configuration')}
+      <div style="margin-left:auto;padding:6px 0">
+        <button onclick="quiz()" ${s?'disabled':''}>${s?'ตรวจแล้ว ✓':'🩺 วินิจฉัยคนไข้รายนี้'}</button>
+      </div></div>
+    <div class="pane on"><h2>${p.name}</h2><div class="sub" style="margin-bottom:12px">namespace: k8s-clinic</div>${body}</div>
+  </div>`;
+}
+
+// สุ่มลำดับตัวเลือก เพื่อไม่ให้เดาจากตำแหน่งได้ (และลอกกันไม่ได้ด้วย)
+function shuffled(n){
+  const a=[...Array(n).keys()];
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+function quiz(){
+  const p = cur; let step = 1, pts = 0, picked=[];
+  let order = [];                       // order[ตำแหน่งที่แสดง] = index จริงใน q.c
+  function draw(){
+    const q = step===1 ? p.q1 : p.q2;
+    order = shuffled(q.c.length);
+    $('modal').innerHTML = `<div class="sub">คนไข้ ${p.id} · ${p.name} — คำถามที่ ${step}/2</div>
+      <h2 style="margin:8px 0 14px">${q.q}</h2>
+      <div id="opts">${order.map((orig,i)=>`<label class="opt" id="o${i}"><input type="radio" name="q" value="${orig}">${esc(q.c[orig])}</label>`).join('')}</div>
+      <div id="fb"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px">
+        <button class="ghost" onclick="closeQ()">ปิด</button>
+        <button id="go" onclick="submit()">ตอบ</button>
+      </div>`;
+    $('mask').classList.add('on');
+  }
+  window.submit = function(){
+    const q = step===1 ? p.q1 : p.q2;
+    const sel = document.querySelector('input[name=q]:checked');
+    if(!sel) return;
+    const v = +sel.value, ok = v===q.ans;
+    if(ok) pts += (step===1?2:1);
+    picked.push(ok);
+    document.querySelectorAll('.opt').forEach((o,i)=>{
+      o.style.pointerEvents='none';
+      if(order[i]===q.ans) o.classList.add('right');
+      else if(order[i]===v) o.classList.add('wrong');
+    });
+    $('fb').innerHTML = `<div class="fb ${ok?'ok':'no'}">${ok?'✅ ถูกต้อง':'❌ ยังไม่ใช่'} — ${esc(q.why)}</div>`;
+    const go = $('go');
+    if(step===1){ go.textContent='คำถามถัดไป'; go.onclick=()=>{step=2;draw()}; }
+    else { go.textContent='เสร็จสิ้น'; go.onclick=()=>{ state[p.id]={pts}; closeQ(); render(); drawDetail(); }; }
+  };
+  draw();
+}
+function closeQ(){ $('mask').classList.remove('on'); }
+
+function showFinal(){
+  const total = Object.values(state).reduce((a,b)=>a+b.pts,0);
+  let grade, note;
+  if(total>=13){ grade='🏆 หมอใหญ่'; note='วินิจฉัยได้แม่นมาก พร้อมรับเคสจริงแล้ว'; }
+  else if(total>=10){ grade='🩺 หมอเวรที่ไว้ใจได้'; note='ไล่เคสได้ดี ทบทวนเคสที่พลาดอีกนิดเดียว'; }
+  else if(total>=7){ grade='📋 นักเรียนแพทย์'; note='พื้นฐานมาแล้ว ลองไล่ checklist ให้ครบทุกครั้ง'; }
+  else { grade='🌱 เพิ่งเข้าเวรวันแรก'; note='ไม่เป็นไร ลองอีกรอบโดยดู Events กับ Logs ให้ครบก่อนตอบ'; }
+  $('final').innerHTML = `<div class="card" style="padding:22px">
+    <h2>ผลการตรวจทั้งคลินิก — ${total}/15 คะแนน</h2>
+    <p style="margin-bottom:14px"><b>${grade}</b> · <span class="sub">${note}</span></p>
+    <table class="summary"><thead><tr><th>คนไข้</th><th>สาเหตุจริง</th><th>เห็นได้จาก</th><th>คะแนน</th></tr></thead><tbody>
+    ${P.map(p=>`<tr><td><b>${p.name}</b></td><td>${esc(p.q1.c[p.q1.ans])}</td>
+      <td class="sub">${p.logs.cur||p.logs.prev?'Logs / ':''}Events${p.id==='D'?' / Configuration':''}</td>
+      <td class="mono">${state[p.id].pts}/3</td></tr>`).join('')}
+    </tbody></table>
+    <div class="hintbox" style="margin-top:16px">🧠 <b>สิ่งที่อยากให้จำกลับไป:</b> ยังไม่เริ่มทำงาน → ดู Events · เริ่มแล้วล้ม → ดู Logs (Previous) · เห็นคำว่า Running ให้ดูตัวเลข READY กับ RESTARTS เสมอ</div>
+  </div>`;
+}
+
+function reset(){ state={}; cur=null; $('detail').innerHTML=''; render(); }
+render();
+</script>
+</body>
+</html>

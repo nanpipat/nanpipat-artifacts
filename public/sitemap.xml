@@ -148,8 +148,14 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://artifacts.nanpipat.top/courses/docker-k8s</loc>
-    <lastmod>2025-01-15</lastmod>
+    <loc>https://artifacts.nanpipat.top/courses/docker-fundamentals</loc>
+    <lastmod>2026-09-30</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://artifacts.nanpipat.top/courses/kubernetes-rancher</loc>
+    <lastmod>2026-09-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
