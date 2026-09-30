@@ -8,7 +8,8 @@ import ThemeToggleButton from './theme-toggle-button'
 
 const NavLink = ({ href, children }: { href: string; children: ReactNode }) => {
   const router = useRouter()
-  const active = router.pathname.startsWith(href)
+  const active =
+    href === '/' ? router.pathname === '/' : router.pathname.startsWith(href)
   const color = useColorModeValue('gray.600', 'whiteAlpha.700')
   const activeColor = useColorModeValue('teal.600', 'teal.300')
   return (
@@ -63,6 +64,7 @@ const Navbar = () => {
           </Heading>
         </Flex>
         <HStack gap={5} alignItems="center">
+          <NavLink href="/">Home</NavLink>
           <NavLink href="/articles">Articles</NavLink>
           <NavLink href="/courses">Courses</NavLink>
           <ThemeToggleButton />

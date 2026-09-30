@@ -47,7 +47,7 @@ export default function Home({
       </Box>
 
       <SectionHeading title="Courses" href="/courses" />
-      <SimpleGrid columns={{ base: 1, md: 2 }} gap={6} mb={12}>
+      <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} gap={5} mb={12}>
         {courses.map((course) => (
           <ChakraLink
             as={Link}
@@ -64,10 +64,10 @@ export default function Home({
               height="100%"
             >
               <Cover src={course.cover} alt={course.title} fallbackIcon={IoSchoolOutline} />
-              <Box p={5}>
+              <Box p={4}>
                 <HStack mb={2} flexWrap="wrap" gap={2}>
                   {course.level && (
-                    <Badge colorPalette="teal" borderRadius="full">
+                    <Badge colorPalette="teal" borderRadius="full" fontSize="xs">
                       {course.level}
                     </Badge>
                   )}
@@ -78,10 +78,10 @@ export default function Home({
                       : ""}
                   </Text>
                 </HStack>
-                <Heading as="h3" size="md" mb={2}>
+                <Heading as="h3" size="sm" mb={2} lineHeight={1.4}>
                   {course.title}
                 </Heading>
-                <Text fontSize="sm" color={muted} lineClamp={3}>
+                <Text fontSize="sm" color={muted} lineClamp={2}>
                   {course.summary}
                 </Text>
               </Box>
