@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>What Are Microservices? · Motion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#191919;--ink2:#37352f;--muted:#787774;--faint:#b9b8b4;--line:#e4e4e0;--soft:#f6f6f3;--paper:#fff;
+  --blue:#2383e2;--blue2:#e7f3ff;--teal:#0f7b6c;--teal2:#ddedea;--orange:#d9730d;--orange2:#fbecdd;
+  --red:#e03e3e;--red2:#fbe4e4;--purple:#6940a5;--purple2:#eae4f2;--yellow:#c99100;--yellow2:#fbf3db;
+  --ease:cubic-bezier(.22,1,.36,1);--spring:cubic-bezier(.34,1.56,.64,1);
+  --sans:'IBM Plex Sans Thai','Sukhumvit Set','Thonburi',sans-serif;--mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#ececea;color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+#stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;margin:-540px 0 0 -960px;transform:scale(var(--k,1));transform-origin:center;background:var(--paper);overflow:hidden;box-shadow:0 16px 80px rgba(0,0,0,.08)}
+#bg{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+#bg .grid{position:absolute;inset:-400px;background-image:radial-gradient(#d8d8d3 1.5px,transparent 1.7px);background-size:42px 42px;opacity:.38;transform:translateX(var(--gx,0));transition:transform 1.3s var(--ease),opacity .8s}
+#bg .orb{position:absolute;width:1040px;height:1040px;border-radius:50%;margin:-520px;background:var(--blue2);transform:translate(var(--ox),var(--oy)) scale(var(--os));transition:transform 1.2s var(--ease),background .8s}
+#bg .ring{position:absolute;width:960px;height:960px;border-radius:50%;margin:-480px;border:3px solid #cfe4f8;transform:translate(var(--rx),var(--ry)) scale(var(--rs));transition:transform 1.4s var(--ease),border-color .8s}
+#bg .dot{position:absolute;width:34px;height:34px;border-radius:50%;margin:-17px;background:var(--blue);transform:translate(var(--dx),var(--dy));transition:transform 1s var(--spring)}
+#bg.dark .orb{background:var(--blue)}#bg.dark .ring{border-color:rgba(255,255,255,.28)}#bg.dark .grid{opacity:0}
+.scene{position:absolute;inset:0;padding:126px 150px 112px;display:flex;flex-direction:column;visibility:hidden;opacity:0}
+.scene.active,.scene.leaving{visibility:visible}.scene.active{opacity:1;transition:opacity .55s var(--ease),transform .85s var(--ease)}
+.scene.enter{transform:translateX(calc(var(--dir,1)*70px)) scale(.98)}.scene.leaving{opacity:0;transform:translateX(calc(var(--dir,1)*-90px));filter:blur(4px);transition:opacity .45s,transform .6s var(--ease),filter .45s}
+.scene.zoom.enter{transform:scale(.92)}.scene.zoom.leaving{transform:scale(1.06)}
+.scene.divider{color:#fff}.scene.divider .muted,.scene.divider .lead{color:rgba(255,255,255,.72)}
+.a,[data-s]{opacity:0;transform:var(--from,translateY(34px));transition:opacity .55s var(--ease) var(--delay,0s),transform .85s var(--ease) var(--delay,0s),clip-path .9s var(--ease) var(--delay,0s)}
+.on{opacity:1;transform:none}.left{--from:translateX(-70px)}.right{--from:translateX(70px)}.pop{--from:scale(.55);transition:opacity .35s var(--ease) var(--delay,0s),transform .65s var(--spring) var(--delay,0s)}
+.wipe{opacity:1;transform:none;clip-path:inset(0 100% 0 0)}.wipe.on{clip-path:inset(0)}
+h1,h2,h3,p{margin:0}.eyebrow{font:500 21px var(--mono);letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:24px}
+.title{font-size:72px;line-height:1.18;letter-spacing:-.02em;font-weight:600;margin-bottom:20px;max-width:1540px}.lead{font-size:34px;line-height:1.5;color:var(--muted);font-weight:300;max-width:1500px}
+.t{font-size:31px;line-height:1.52;color:var(--ink2)}.s{font-size:25px;line-height:1.5;color:var(--muted)}.big{font-size:98px;line-height:1.08;font-weight:600;letter-spacing:-.035em}
+.mono{font-family:var(--mono)}.muted{color:var(--muted)}.blue{color:var(--blue)}.teal{color:var(--teal)}.orange{color:var(--orange)}.red{color:var(--red)}.purple{color:var(--purple)}
+.body{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center}.row{display:flex;align-items:center;gap:24px}.col{display:flex;flex-direction:column}.g2{display:grid;grid-template-columns:1fr 1fr;gap:48px}.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:30px}.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:24px}
+.card{background:#fff;border:2px solid var(--line);border-radius:24px;padding:34px 38px}.card h3{font-size:39px;line-height:1.25;margin-bottom:12px}.card.bluebg{background:var(--blue2);border-color:#bddcf8}.card.tealbg{background:var(--teal2);border-color:#afd8d1}.card.orangebg{background:var(--orange2);border-color:#efd0af}.card.redbg{background:var(--red2);border-color:#efc4c4}.card.purplebg{background:var(--purple2);border-color:#d4c6e5}.card.soft{background:var(--soft)}
+.tag{display:inline-block;padding:7px 15px;border-radius:8px;background:var(--soft);font:500 19px var(--mono);letter-spacing:.05em;color:var(--muted);margin-bottom:14px}.tag.blue{background:var(--blue2);color:var(--blue)}.tag.red{background:var(--red2);color:var(--red)}.tag.teal{background:var(--teal2);color:var(--teal)}
+.callout{margin-top:auto;padding:23px 32px;border-radius:18px;background:var(--soft);font-size:30px;line-height:1.45;color:var(--ink2);display:flex;gap:18px;align-items:center}.callout.bluebg{background:var(--blue2);color:#0b5ea8}.callout.redbg{background:var(--red2);color:#9f2b2b}.callout.tealbg{background:var(--teal2);color:#0b665a}
+.ico{font-size:40px;line-height:1}.pill{display:inline-flex;align-items:center;padding:12px 22px;border:2px solid var(--line);border-radius:999px;background:#fff;font-size:27px;white-space:nowrap}.pill.hot{background:var(--blue);border-color:var(--blue);color:#fff}
+.divider{justify-content:center}.divider .chapter{font:500 24px var(--mono);letter-spacing:.14em;margin-bottom:28px;opacity:.76}.divider h1{font-size:112px;line-height:1.08;max-width:1320px}.divider .n{position:absolute;right:120px;bottom:40px;font:600 300px var(--mono);opacity:.13}
+.hero{justify-content:center}.hero h1{font-size:126px;line-height:1.02;letter-spacing:-.05em;max-width:1350px}.hero .sub{font-size:44px;margin-top:30px;color:var(--muted)}.hero .stamp{position:absolute;right:150px;bottom:145px;width:330px;height:330px;border-radius:50%;display:grid;place-items:center;background:var(--blue);color:#fff;font:600 32px var(--mono);text-align:center;transform:rotate(7deg);box-shadow:0 0 0 24px var(--blue2)}
+.photo{border-radius:26px;border:2px solid var(--line);overflow:hidden;background:#fff}.photo img{display:block;width:100%;height:100%;object-fit:cover}
+.definition{font-size:63px;line-height:1.35;max-width:1500px}.definition b{color:var(--blue)}
+.fourline{display:grid;grid-template-columns:160px 1fr;align-items:baseline;padding:24px 0;border-bottom:2px solid var(--line)}.fourline .num{font:500 32px var(--mono);color:var(--blue)}.fourline b{font-size:38px;margin-right:18px}.fourline span{font-size:30px;color:var(--muted)}
+.spectrum{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;border:2px solid var(--line);border-radius:26px;overflow:hidden}.spec{padding:42px 36px;background:#fff;border-right:2px solid var(--line);min-height:420px}.spec:last-child{border:0}.spec h3{font-size:42px}.spec .bar{height:12px;border-radius:99px;background:var(--blue);margin:25px 0}.spec:nth-child(2){background:var(--blue2)}.spec:nth-child(3){background:var(--teal2)}
+.stack{display:flex;flex-direction:column;gap:18px}.layer{padding:25px 34px;border:2px solid var(--line);border-left:10px solid var(--blue);border-radius:18px;background:#fff;display:grid;grid-template-columns:330px 1fr;align-items:center}.layer b{font-size:35px}.layer span{font-size:29px;color:var(--muted)}
+.services{display:flex;align-items:center;justify-content:center;gap:34px;position:relative}.svc{width:285px;min-height:230px;border:3px solid var(--ink);border-radius:24px;background:#fff;padding:28px;text-align:center;position:relative}.svc b{font-size:34px}.svc .db{width:110px;height:54px;border:5px solid var(--ink);border-radius:50%;margin:28px auto 0;background:var(--soft);position:relative}.svc .db:after{content:"";position:absolute;left:-5px;right:-5px;top:21px;height:30px;border:5px solid var(--ink);border-top:0;border-radius:0 0 50% 50%;background:#fff}.wire{font:600 46px var(--mono);color:var(--blue)}
+.badwire{position:relative}.badwire:after{content:"×";position:absolute;color:var(--red);font:700 72px var(--mono);left:50%;top:50%;transform:translate(-50%,-50%)}
+.checks{display:flex;flex-direction:column}.check{display:grid;grid-template-columns:72px 1fr;align-items:center;padding:21px 0;border-bottom:2px solid var(--line)}.check i{width:43px;height:43px;border:3px solid var(--faint);border-radius:12px;display:grid;place-items:center;font-style:normal}.check.on i{background:var(--teal);border-color:var(--teal);color:#fff}.check span{font-size:33px}
+.flow{display:flex;align-items:center;justify-content:center;gap:20px}.node{padding:25px 30px;border:3px solid var(--ink);border-radius:20px;background:#fff;text-align:center;min-width:230px}.node b{font-size:32px}.arr{font-size:48px;color:var(--blue)}
+.choice{display:grid;grid-template-columns:1fr 1fr;gap:60px}.choice>div{border-top:7px solid var(--blue);padding-top:34px}.choice>div:last-child{border-color:var(--teal)}.choice h3{font-size:52px;margin-bottom:22px}.choice .t{padding:14px 0;border-bottom:2px solid var(--line)}
+.story{display:grid;grid-template-columns:110px 1fr;gap:26px;align-items:center}.story .n{width:82px;height:82px;border-radius:50%;background:var(--blue2);color:var(--blue);display:grid;place-items:center;font:600 28px var(--mono)}.story .txt{padding:18px 0;border-bottom:2px solid var(--line);font-size:31px}.story.fail .n{background:var(--red2);color:var(--red)}
+.terminal{border:2px solid var(--line);border-radius:22px;background:#171717;color:#e9e9e7;overflow:hidden;font:400 25px/1.55 var(--mono)}.terminal .bar{height:56px;background:#292929;display:flex;align-items:center;gap:10px;padding:0 22px}.terminal .bar i{width:13px;height:13px;border-radius:50%;background:#777}.terminal .bar i:first-child{background:#e86b67}.terminal .bar i:nth-child(2){background:#e4b451}.terminal .bar i:nth-child(3){background:#61b873}.terminal pre{margin:0;padding:28px 34px;white-space:pre-wrap}.terminal .k{color:#8dc8ff}.terminal .g{color:#84d7c8}.terminal .r{color:#ff9b9b}
+.signals{display:grid;grid-template-columns:repeat(3,1fr);gap:52px}.signal{text-align:center}.signal .circle{width:210px;height:210px;margin:0 auto 30px;border-radius:50%;display:grid;place-items:center;font-size:85px;background:var(--blue2);border:3px solid #bedcf6}.signal:nth-child(2) .circle{background:var(--teal2);border-color:#aed5cf}.signal:nth-child(3) .circle{background:var(--orange2);border-color:#efd0ae}.signal h3{font-size:43px}.signal p{font-size:27px;color:var(--muted);margin-top:9px}
+.equation{display:flex;align-items:center;justify-content:center;gap:35px;font-size:52px}.eqbox{padding:34px 40px;border:3px solid var(--ink);border-radius:24px;background:#fff;font-weight:600}.neq{color:var(--red);font:700 80px var(--mono)}
+.gate{display:grid;grid-template-columns:300px 240px 1fr;align-items:center;gap:45px}.gate .client,.gate .gateway{padding:34px;border:3px solid var(--ink);border-radius:22px;text-align:center;font-size:34px;font-weight:600;background:#fff}.gate .gateway{background:var(--blue);color:#fff;border-color:var(--blue)}.gate .mini{display:grid;grid-template-columns:1fr 1fr;gap:18px}.gate .mini span{padding:26px;border:2px solid var(--line);border-radius:17px;text-align:center;background:#fff;font-size:28px}
+.stairs{display:flex;align-items:flex-end;gap:26px;height:430px}.stair{flex:1;border:3px solid var(--ink);border-radius:20px 20px 0 0;background:#fff;padding:26px;text-align:center}.stair:nth-child(1){height:160px}.stair:nth-child(2){height:250px;background:var(--blue2)}.stair:nth-child(3){height:340px;background:var(--purple2)}.stair:nth-child(4){height:430px;background:var(--red2)}.stair b{font-size:30px}.stair p{font-size:23px;color:var(--muted);margin-top:10px}
+.bingo{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.bingo>div{min-height:150px;border:2px solid var(--line);border-radius:18px;padding:25px;background:#fff;font-size:29px;line-height:1.35;display:flex;align-items:center}.bingo>div.hot{background:var(--red2);border-color:#ecc0c0}
+.score{display:flex;flex-direction:column}.score .r{display:grid;grid-template-columns:430px 1fr 110px;align-items:center;gap:24px;padding:18px 0;border-bottom:2px solid var(--line)}.score b{font-size:31px}.meter{height:17px;background:var(--soft);border-radius:99px;overflow:hidden}.meter i{display:block;height:100%;width:var(--w);background:var(--blue);border-radius:99px;transform:scaleX(0);transform-origin:left;transition:transform .9s var(--ease) calc(var(--delay,0s) + .2s)}.score .r.on .meter i{transform:scaleX(1)}.score strong{font:600 27px var(--mono);text-align:right}
+.form{display:flex;flex-direction:column;gap:25px}.form .r{display:grid;grid-template-columns:360px 1fr;align-items:end;gap:26px}.form b{font-size:34px}.form .line{height:52px;border-bottom:3px solid var(--faint)}
+.closing{font-size:86px;line-height:1.24;letter-spacing:-.025em;max-width:1520px}.closing span{display:block}.closing .muted{color:var(--muted)}
+#hud{position:absolute;left:70px;right:70px;top:38px;height:45px;display:flex;align-items:center;gap:24px;z-index:30;color:var(--muted);font:500 18px var(--mono);letter-spacing:.07em}.divider~#hud{color:#fff}#hud-ch{flex:1}#hud-n{min-width:100px;text-align:right}#steps{display:flex;gap:8px}#steps i{width:7px;height:7px;border-radius:50%;background:var(--line)}#steps i.on{background:var(--blue)}#progress{position:absolute;left:0;bottom:0;height:5px;background:var(--blue);transition:width .35s var(--ease);z-index:50}
+.overlay{position:fixed;inset:0;background:rgba(18,18,18,.94);z-index:100;display:none;color:#fff;overflow:auto;padding:70px}.overlay.show{display:block}.overlay h3{font-size:42px;margin-bottom:30px}.ovgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.ovgrid button{padding:17px;text-align:left;border:1px solid #555;border-radius:12px;background:#252525;color:#fff;font-family:var(--sans);font-size:19px}.ovgrid button.cur{border-color:#60adf2;background:#123b60}.ovgrid button span{display:block;color:#8dc8ff;font:500 15px var(--mono);margin-bottom:6px}
+#help .box{max-width:920px;margin:auto;background:#222;border-radius:24px;padding:45px}#help table{width:100%;font-size:25px;border-collapse:collapse}#help td{padding:15px;border-bottom:1px solid #444}#help td:first-child{font-family:var(--mono);color:#8dc8ff;width:48%}
+#blank{position:fixed;inset:0;background:#fff;z-index:200;display:none}#blank.show{display:block}#toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,30px);background:#191919;color:#fff;padding:12px 22px;border-radius:999px;font:500 16px var(--mono);opacity:0;transition:.35s;z-index:90}#toast.show{opacity:1;transform:translate(-50%,0)}
+@media print{
+  @page{size:13.333in 7.5in;margin:0}html,body{width:auto;height:auto;overflow:visible;background:#fff}#stage{position:static;width:1920px;height:auto;margin:0;transform:none!important;box-shadow:none;overflow:visible}#bg,#hud,#progress,.overlay,#blank,#toast{display:none!important}.scene{position:relative;width:1920px;height:1080px;page-break-after:always;visibility:visible!important;opacity:1!important;transform:none!important;filter:none!important}.scene.divider{background:#202327!important;color:#fff!important}.scene.divider .muted,.scene.divider .lead{color:rgba(255,255,255,.72)!important}.scene:last-of-type{page-break-after:auto}.a,[data-s]{opacity:1!important;transform:none!important;clip-path:none!important}}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="bg"><div class="grid"></div><div class="orb"></div><div class="ring"></div><div class="dot"></div></div>
+
+  <!-- S01 -->
+  <section class="scene hero zoom" data-bg="hero" data-chapter="00 · Opening" data-title="What Are Microservices?">
+    <div class="eyebrow a">Architecture Foundation · 2026 Edition</div>
+    <h1 class="a">What Are<br><span class="blue">Microservices?</span></h1>
+    <p class="sub a">แยกระบบอย่างมีเหตุผล ไม่ใช่แยกเพราะ Diagram ดูแพง</p>
+    <div class="stamp pop" data-s="1">AUTONOMY<br>HAS A BILL</div>
+  </section>
+
+  <!-- S02 -->
+  <section class="scene" data-bg="tr" data-title="คำตอบสั้นที่สุด">
+    <div class="eyebrow a">คำตอบสั้นที่สุด</div>
+    <div class="body">
+      <p class="definition a">Microservice คือส่วนของระบบที่ดูแล <b>Business capability</b> ชัดเจน เป็นเจ้าของข้อมูล และ <b>Deploy แยก</b> จากส่วนอื่นได้</p>
+    </div>
+    <div class="callout bluebg" data-s="1"><span class="ico">💡</span><span>คำว่า Micro บอกใบ้น้อยกว่าคำว่า Independent</span></div>
+  </section>
+
+  <!-- S03 -->
+  <section class="scene" data-bg="bl" data-title="สิ่งที่เราจะตอบให้ได้">
+    <h2 class="title a">จบคอร์สแล้ว เราควรตอบให้ได้</h2>
+    <div class="body g3" style="align-content:center">
+      <div class="card bluebg pop" data-s="1"><span class="tag blue">BOUNDARY</span><h3>ควรตัดตรงไหน</h3><p class="t">อะไรควรอยู่ Service เดียวกัน และอะไรควรแยก</p></div>
+      <div class="card tealbg pop" data-s="2"><span class="tag teal">FAILURE</span><h3>พังแล้วเกิดอะไร</h3><p class="t">Network, Message และข้อมูลที่ไม่ได้ Commit พร้อมกัน</p></div>
+      <div class="card orangebg pop" data-s="3"><span class="tag">DECISION</span><h3>ควรใช้หรือยัง</h3><p class="t">เมื่อไร Microservices คุ้ม และเมื่อไร Monolith ฉลาดกว่า</p></div>
+    </div>
+  </section>
+
+  <!-- S04 -->
+  <section class="scene divider zoom" data-bg="flood" data-chapter="01 · The Shape" data-title="Microservices คืออะไร">
+    <div class="chapter a">CHAPTER 01</div><h1 class="a">Microservices<br>คืออะไร</h1><p class="lead a">เริ่มจากสิ่งที่มันแก้ ไม่ใช่สิ่งที่มันรันบน</p><div class="n a">01</div>
+  </section>
+
+  <!-- S05 -->
+  <section class="scene" data-bg="br" data-title="จากครัวเดียวสู่หลายสถานี">
+    <h2 class="title a">จากคนเดียวทำทุกอย่าง สู่หลายสถานี</h2>
+    <div class="body" style="padding-top:8px"><div class="photo a" style="height:610px"><img src="assets/microservices-kitchen.png" alt="ร้านอาหารหนึ่งคนเทียบกับหลายสถานีที่ต้องส่งออเดอร์ถึงกัน"></div></div>
+    <div class="callout" data-s="1"><span class="ico">🍳</span><span>แยกงานแล้วแต่ละสถานีคล่องขึ้น แต่กระดาษออเดอร์กลายเป็นปัญหาระบบกระจาย</span></div>
+  </section>
+
+  <!-- S06 -->
+  <section class="scene" data-bg="tl" data-title="คุณสมบัติหลักสี่ข้อ">
+    <h2 class="title a">สี่คุณสมบัติที่ทำให้ Service เป็นอิสระจริง</h2>
+    <div class="body">
+      <div class="fourline" data-s="1"><span class="num">01</span><div><b>Business capability</b><span>รับผิดชอบ Outcome ที่มีความหมาย</span></div></div>
+      <div class="fourline" data-s="2"><span class="num">02</span><div><b>Independent deployment</b><span>Release ได้โดยไม่ลากทุกทีมมาด้วย</span></div></div>
+      <div class="fourline" data-s="3"><span class="num">03</span><div><b>Data ownership</b><span>เป็นเจ้าของ Logic และข้อมูลในขอบเขต</span></div></div>
+      <div class="fourline" data-s="4"><span class="num">04</span><div><b>Explicit contract</b><span>คุยผ่าน API หรือ Event ที่ตกลงกัน</span></div></div>
+    </div>
+  </section>
+
+  <!-- S07 -->
+  <section class="scene" data-bg="tr" data-title="เล็กแค่ไหนถึงเรียก Micro">
+    <h2 class="title a">เล็กแค่ไหนถึงเรียก Micro?</h2>
+    <div class="body">
+      <div class="big a" style="max-width:1450px">เล็กพอให้ทีมหนึ่งดูแลได้<br><span class="muted">ใหญ่พอให้รับผิดชอบเรื่องหนึ่งได้ครบ</span></div>
+    </div>
+    <div class="callout bluebg" data-s="1"><span class="ico">📏</span><span>นับบรรทัดไม่ได้บอกว่า Boundary ดีหรือไม่</span></div>
+  </section>
+
+  <!-- S08 -->
+  <section class="scene" data-bg="bl" data-title="สามรูปแบบที่ไม่ต้องทะเลาะกัน">
+    <h2 class="title a">สามรูปแบบที่ไม่ต้องทะเลาะกัน</h2>
+    <div class="body"><div class="spectrum a">
+      <div class="spec"><h3>Monolith</h3><div class="bar" style="width:28%"></div><p class="t">Build และ Deploy เป็นหน่วยเดียว เริ่มง่าย Transaction ตรงไปตรงมา</p></div>
+      <div class="spec"><h3>Modular Monolith</h3><div class="bar" style="width:62%"></div><p class="t">หน่วยเดียว แต่แบ่ง Module และ Ownership ภายในชัด</p></div>
+      <div class="spec"><h3>Microservices</h3><div class="bar" style="width:100%;background:var(--teal)"></div><p class="t">แยก Deploy และข้อมูล แลกกับงานระบบกระจายเต็มรูปแบบ</p></div>
+    </div></div>
+  </section>
+
+  <!-- S09 -->
+  <section class="scene" data-bg="r" data-title="Distributed Monolith">
+    <h2 class="title a">Distributed Monolith ได้ข้อเสียมาครบสองฝั่ง</h2>
+    <div class="body">
+      <div class="services">
+        <div class="svc left" data-s="1"><b>ORDER</b><div class="db"></div></div><span class="wire" data-s="2">⇄</span>
+        <div class="svc" data-s="2"><b>PAYMENT</b><div class="db"></div></div><span class="wire" data-s="3">⇄</span>
+        <div class="svc right" data-s="3"><b>DELIVERY</b><div class="db"></div></div>
+      </div>
+      <p class="big red a" style="font-size:58px;text-align:center;margin-top:45px">Deploy พร้อมกัน · Database เดียว · ล้มตามกัน</p>
+    </div>
+    <div class="callout redbg" data-s="4"><span class="ico">🧱</span><span>Container หลายใบไม่ได้รับประกันความเป็นอิสระ</span></div>
+  </section>
+
+  <!-- S10 -->
+  <section class="scene divider zoom" data-bg="flood" data-chapter="02 · Boundaries" data-title="Service Boundary">
+    <div class="chapter a">CHAPTER 02</div><h1 class="a">Service<br>Boundary</h1><p class="lead a">ตัดตามธุรกิจ ไม่ใช่ตัดตามชื่อ Folder</p><div class="n a">02</div>
+  </section>
+
+  <!-- S11 -->
+  <section class="scene" data-bg="tr" data-title="แยกตามชั้นเทคนิค">
+    <h2 class="title a">แยกตามชั้นเทคนิค แล้วทุก Feature ต้องเดินทางไกล</h2>
+    <div class="body"><div class="stack">
+      <div class="layer left" data-s="1"><b>Frontend Service</b><span>รับ Request</span></div>
+      <div class="layer left" data-s="2" style="border-left-color:var(--purple)"><b>Business Service</b><span>ตัดสินใจ</span></div>
+      <div class="layer left" data-s="3" style="border-left-color:var(--orange)"><b>Data Service</b><span>อ่านเขียนทุก Table</span></div>
+      <div class="layer left" data-s="4" style="border-left-color:var(--red)"><b>Email Service</b><span>Deploy ทั้งขบวนเพื่อเปลี่ยนกฎเดียว</span></div>
+    </div></div>
+    <div class="callout redbg" data-s="5"><span class="ico">📨</span><span>เราแยกกล่องสำเร็จ แต่ยังแยกการเปลี่ยนแปลงไม่ได้</span></div>
+  </section>
+
+  <!-- S12 -->
+  <section class="scene" data-bg="bl" data-title="แยกตาม Business capability">
+    <h2 class="title a">แยกตามสิ่งที่ธุรกิจทำ</h2>
+    <div class="body"><div class="services">
+      <div class="svc pop" data-s="1" style="background:var(--blue2)"><b>ORDERING</b><p class="s" style="margin-top:20px">รับออเดอร์<br>วงจรสถานะ</p></div>
+      <span class="wire" data-s="2">· · ·</span>
+      <div class="svc pop" data-s="2" style="background:var(--purple2)"><b>PAYMENT</b><p class="s" style="margin-top:20px">เก็บเงิน<br>คืนเงิน</p></div>
+      <span class="wire" data-s="3">· · ·</span>
+      <div class="svc pop" data-s="3" style="background:var(--orange2)"><b>KITCHEN</b><p class="s" style="margin-top:20px">คิวปรุง<br>สถานะอาหาร</p></div>
+      <span class="wire" data-s="4">· · ·</span>
+      <div class="svc pop" data-s="4" style="background:var(--teal2)"><b>DELIVERY</b><p class="s" style="margin-top:20px">ไรเดอร์<br>การจัดส่ง</p></div>
+    </div></div>
+    <div class="callout bluebg" data-s="5"><span class="ico">🗣️</span><span>แต่ละ Context มีภาษา กฎ และเจ้าของของตัวเอง</span></div>
+  </section>
+
+  <!-- S13 -->
+  <section class="scene" data-bg="br" data-title="Boundary Tests">
+    <h2 class="title a">ก่อนแยก ลองถามห้าข้อ</h2>
+    <div class="body"><div class="checks">
+      <div class="check" data-s="1"><i>✓</i><span><b>Change together</b> เปลี่ยนพร้อมกันบ่อยแค่ไหน</span></div>
+      <div class="check" data-s="2"><i>✓</i><span><b>Chatty calls</b> ต้องโทรหากันทุกสองบรรทัดหรือไม่</span></div>
+      <div class="check" data-s="3"><i>✓</i><span><b>Data owner</b> ใครเป็น Source of truth</span></div>
+      <div class="check" data-s="4"><i>✓</i><span><b>Failure</b> ล้มแยกกันแล้วระบบทำอะไรต่อ</span></div>
+      <div class="check" data-s="5"><i>✓</i><span><b>Team</b> มีเจ้าของที่ดูแลได้ครบวงจรหรือยัง</span></div>
+    </div></div>
+  </section>
+
+  <!-- S14 -->
+  <section class="scene" data-bg="r" data-title="Chatty Services">
+    <h2 class="title a">ถ้าคุยกันไม่หยุด อาจควรอยู่บ้านเดียวกัน</h2>
+    <div class="body">
+      <div class="flow">
+        <div class="node left" data-s="1"><b>SERVICE A</b></div><div class="arr" data-s="2">⇄ ⇄ ⇄ ⇄</div><div class="node right" data-s="2"><b>SERVICE B</b></div>
+      </div>
+      <p class="big a" style="font-size:62px;text-align:center;margin-top:70px">คุยถี่ · ใช้ข้อมูลเดียว · Release คู่กัน</p>
+    </div>
+    <div class="callout redbg" data-s="3"><span class="ico">🏠</span><span>Merge ก็เป็น Architecture decision ไม่ใช่การถอยหลัง</span></div>
+  </section>
+
+  <!-- S15 -->
+  <section class="scene" data-bg="tl" data-title="เจ้าของข้อมูล">
+    <h2 class="title a">ทุก Fact ต้องมีบ้านหลักหนึ่งหลัง</h2>
+    <div class="body g2" style="align-items:center">
+      <div class="card bluebg left" data-s="1"><span class="tag blue">SOURCE OF TRUTH</span><h3>Payment owns payment data</h3><p class="t">Service อื่นขอผ่าน Contract ไม่เขียน Table แทนเจ้าของ</p></div>
+      <div class="terminal right" data-s="2"><div class="bar"><i></i><i></i><i></i></div><pre><span class="r">// อย่าทำ</span>
+orderingDB.exec(
+  <span class="k">"UPDATE payments ..."</span>
+)
+
+<span class="g">// ให้ Payment ตัดสินใจ</span>
+payment.authorize(order)</pre></div>
+    </div>
+    <div class="callout" data-s="3"><span class="ico">🔑</span><span>Schema ภายในไม่ควรกลายเป็น Public API โดยบังเอิญ</span></div>
+  </section>
+
+  <!-- S16 -->
+  <section class="scene divider zoom" data-bg="flood" data-chapter="03 · Data & Messages" data-title="Data และการสื่อสาร">
+    <div class="chapter a">CHAPTER 03</div><h1 class="a">Data &<br>Messages</h1><p class="lead a">พอ Database แยก Transaction ก็เริ่มมีเนื้อเรื่อง</p><div class="n a">03</div>
+  </section>
+
+  <!-- S17 -->
+  <section class="scene" data-bg="bl" data-title="Database per Service">
+    <h2 class="title a">Database per Service หมายถึง Ownership</h2>
+    <div class="body"><div class="services">
+      <div class="svc pop" data-s="1"><b>ORDER</b><div class="db"></div></div>
+      <div class="svc pop" data-s="2"><b>PAYMENT</b><div class="db"></div></div>
+      <div class="svc pop" data-s="3"><b>DELIVERY</b><div class="db"></div></div>
+    </div></div>
+    <div class="callout bluebg" data-s="4"><span class="ico">🗄️</span><span>แชร์ Physical server ได้ แต่ไม่แชร์ Table และสิทธิ์เขียนกันตามอัธยาศัย</span></div>
+  </section>
+
+  <!-- S18 -->
+  <section class="scene" data-bg="br" data-title="ข้อมูลซ้ำและ Eventual consistency">
+    <h2 class="title a">ข้อมูลซ้ำได้ ถ้ารู้ว่าใครคือของจริง</h2>
+    <div class="body g2" style="align-items:center;gap:80px">
+      <div class="card bluebg left" data-s="1"><span class="tag blue">CATALOG</span><h3>ราคา ณ ตอนนี้</h3><p class="big blue" style="font-size:70px;margin:26px 0">฿129</p><p class="t">Source of truth สำหรับเมนูปัจจุบัน</p></div>
+      <div class="card orangebg right" data-s="2"><span class="tag">ORDER</span><h3>ราคาตอนซื้อ</h3><p class="big orange" style="font-size:70px;margin:26px 0">฿99</p><p class="t">Snapshot ที่ต้องไม่เปลี่ยนตามอนาคต</p></div>
+    </div>
+    <div class="callout" data-s="3"><span class="ico">⏱️</span><span>Eventual consistency ต้องมีเวลาเป้าหมาย วิธี Reconcile และพฤติกรรมระหว่างรอ</span></div>
+  </section>
+
+  <!-- S19 -->
+  <section class="scene" data-bg="tr" data-title="Sync หรือ Async">
+    <h2 class="title a">Sync หรือ Async เลือกตามสิ่งที่ต้องรอ</h2>
+    <div class="body choice">
+      <div class="left" data-s="1"><h3 class="blue">Synchronous</h3><p class="t">ต้องใช้คำตอบทันที</p><p class="t">Flow เข้าใจง่าย</p><p class="t">Availability และ Latency ผูกกัน</p><p class="t">HTTP · gRPC</p></div>
+      <div class="right" data-s="2"><h3 class="teal">Asynchronous</h3><p class="t">ส่งแล้วทำงานต่อได้</p><p class="t">Buffer ช่วง Traffic พุ่ง</p><p class="t">ต้องรับ Message ซ้ำและผลที่มาทีหลัง</p><p class="t">Queue · Event broker</p></div>
+    </div>
+  </section>
+
+  <!-- S20 -->
+  <section class="scene" data-bg="tl" data-title="ตั้งชื่อ Event ให้เป็น Business fact">
+    <h2 class="title a">Event ควรบอกว่าเกิดอะไรขึ้นแล้ว</h2>
+    <div class="body g2" style="align-items:center;gap:70px">
+      <div class="card redbg left" data-s="1"><span class="tag red">กว้างจนต้องแกะถุงดู</span><h3>DataChanged</h3><h3>OrderUpdated</h3><h3>ProcessCompleted</h3></div>
+      <div class="card tealbg right" data-s="2"><span class="tag teal">Business fact</span><h3>OrderPlaced</h3><h3>PaymentAuthorized</h3><h3>DeliveryAssigned</h3></div>
+    </div>
+  </section>
+
+  <!-- S21 -->
+  <section class="scene" data-bg="r" data-title="Timeout ที่ตอบไม่ได้ว่าเงินถูกเก็บหรือยัง">
+    <h2 class="title a">Timeout ไม่ได้บอกว่างานปลายทางล้ม</h2>
+    <div class="body"><div class="story"><div class="n" data-s="1">01</div><div class="txt" data-s="1">Ordering ส่งคำขอเก็บเงิน 450 บาท</div><div class="n" data-s="2">02</div><div class="txt" data-s="2">Payment เก็บเงินสำเร็จ</div><div class="n" data-s="3">03</div><div class="txt" data-s="3">Network ขาดก่อน Response กลับ</div><div class="n red" data-s="4" style="background:var(--red2)">?</div><div class="txt red" data-s="4"><b>Ordering เห็น Timeout แล้วควร Retry หรือไม่</b></div></div></div>
+    <div class="callout redbg" data-s="5"><span class="ico">💳</span><span>Idempotency key ทำให้ Request เดิมไม่เก็บเงินซ้ำ</span></div>
+  </section>
+
+  <!-- S22 -->
+  <section class="scene" data-bg="bl" data-title="Saga">
+    <h2 class="title a">Saga เปลี่ยน Transaction ใหญ่เป็นขั้นที่ชดเชยได้</h2>
+    <div class="body"><div class="flow">
+      <div class="node pop" data-s="1"><b>ORDER</b><p class="s">PENDING</p></div><div class="arr" data-s="2">→</div>
+      <div class="node pop" data-s="2"><b>PAY</b><p class="s">AUTHORIZED</p></div><div class="arr" data-s="3">→</div>
+      <div class="node pop" data-s="3" style="background:var(--red2)"><b>KITCHEN</b><p class="s red">REJECTED</p></div><div class="arr red" data-s="4">↩</div>
+      <div class="node pop" data-s="4" style="background:var(--orange2)"><b>REFUND</b><p class="s">COMPENSATE</p></div>
+    </div></div>
+    <div class="callout" data-s="5"><span class="ico">🧾</span><span>Compensation คือรายการธุรกิจใหม่ ไม่ใช่ย้อนเวลาทั้งระบบ</span></div>
+  </section>
+
+  <!-- S23 -->
+  <section class="scene" data-bg="br" data-title="Transactional Outbox">
+    <h2 class="title a">Outbox ผูกข้อมูลกับ Event ใน Transaction เดียว</h2>
+    <div class="body g2" style="align-items:center;gap:70px">
+      <div class="terminal left" data-s="1"><div class="bar"><i></i><i></i><i></i></div><pre><span class="k">BEGIN</span>
+  INSERT INTO orders (...)
+  INSERT INTO outbox (...)
+<span class="g">COMMIT</span></pre></div>
+      <div class="col right" data-s="2" style="gap:25px"><div class="card bluebg"><h3>Outbox Publisher</h3><p class="t">อ่านรายการที่ยังไม่ส่ง แล้ว Publish ไป Broker</p></div><div class="card orangebg"><h3>Idempotent Consumer</h3><p class="t">รับ Event ซ้ำโดยไม่ทำผลกระทบซ้ำ</p></div></div>
+    </div>
+  </section>
+
+  <!-- S24 -->
+  <section class="scene divider zoom" data-bg="flood" data-chapter="04 · Production" data-title="ตอนระบบเริ่มพังจริง">
+    <div class="chapter a">CHAPTER 04</div><h1 class="a">Production<br>Changes the Rules</h1><p class="lead a">Network ช้า Service ล่ม และ Message มาเกินหนึ่งครั้ง</p><div class="n a">04</div>
+  </section>
+
+  <!-- S25 -->
+  <section class="scene" data-bg="r" data-title="Resilience Stack">
+    <h2 class="title a">Resilience ไม่ใช่ Retry จนปลายทางยอมแพ้</h2>
+    <div class="body"><div class="stairs">
+      <div class="stair pop" data-s="1"><b>TIMEOUT</b><p>หยุดรอ</p></div>
+      <div class="stair pop" data-s="2"><b>BACKOFF</b><p>ลองใหม่แบบเว้นจังหวะ</p></div>
+      <div class="stair pop" data-s="3"><b>CIRCUIT BREAKER</b><p>Fail fast เมื่อพังต่อเนื่อง</p></div>
+      <div class="stair pop" data-s="4"><b>BULKHEAD</b><p>กัน Resource ไม่ให้ล้มทั้งระบบ</p></div>
+    </div></div>
+    <div class="callout redbg" data-s="5"><span class="ico">⚡</span><span>Retry เฉพาะ Transient failure และ Operation ที่ทำซ้ำได้ปลอดภัย</span></div>
+  </section>
+
+  <!-- S26 -->
+  <section class="scene" data-bg="bl" data-title="Logs Metrics Traces">
+    <h2 class="title a">Observability ต้องตาม Request ข้ามบ้านได้</h2>
+    <div class="body signals">
+      <div class="signal pop" data-s="1"><div class="circle">📝</div><h3>Logs</h3><p>เกิดเหตุการณ์อะไร</p></div>
+      <div class="signal pop" data-s="2"><div class="circle">📈</div><h3>Metrics</h3><p>เกิดมากแค่ไหน</p></div>
+      <div class="signal pop" data-s="3"><div class="circle">🧵</div><h3>Traces</h3><p>Request เดินผ่านที่ใด</p></div>
+    </div>
+    <div class="callout bluebg" data-s="4"><span class="ico">🔎</span><span>OpenTelemetry ช่วยส่ง Context และ Signals ด้วยมาตรฐานร่วม</span></div>
+  </section>
+
+  <!-- S27 -->
+  <section class="scene" data-bg="tr" data-title="Kubernetes ไม่เท่ากับ Microservices">
+    <h2 class="title a">Kubernetes ไม่ได้ทำให้ระบบเป็น Microservices</h2>
+    <div class="body"><div class="equation a"><div class="eqbox">KUBERNETES</div><div class="neq">≠</div><div class="eqbox">MICROSERVICES</div></div><p class="lead a" style="text-align:center;margin:60px auto 0">ตัวหนึ่งจัดวาง Workload อีกตัวหนึ่งกำหนด Boundary และ Ownership</p></div>
+    <div class="callout" data-s="1"><span class="ico">📦</span><span>กล่องจำนวนมากยังใช้ Database เดียวและ Release พร้อมกันได้</span></div>
+  </section>
+
+  <!-- S28 -->
+  <section class="scene" data-bg="tl" data-title="API Gateway">
+    <h2 class="title a">Gateway เป็นประตูหน้า ไม่ใช่กระทรวงทุกอย่าง</h2>
+    <div class="body"><div class="gate">
+      <div class="client left" data-s="1">CLIENTS</div><div class="gateway pop" data-s="2">API<br>GATEWAY</div><div class="mini right" data-s="3"><span>ORDER</span><span>PAYMENT</span><span>KITCHEN</span><span>DELIVERY</span></div>
+    </div></div>
+    <div class="callout bluebg" data-s="4"><span class="ico">🚪</span><span>Routing, TLS, Auth และ Rate limit อยู่หน้าได้ แต่ Business rule ควรอยู่ใน Domain</span></div>
+  </section>
+
+  <!-- S29 -->
+  <section class="scene" data-bg="br" data-title="Independent Deployment">
+    <h2 class="title a">Deploy แยกได้ ต้องเปลี่ยน Contract แบบไม่หักคอเพื่อนบ้าน</h2>
+    <div class="body"><div class="checks">
+      <div class="check" data-s="1"><i>✓</i><span>เพิ่ม Field แบบ Optional ก่อน</span></div>
+      <div class="check" data-s="2"><i>✓</i><span>ย้าย Consumer ทีละตัว</span></div>
+      <div class="check" data-s="3"><i>✓</i><span>ตรวจ Breaking change ใน Pipeline</span></div>
+      <div class="check" data-s="4"><i>✓</i><span>รองรับ Code เก่าและใหม่ระหว่าง Rollout</span></div>
+      <div class="check" data-s="5"><i>✓</i><span>ลบของเก่าเมื่อไม่มี Consumer เหลือ</span></div>
+    </div></div>
+  </section>
+
+  <!-- S30 -->
+  <section class="scene" data-bg="r" data-title="Security">
+    <h2 class="title a">จำนวน Service เพิ่ม จำนวนประตูก็เพิ่ม</h2>
+    <div class="body g3" style="align-content:center">
+      <div class="card bluebg pop" data-s="1"><h3>Identity</h3><p class="t">User และ Service ต้องพิสูจน์ตัวตนกับสิทธิ์</p></div>
+      <div class="card tealbg pop" data-s="2"><h3>Least privilege</h3><p class="t">Network, Data และ Secret เท่าที่ต้องใช้</p></div>
+      <div class="card orangebg pop" data-s="3"><h3>Supply chain</h3><p class="t">ตรวจ Dependency, Image และ Artifact</p></div>
+    </div>
+    <div class="callout redbg" data-s="4"><span class="ico">🔐</span><span>Gateway รู้ว่า Token จริง แต่ Domain ยังต้องรู้ว่าใครอ่าน Order ของใครได้</span></div>
+  </section>
+
+  <!-- S31 -->
+  <section class="scene divider zoom" data-bg="flood" data-chapter="05 · The Decision" data-title="เราควรใช้หรือยัง">
+    <div class="chapter a">CHAPTER 05</div><h1 class="a">Should We<br>Use It?</h1><p class="lead a">คำตอบที่ดีอาจเป็น “ยัง”</p><div class="n a">05</div>
+  </section>
+
+  <!-- S32 -->
+  <section class="scene" data-bg="bl" data-title="เหตุผลที่คุ้ม">
+    <h2 class="title a">Microservices เริ่มคุ้มเมื่ออิสระมีมูลค่า</h2>
+    <div class="body"><div class="checks">
+      <div class="check" data-s="1"><i>✓</i><span>หลายทีมต้อง Release คนละจังหวะ</span></div>
+      <div class="check" data-s="2"><i>✓</i><span>บาง Capability ต้อง Scale หรือแยก Fault ต่างกัน</span></div>
+      <div class="check" data-s="3"><i>✓</i><span>Domain และ Ownership เริ่มชัด</span></div>
+      <div class="check" data-s="4"><i>✓</i><span>มี Test, CI/CD และ Observability รองรับ</span></div>
+    </div></div>
+  </section>
+
+  <!-- S33 -->
+  <section class="scene" data-bg="r" data-title="เหตุผลที่ควรรอ">
+    <h2 class="title a">ถ้ายังเป็นแบบนี้ Modular Monolith มักฉลาดกว่า</h2>
+    <div class="body"><div class="checks">
+      <div class="check" data-s="1"><i>!</i><span>ทีมเล็กและ Product ยังเปลี่ยนทิศทุกสัปดาห์</span></div>
+      <div class="check" data-s="2"><i>!</i><span>ทุก Feature ต้องแตะทุก Service</span></div>
+      <div class="check" data-s="3"><i>!</i><span>ยังไม่มี Automated delivery และ Monitoring</span></div>
+      <div class="check" data-s="4"><i>!</i><span>เหตุผลหลักคือบริษัทอื่นมี</span></div>
+    </div></div>
+    <div class="callout redbg" data-s="5"><span class="ico">🪑</span><span>ไม่ต้องเช่ารถบรรทุกสิบคันเพื่อย้ายเก้าอี้ตัวเดียว</span></div>
+  </section>
+
+  <!-- S34 -->
+  <section class="scene" data-bg="tr" data-title="Strangler migration">
+    <h2 class="title a">ย้ายทีละ Capability ให้ของเก่ากับใหม่ Coexist</h2>
+    <div class="body"><div class="flow">
+      <div class="node left" data-s="1" style="min-width:330px"><b>MONOLITH</b><p class="s">ทุก Traffic</p></div><div class="arr" data-s="2">→</div>
+      <div class="node pop" data-s="2" style="background:var(--blue2)"><b>ROUTER</b><p class="s">ค่อย ๆ แบ่ง</p></div><div class="arr" data-s="3">→</div>
+      <div class="node right" data-s="3" style="background:var(--teal2)"><b>NEW SERVICE</b><p class="s">หนึ่ง Capability</p></div>
+    </div><p class="lead a" style="text-align:center;margin:65px auto 0">วัดผล · มี Rollback · ปลดของเก่าเมื่อไม่มีใครใช้</p></div>
+  </section>
+
+  <!-- S35 -->
+  <section class="scene" data-bg="br" data-title="Microservices Anti-pattern Bingo">
+    <h2 class="title a">Microservices Anti-pattern Bingo</h2>
+    <div class="body bingo">
+      <div data-s="1">Service ต่อ Function</div><div data-s="1">Shared Database ใครอยากเขียนก็เชิญ</div><div data-s="1">Sync chain หกชั้น</div>
+      <div data-s="2">Event ชื่อ DataChanged</div><div class="hot" data-s="2">Kubernetes ก่อน Monitoring</div><div data-s="2">Shared library บังคับ Upgrade พร้อมกัน</div>
+      <div data-s="3">ไม่มี Owner</div><div data-s="3">Retry ไม่มีวันหยุด</div><div data-s="3">หนึ่ง Feature แก้ 17 Repo</div>
+    </div>
+  </section>
+
+  <!-- S36 -->
+  <section class="scene" data-bg="tl" data-title="Microservices Readiness Score">
+    <h2 class="title a">Readiness วัดจากระบบและทีม ไม่ใช่จำนวน Pod</h2>
+    <div class="body score">
+      <div class="r" data-s="1"><b>Business need for autonomy</b><div class="meter"><i style="--w:88%"></i></div><strong>HIGH</strong></div>
+      <div class="r" data-s="2"><b>Domain boundaries</b><div class="meter"><i style="--w:72%"></i></div><strong>CLEAR</strong></div>
+      <div class="r" data-s="3"><b>Automated delivery</b><div class="meter"><i style="--w:64%"></i></div><strong>READY</strong></div>
+      <div class="r" data-s="4"><b>Observability</b><div class="meter"><i style="--w:58%;background:var(--orange)"></i></div><strong>GAPS</strong></div>
+      <div class="r" data-s="5"><b>Operational ownership</b><div class="meter"><i style="--w:42%;background:var(--red)"></i></div><strong>RISK</strong></div>
+    </div>
+    <div class="callout bluebg" data-s="6"><span class="ico">⚖️</span><span>อิสระที่ได้ต้องมีค่ามากกว่าค่าประสานงานที่เพิ่ม</span></div>
+  </section>
+
+  <!-- S37 -->
+  <section class="scene" data-bg="br" data-title="Workshop">
+    <div class="eyebrow a">Workshop · 12 นาที</div>
+    <h2 class="title a">ออกแบบร้านส่งอาหารหนึ่ง Flow</h2>
+    <div class="body form">
+      <div class="r" data-s="1"><b>Capability:</b><div class="line"></div></div>
+      <div class="r" data-s="2"><b>Source of truth:</b><div class="line"></div></div>
+      <div class="r" data-s="3"><b>Sync / Async:</b><div class="line"></div></div>
+      <div class="r" data-s="4"><b>Failure:</b><div class="line"></div></div>
+      <div class="r" data-s="5"><b>Evidence / SLO:</b><div class="line"></div></div>
+    </div>
+    <div class="callout tealbg" data-s="6"><span class="ico">✏️</span><span>วาด Happy path หนึ่งเส้น แล้ววาดจุดที่มันขาดอย่างน้อยสองจุด</span></div>
+  </section>
+
+  <!-- S38 -->
+  <section class="scene zoom" data-bg="hero" data-title="Autonomy has a coordination bill">
+    <div class="eyebrow a">One idea to remember</div>
+    <div class="body"><p class="closing a"><span class="muted">Microservices ซื้อความเป็นอิสระ</span><span>ด้วยค่าประสานงานของระบบกระจาย</span></p><p class="lead a" style="margin-top:45px">ใช้เมื่ออิสระนั้นมีมูลค่ามากกว่าบิล</p></div>
+    <div class="callout bluebg" data-s="1"><span class="ico">🏁</span><span>Architecture ที่ดีช่วยให้ทีมเปลี่ยนสิ่งสำคัญได้ โดยไม่ต้องปลุกทั้งบริษัทมาดู Log</span></div>
+  </section>
+
+  <div id="hud"><div id="hud-ch"></div><div id="steps"></div><div id="hud-n"></div></div><div id="progress"></div>
+</div>
+
+<div id="overview" class="overlay"><h3>ภาพรวมทุกฉาก</h3><div id="ovgrid" class="ovgrid"></div></div>
+<div id="help" class="overlay"><div class="box"><h3>ปุ่มลัด</h3><table>
+  <tr><td>→ · Space · Click</td><td>จังหวะถัดไป</td></tr><tr><td>← · Backspace</td><td>ย้อนหนึ่งจังหวะ</td></tr>
+  <tr><td>↓ / ↑</td><td>ข้ามไปฉากถัดไป / ก่อนหน้า</td></tr><tr><td>O · Esc</td><td>ภาพรวมทุกฉาก</td></tr>
+  <tr><td>F</td><td>เต็มจอ</td></tr><tr><td>B</td><td>พักจอ</td></tr><tr><td>P</td><td>พิมพ์หรือบันทึก PDF</td></tr><tr><td>?</td><td>เปิดปุ่มลัด</td></tr>
+</table></div></div>
+<div id="blank"></div><div id="toast">กด → เพื่อไปต่อ · O ดูภาพรวม · ? ปุ่มลัด</div>
+
+<script>
+(()=>{
+const stage=document.getElementById('stage'),bg=document.getElementById('bg'),scenes=[...stage.querySelectorAll('.scene')];
+const $=id=>document.getElementById(id),hudCh=$('hud-ch'),hudN=$('hud-n'),stepsEl=$('steps'),progress=$('progress'),overview=$('overview'),help=$('help'),blank=$('blank');
+const presets={hero:[1570,430,1,1570,430,1.25,1100,180],tr:[1780,90,.52,1780,90,.76,1530,190],br:[1810,1000,.58,1810,1000,.84,1500,990],bl:[80,1040,.5,80,1040,.74,400,1000],tl:[100,60,.38,100,60,.58,340,100],r:[1740,560,.82,1740,560,1.05,1250,260],flood:[960,540,2.7,960,540,3.3,960,540]};
+let chapter='';
+scenes.forEach((sc,i)=>{if(sc.dataset.chapter)chapter=sc.dataset.chapter;sc._chapter=chapter;sc._els=[...sc.querySelectorAll('.a,[data-s]')];sc._els.forEach(el=>el._step=+(el.dataset.s||0));sc._max=Math.max(0,...sc._els.map(el=>el._step));sc._bg=sc.dataset.bg||['tr','br','bl','tl'][i%4]});
+function setStep(sc,n,animate=true){const groups={};sc._els.forEach(el=>{const want=el._step<=n,has=el.classList.contains('on');if(want&&!has){const g=groups[el._step]||0;groups[el._step]=g+1;el.style.setProperty('--delay',animate?(g*.07)+'s':'0s');el.classList.add('on')}else if(!want&&has){el.style.setProperty('--delay','0s');el.classList.remove('on')}});sc.dataset.step=n}
+function reset(sc){sc._els.forEach(el=>{el.style.setProperty('--delay','0s');el.classList.remove('on')});sc.dataset.step=-1}
+let cur=-1,step=0;
+function apply(sc,i){const p=presets[sc._bg]||presets.tr;const keys=['ox','oy','os','rx','ry','rs','dx','dy'];keys.forEach((k,j)=>bg.style.setProperty('--'+k,j%3===2?p[j]:p[j]+'px'));bg.style.setProperty('--gx',(-(i*27)%520)+'px');bg.classList.toggle('dark',sc.classList.contains('divider'));hudCh.textContent=sc._chapter}
+function go(i,n=0,dir=1){i=Math.max(0,Math.min(scenes.length-1,i));const nx=scenes[i];if(i!==cur){const old=scenes[cur];if(old){old.style.setProperty('--dir',dir);old.classList.remove('active');old.classList.add('leaving');clearTimeout(old._timer);old._timer=setTimeout(()=>{old.classList.remove('leaving');if(!old.classList.contains('active'))reset(old)},650)}reset(nx);nx.style.setProperty('--dir',dir);nx.classList.add('enter','active');requestAnimationFrame(()=>nx.classList.remove('enter'));cur=i;step=n;setStep(nx,n,true);apply(nx,i)}else{step=n;setStep(nx,n,true)}hud()}
+function next(){const sc=scenes[cur];if(step<sc._max){step++;setStep(sc,step);hud()}else if(cur<scenes.length-1)go(cur+1,0,1)}
+function prev(){const sc=scenes[cur];if(step>0){step--;setStep(sc,step,false);hud()}else if(cur>0)go(cur-1,scenes[cur-1]._max,-1)}
+function hud(){const sc=scenes[cur];hudN.textContent=String(cur+1).padStart(2,'0')+' / '+scenes.length;progress.style.width=((cur+(sc._max?step/sc._max:.99))/scenes.length*100)+'%';stepsEl.innerHTML=Array.from({length:sc._max},(_,i)=>`<i class="${i<step?'on':''}"></i>`).join('');try{history.replaceState(null,'','#'+(cur+1)+(step?'.'+step:''))}catch(e){}}
+function fit(){stage.style.setProperty('--k',Math.min(innerWidth/1920,innerHeight/1080))}addEventListener('resize',fit);fit();
+function title(sc){return sc.dataset.title||(sc.querySelector('.title,h1')||{}).textContent||''}
+function buildOverview(){$('ovgrid').innerHTML=scenes.map((sc,i)=>`<button data-i="${i}" class="${i===cur?'cur':''}"><span>${String(i+1).padStart(2,'0')} · ${sc._chapter}</span>${title(sc)}</button>`).join('')}
+$('ovgrid').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const i=+b.dataset.i;overview.classList.remove('show');go(i,0,i>=cur?1:-1)});
+function toggle(el,on){const value=on===undefined?!el.classList.contains('show'):on;el.classList.toggle('show',value);if(el===overview&&value)buildOverview()}
+addEventListener('keydown',e=>{if(e.metaKey||e.ctrlKey||e.altKey)return;const k=e.key;if(overview.classList.contains('show')||help.classList.contains('show')){if(k==='Escape'||k==='o'||k==='O'||k==='?'){toggle(overview,false);toggle(help,false);e.preventDefault()}return}switch(k){case'ArrowRight':case' ':case'PageDown':case'Enter':e.preventDefault();next();break;case'ArrowLeft':case'PageUp':case'Backspace':e.preventDefault();prev();break;case'ArrowDown':e.preventDefault();go(cur+1,0,1);break;case'ArrowUp':e.preventDefault();go(cur-1,scenes[Math.max(0,cur-1)]._max,-1);break;case'Home':go(0,0,-1);break;case'End':go(scenes.length-1,0,1);break;case'o':case'O':case'Escape':toggle(overview);break;case'?':case'/':toggle(help);break;case'f':case'F':document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();break;case'b':case'B':blank.classList.toggle('show');break;case'p':case'P':window.print();break}});
+stage.addEventListener('click',e=>{if(getSelection().toString())return;const r=stage.getBoundingClientRect();e.clientX-r.left<r.width*.2?prev():next()});blank.addEventListener('click',()=>blank.classList.remove('show'));
+let tx=null;addEventListener('touchstart',e=>tx=e.touches[0].clientX,{passive:true});addEventListener('touchend',e=>{if(tx===null)return;const dx=e.changedTouches[0].clientX-tx;if(Math.abs(dx)>50)(dx<0?next:prev)();tx=null});
+addEventListener('beforeprint',()=>scenes.forEach(sc=>setStep(sc,sc._max,false)));addEventListener('afterprint',()=>scenes.forEach((sc,i)=>i===cur?setStep(sc,step,false):reset(sc)));
+const m=location.hash.match(/^#(\d+)(?:\.(\d+))?/),si=m?Math.min(scenes.length,+m[1])-1:0,ss=m&&m[2]?+m[2]:0;go(si,0,1);if(ss){step=Math.min(ss,scenes[si]._max);setStep(scenes[si],step,false);hud()}
+const toast=$('toast');setTimeout(()=>toast.classList.add('show'),800);setTimeout(()=>toast.classList.remove('show'),5000);window.__deck={go,next,prev,scenes,get cur(){return cur},get step(){return step}};
+})();
+</script>
+</body>
+</html>

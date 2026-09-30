@@ -160,6 +160,12 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://artifacts.nanpipat.top/courses/microservices</loc>
+    <lastmod>2026-09-30</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://artifacts.nanpipat.top/courses/python-101</loc>
     <lastmod>2026-09-30</lastmod>
     <changefreq>monthly</changefreq>

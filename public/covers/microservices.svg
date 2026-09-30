@@ -1,0 +1,98 @@
+<svg viewBox="0 0 1600 900" xmlns="http://www.w3.org/2000/svg" font-family="Menlo, monospace">
+  <!-- microservices cover: one overloaded restaurant box split into independent service stations -->
+  <rect width="1600" height="900" fill="#ffffff"/>
+  <ellipse cx="805" cy="730" rx="690" ry="138" fill="#e7f3f8"/>
+  <circle cx="180" cy="170" r="74" fill="#fbf3db"/>
+  <circle cx="1435" cy="145" r="58" fill="#ddedea"/>
+
+  <!-- left: the monolith, one box carrying every responsibility -->
+  <rect x="150" y="230" width="440" height="470" rx="24" fill="#ffffff" stroke="#191919" stroke-width="9"/>
+  <path d="M 150 330 L 590 330" stroke="#191919" stroke-width="7"/>
+  <circle cx="195" cy="280" r="12" fill="#e03e3e"/>
+  <circle cx="230" cy="280" r="12" fill="#d9730d"/>
+  <circle cx="265" cy="280" r="12" fill="#0f7b6c"/>
+  <text x="310" y="291" font-size="33" font-weight="700" fill="#191919">MONOLITH</text>
+
+  <!-- four jobs squeezed into the same application -->
+  <rect x="190" y="370" width="160" height="115" rx="14" fill="#ddedea" stroke="#191919" stroke-width="7"/>
+  <path d="M 225 405 L 315 405 M 225 438 L 290 438 M 225 460 L 275 460" stroke="#191919" stroke-width="6" stroke-linecap="round"/>
+  <rect x="390" y="370" width="160" height="115" rx="14" fill="#fbecdd" stroke="#191919" stroke-width="7"/>
+  <path d="M 470 454 C 430 428 448 393 470 406 C 480 376 518 405 499 430 C 494 441 485 450 470 454 Z" fill="#d9730d" stroke="#191919" stroke-width="6" stroke-linejoin="round"/>
+  <rect x="190" y="525" width="160" height="115" rx="14" fill="#eae4f2" stroke="#191919" stroke-width="7"/>
+  <rect x="222" y="554" width="96" height="58" rx="8" fill="#ffffff" stroke="#191919" stroke-width="6"/>
+  <path d="M 238 574 L 302 574 M 238 593 L 270 593" stroke="#6940a5" stroke-width="6" stroke-linecap="round"/>
+  <rect x="390" y="525" width="160" height="115" rx="14" fill="#fbe4e4" stroke="#191919" stroke-width="7"/>
+  <path d="M 420 595 L 500 595 L 520 568 L 458 568 Z" fill="#ffffff" stroke="#191919" stroke-width="6" stroke-linejoin="round"/>
+  <circle cx="449" cy="610" r="12" fill="#191919"/>
+  <circle cx="497" cy="610" r="12" fill="#191919"/>
+
+  <!-- overloaded operator -->
+  <circle cx="110" cy="450" r="42" fill="#ffffff" stroke="#191919" stroke-width="8"/>
+  <circle cx="96" cy="444" r="5" fill="#191919"/>
+  <circle cx="119" cy="444" r="5" fill="#191919"/>
+  <path d="M 95 466 Q 110 453 125 466" stroke="#191919" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <path d="M 110 492 Q 90 555 112 632 M 108 535 L 64 570 M 108 535 L 144 560 M 112 632 L 78 684 M 112 632 L 142 684" stroke="#191919" stroke-width="9" stroke-linecap="round" fill="none"/>
+  <path d="M 64 570 L 44 536 M 144 560 L 158 525" stroke="#191919" stroke-width="8" stroke-linecap="round"/>
+  <path d="M 38 500 Q 6 476 26 448 M 142 500 Q 172 475 152 445" stroke="#2383e2" stroke-width="7" stroke-linecap="round" fill="none"/>
+  <circle cx="32" cy="420" r="8" fill="#2383e2"/>
+  <circle cx="150" cy="416" r="8" fill="#2383e2"/>
+
+  <!-- split path -->
+  <path d="M 630 468 C 700 468 710 330 790 330 M 630 468 C 700 468 710 610 790 610" stroke="#2383e2" stroke-width="8" stroke-dasharray="16 13" stroke-linecap="round" fill="none"/>
+  <path d="M 760 312 L 790 330 L 760 348 M 760 592 L 790 610 L 760 628" stroke="#2383e2" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <rect x="655" y="430" width="92" height="70" rx="9" fill="#ffffff" stroke="#191919" stroke-width="6" transform="rotate(-8 701 465)"/>
+  <path d="M 680 454 L 723 454 M 680 474 L 712 474" stroke="#787774" stroke-width="5" stroke-linecap="round" transform="rotate(-8 701 465)"/>
+
+  <!-- right: independent services -->
+  <g>
+    <rect x="820" y="205" width="270" height="230" rx="22" fill="#ffffff" stroke="#191919" stroke-width="9"/>
+    <rect x="820" y="205" width="270" height="58" rx="18" fill="#ddedea"/>
+    <path d="M 820 263 L 1090 263" stroke="#191919" stroke-width="7"/>
+    <text x="858" y="248" font-size="29" font-weight="700" fill="#191919">ORDER</text>
+    <path d="M 872 310 L 1025 310 M 872 350 L 1000 350 M 872 390 L 970 390" stroke="#191919" stroke-width="7" stroke-linecap="round"/>
+    <ellipse cx="955" cy="458" rx="74" ry="22" fill="#ddedea" stroke="#191919" stroke-width="7"/>
+    <path d="M 881 458 L 881 510 C 881 523 914 534 955 534 C 996 534 1029 523 1029 510 L 1029 458" fill="#ffffff" stroke="#191919" stroke-width="7"/>
+  </g>
+
+  <g>
+    <rect x="1170" y="205" width="270" height="230" rx="22" fill="#ffffff" stroke="#191919" stroke-width="9"/>
+    <rect x="1170" y="205" width="270" height="58" rx="18" fill="#fbecdd"/>
+    <path d="M 1170 263 L 1440 263" stroke="#191919" stroke-width="7"/>
+    <text x="1207" y="248" font-size="29" font-weight="700" fill="#191919">KITCHEN</text>
+    <path d="M 1305 390 C 1248 358 1266 303 1302 325 C 1312 284 1360 322 1339 355 C 1332 370 1321 382 1305 390 Z" fill="#d9730d" stroke="#191919" stroke-width="7" stroke-linejoin="round"/>
+    <ellipse cx="1305" cy="458" rx="74" ry="22" fill="#fbecdd" stroke="#191919" stroke-width="7"/>
+    <path d="M 1231 458 L 1231 510 C 1231 523 1264 534 1305 534 C 1346 534 1379 523 1379 510 L 1379 458" fill="#ffffff" stroke="#191919" stroke-width="7"/>
+  </g>
+
+  <g>
+    <rect x="820" y="565" width="270" height="190" rx="22" fill="#ffffff" stroke="#191919" stroke-width="9"/>
+    <rect x="820" y="565" width="270" height="58" rx="18" fill="#eae4f2"/>
+    <path d="M 820 623 L 1090 623" stroke="#191919" stroke-width="7"/>
+    <text x="845" y="608" font-size="29" font-weight="700" fill="#191919">PAYMENT</text>
+    <rect x="878" y="659" width="154" height="62" rx="10" fill="#ffffff" stroke="#191919" stroke-width="7"/>
+    <path d="M 900 682 L 1010 682 M 900 704 L 958 704" stroke="#6940a5" stroke-width="6" stroke-linecap="round"/>
+  </g>
+
+  <g>
+    <rect x="1170" y="565" width="270" height="190" rx="22" fill="#ffffff" stroke="#191919" stroke-width="9"/>
+    <rect x="1170" y="565" width="270" height="58" rx="18" fill="#fbe4e4"/>
+    <path d="M 1170 623 L 1440 623" stroke="#191919" stroke-width="7"/>
+    <text x="1190" y="608" font-size="29" font-weight="700" fill="#191919">DELIVERY</text>
+    <path d="M 1212 700 L 1344 700 L 1378 665 L 1270 665 Z" fill="#ffffff" stroke="#191919" stroke-width="7" stroke-linejoin="round"/>
+    <circle cx="1260" cy="718" r="16" fill="#191919"/>
+    <circle cx="1340" cy="718" r="16" fill="#191919"/>
+  </g>
+
+  <!-- service-to-service messages; one failure is visible -->
+  <path d="M 1095 320 C 1120 300 1142 300 1164 320 M 1305 540 L 1305 558 M 1094 660 L 1164 660" stroke="#0f7b6c" stroke-width="7" stroke-dasharray="12 10" stroke-linecap="round" fill="none"/>
+  <path d="M 1110 646 L 1128 674 M 1128 646 L 1110 674" stroke="#e03e3e" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="1119" cy="613" r="22" fill="#fbe4e4" stroke="#191919" stroke-width="6"/>
+  <text x="1111" y="624" font-size="31" font-weight="700" fill="#e03e3e">!</text>
+
+  <!-- observability magnifying glass -->
+  <circle cx="1500" cy="480" r="56" fill="#ffffff" stroke="#191919" stroke-width="9"/>
+  <path d="M 1540 520 L 1580 560" stroke="#191919" stroke-width="12" stroke-linecap="round"/>
+  <path d="M 1478 480 L 1494 496 L 1524 460" stroke="#0f7b6c" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+  <text x="164" y="824" font-size="29" fill="#787774">one deploy is simple · independent change has a coordination bill</text>
+</svg>
