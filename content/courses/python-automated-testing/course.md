@@ -3,6 +3,7 @@ title: "Automated Tester with Python — สร้างหุ่นยนต์
 level: "Part 4 of 4"
 tags: ["python", "testing", "selenium"]
 updated: "2026-09-30"
+cover: "/covers/python-automated-testing.svg"
 summary: "สร้างหุ่นยนต์ทดสอบเว็บด้วย Selenium — เปิดหน้า Login กรอกฟอร์ม กดปุ่ม และจับบั๊กแทนคน วนได้ทุกวันโดยไม่เบื่อ"
 ---
 

@@ -1,0 +1,65 @@
+<svg viewBox="0 0 1600 900" xmlns="http://www.w3.org/2000/svg" font-family="Menlo, monospace">
+  <!-- python-automated-testing cover: robot clicking through a browser, figure relaxing with coffee -->
+  <rect width="1600" height="900" fill="#ffffff"/>
+  <ellipse cx="640" cy="720" rx="560" ry="140" fill="#e7f3f8"/>
+  <circle cx="1430" cy="150" r="85" fill="#ddedea"/>
+  <circle cx="150" cy="170" r="65" fill="#fbf3db"/>
+
+  <!-- browser window -->
+  <rect x="330" y="150" width="700" height="520" rx="16" fill="#ffffff" stroke="#191919" stroke-width="9"/>
+  <path d="M 330 220 L 1030 220" stroke="#191919" stroke-width="7"/>
+  <circle cx="372" cy="186" r="10" fill="#e03e3e"/>
+  <circle cx="404" cy="186" r="10" fill="#fbecdd"/>
+  <circle cx="436" cy="186" r="10" fill="#ddedea"/>
+  <rect x="470" y="168" width="520" height="36" rx="18" fill="#f7f7f5" stroke="#191919" stroke-width="5"/>
+  <text x="492" y="194" font-size="24" fill="#787774">shop.example.com</text>
+
+  <!-- form inside the browser -->
+  <rect x="380" y="260" width="380" height="52" rx="8" fill="#f7f7f5" stroke="#191919" stroke-width="6"/>
+  <rect x="380" y="340" width="380" height="52" rx="8" fill="#f7f7f5" stroke="#191919" stroke-width="6"/>
+  <path d="M 404 286 L 470 286 M 404 366 L 520 366" stroke="#787774" stroke-width="5" stroke-linecap="round"/>
+  <!-- submit button being clicked -->
+  <rect x="380" y="430" width="180" height="58" rx="10" fill="#0f9d76" stroke="#191919" stroke-width="7"/>
+  <text x="408" y="468" font-size="26" fill="#ffffff">Buy!</text>
+  <!-- cursor click -->
+  <path d="M 560 470 L 620 530 L 586 534 L 604 580 L 582 590 L 564 544 L 540 566 Z"
+        fill="#ffffff" stroke="#191919" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M 640 430 L 660 400 M 652 470 L 686 462 M 620 404 L 616 372" stroke="#d9730d" stroke-width="7" stroke-linecap="round"/>
+
+  <!-- checklist on the right -->
+  <rect x="1120" y="180" width="330" height="360" rx="14" fill="#ffffff" stroke="#191919" stroke-width="9"/>
+  <path d="M 1152 250 L 1210 250 M 1152 330 L 1210 330 M 1152 410 L 1210 410 M 1152 490 L 1210 490" stroke="#787774" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="1178" cy="245" r="22" fill="#ddedea" stroke="#191919" stroke-width="6"/>
+  <path d="M 1168 245 L 1176 254 L 1190 236" stroke="#0f7b6c" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <circle cx="1178" cy="325" r="22" fill="#ddedea" stroke="#191919" stroke-width="6"/>
+  <path d="M 1168 325 L 1176 334 L 1190 316" stroke="#0f7b6c" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <circle cx="1178" cy="405" r="22" fill="#ddedea" stroke="#191919" stroke-width="6"/>
+  <path d="M 1168 405 L 1176 414 L 1190 396" stroke="#0f7b6c" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <circle cx="1178" cy="485" r="22" fill="#fbe4e4" stroke="#191919" stroke-width="6"/>
+  <path d="M 1166 473 L 1190 497 M 1190 473 L 1166 497" stroke="#e03e3e" stroke-width="7" stroke-linecap="round"/>
+
+  <!-- robot arm clicking the button -->
+  <path d="M 1105 420 Q 1010 470 700 560" stroke="#191919" stroke-width="10" stroke-linecap="round" fill="none"/>
+  <circle cx="1105" cy="420" r="20" fill="#ffffff" stroke="#191919" stroke-width="7"/>
+  <rect x="1060" y="380" width="90" height="70" rx="12" fill="#ffffff" stroke="#191919" stroke-width="8"/>
+  <circle cx="1105" cy="415" r="10" fill="#191919"/>
+
+  <!-- relaxed stick figure with coffee, bottom left -->
+  <circle cx="240" cy="560" r="54" fill="#ffffff" stroke="#191919" stroke-width="9"/>
+  <circle cx="224" cy="552" r="6" fill="#191919"/>
+  <circle cx="254" cy="552" r="6" fill="#191919"/>
+  <path d="M 226 580 Q 240 590 254 580" stroke="#191919" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <path d="M 238 614 Q 232 690 236 756" stroke="#191919" stroke-width="9" stroke-linecap="round" fill="none"/>
+  <path d="M 236 756 L 180 758 M 236 756 L 292 758" stroke="#191919" stroke-width="9" stroke-linecap="round"/>
+  <path d="M 236 650 Q 190 640 168 606" stroke="#191919" stroke-width="9" stroke-linecap="round" fill="none"/>
+  <!-- coffee in the other hand -->
+  <path d="M 258 640 L 314 640 L 308 682 L 264 682 Z" fill="#fbecdd" stroke="#191919" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M 316 650 Q 340 654 312 670" stroke="#191919" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <!-- zzz / relaxing marks -->
+  <text x="150" y="500" font-size="34" fill="#787774">zzz...</text>
+
+  <!-- little bug trying to escape the test -->
+  <circle cx="920" cy="330" r="20" fill="#fbe4e4" stroke="#191919" stroke-width="6"/>
+  <path d="M 910 314 Q 904 296 894 290 M 930 314 Q 936 296 946 290" stroke="#191919" stroke-width="5" stroke-linecap="round" fill="none"/>
+  <path d="M 940 322 L 972 306 M 940 334 L 974 334 M 938 344 L 970 358" stroke="#191919" stroke-width="5" stroke-linecap="round"/>
+</svg>

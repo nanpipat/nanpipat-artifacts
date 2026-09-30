@@ -1,0 +1,64 @@
+<svg viewBox="0 0 1600 900" xmlns="http://www.w3.org/2000/svg" font-family="Menlo, monospace">
+  <!-- python-ai-ml cover: old computer vs learning robot, figure feeding data -->
+  <rect width="1600" height="900" fill="#ffffff"/>
+  <ellipse cx="800" cy="720" rx="660" ry="140" fill="#eae4f2"/>
+  <circle cx="200" cy="160" r="85" fill="#ddedea"/>
+  <circle cx="1450" cy="700" r="70" fill="#fbf3db"/>
+
+  <!-- ground line -->
+  <path d="M 140 760 L 1460 758" stroke="#191919" stroke-width="9" stroke-linecap="round"/>
+
+  <!-- OLD computer on the left, grumpy rule-follower -->
+  <rect x="180" y="430" width="260" height="200" rx="12" fill="#ffffff" stroke="#191919" stroke-width="9"/>
+  <rect x="210" y="460" width="200" height="130" rx="6" fill="#e7f3f8" stroke="#191919" stroke-width="6"/>
+  <text x="228" y="540" font-size="40" fill="#191919">:)</text>
+  <rect x="270" y="630" width="80" height="46" rx="6" fill="#ffffff" stroke="#191919" stroke-width="8"/>
+  <path d="M 240 676 L 240 756 M 360 676 L 360 756" stroke="#191919" stroke-width="9" stroke-linecap="round"/>
+  <!-- speech bubble: only follows the manual -->
+  <rect x="150" y="250" width="300" height="90" rx="18" fill="#ffffff" stroke="#191919" stroke-width="7"/>
+  <path d="M 270 340 L 300 380" stroke="#191919" stroke-width="7" stroke-linecap="round"/>
+  <text x="185" y="305" font-size="28" fill="#37352f">page 14, rule 1...</text>
+
+  <!-- stick figure feeding data into the middle -->
+  <circle cx="660" cy="440" r="56" fill="#ffffff" stroke="#191919" stroke-width="9"/>
+  <circle cx="644" cy="432" r="6" fill="#191919"/>
+  <circle cx="674" cy="432" r="6" fill="#191919"/>
+  <path d="M 646 460 Q 660 470 674 460" stroke="#191919" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <path d="M 658 496 Q 650 590 654 680" stroke="#191919" stroke-width="9" stroke-linecap="round" fill="none"/>
+  <path d="M 656 530 Q 700 560 758 574" stroke="#191919" stroke-width="9" stroke-linecap="round" fill="none"/>
+  <path d="M 660 512 Q 720 530 790 528" stroke="#191919" stroke-width="9" stroke-linecap="round" fill="none"/>
+  <!-- paper stack in hands -->
+  <rect x="760" y="520" width="120" height="80" rx="8" fill="#ffffff" stroke="#191919" stroke-width="7" transform="rotate(-6 820 560)"/>
+  <path d="M 782 548 L 856 542 M 786 568 L 852 562 M 790 588 L 848 582" stroke="#787774" stroke-width="5" stroke-linecap="round" transform="rotate(-6 820 560)"/>
+
+  <!-- arrows from data to robot brain -->
+  <path d="M 900 540 Q 980 520 1050 520" stroke="#191919" stroke-width="8" stroke-linecap="round" fill="none"/>
+  <path d="M 1030 504 L 1062 520 L 1030 538" stroke="#191919" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+  <!-- LEARNING robot on the right -->
+  <rect x="1080" y="380" width="320" height="260" rx="26" fill="#ffffff" stroke="#191919" stroke-width="9"/>
+  <rect x="1116" y="416" width="248" height="150" rx="14" fill="#eae4f2" stroke="#191919" stroke-width="6"/>
+  <!-- neural net doodle on its face-screen -->
+  <circle cx="1160" cy="460" r="16" fill="#ffffff" stroke="#191919" stroke-width="5"/>
+  <circle cx="1230" cy="440" r="16" fill="#ffffff" stroke="#191919" stroke-width="5"/>
+  <circle cx="1300" cy="470" r="16" fill="#ffffff" stroke="#191919" stroke-width="5"/>
+  <circle cx="1195" cy="525" r="16" fill="#ffffff" stroke="#191919" stroke-width="5"/>
+  <circle cx="1275" cy="525" r="16" fill="#ffffff" stroke="#191919" stroke-width="5"/>
+  <path d="M 1160 460 L 1230 440 M 1230 440 L 1300 470 M 1160 460 L 1195 525 M 1230 440 L 1195 525 M 1300 470 L 1275 525 M 1195 525 L 1275 525"
+        stroke="#191919" stroke-width="4"/>
+  <!-- antenna + lightbulb -->
+  <path d="M 1240 380 L 1240 320" stroke="#191919" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="1240" cy="290" r="30" fill="#fbf3db" stroke="#191919" stroke-width="7"/>
+  <path d="M 1228 312 L 1252 312 M 1232 322 L 1248 322" stroke="#191919" stroke-width="6" stroke-linecap="round"/>
+  <path d="M 1180 250 L 1160 228 M 1240 240 L 1240 214 M 1300 250 L 1320 228" stroke="#fbecdd" stroke-width="0" fill="none"/>
+  <path d="M 1180 250 L 1160 228 M 1240 240 L 1240 214 M 1300 250 L 1320 228" stroke="#d9730d" stroke-width="7" stroke-linecap="round"/>
+  <!-- legs -->
+  <path d="M 1150 640 L 1146 756 M 1330 640 L 1336 756" stroke="#191919" stroke-width="9" stroke-linecap="round"/>
+  <!-- speech bubble: learning from data -->
+  <rect x="1140" y="150" width="380" height="90" rx="18" fill="#ffffff" stroke="#191919" stroke-width="7"/>
+  <path d="M 1300 240 L 1270 290" stroke="#191919" stroke-width="7" stroke-linecap="round"/>
+  <text x="1170" y="205" font-size="28" fill="#37352f">teach me more data!</text>
+
+  <!-- floating question -->
+  <text x="470" y="180" font-size="30" fill="#787774">rules?</text>
+</svg>

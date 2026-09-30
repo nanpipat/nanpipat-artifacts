@@ -3,6 +3,7 @@ title: "AI & Machine Learning — จากคอมที่ทำตามค�
 level: "Part 3 of 4"
 tags: ["python", "machine-learning", "ai"]
 updated: "2026-09-30"
+cover: "/covers/python-ai-ml.svg"
 summary: "พื้นฐาน Machine Learning ฉบับเข้าใจง่าย — แนวคิด การเตรียมข้อมูล และโมเดลจริงด้วย Python พร้อมโค้ดตัวอย่าง"
 ---
 

@@ -3,6 +3,7 @@ title: "Python 101 ฉบับเริ่มจากศูนย์ แต่
 level: "Part 1 of 4"
 tags: ["python", "beginner"]
 updated: "2026-09-30"
+cover: "/covers/python-101.svg"
 summary: "เริ่มจาก Hello World สู่ตัวแปร เงื่อนไข Loop Function และการอ่าน Error พร้อมโปรเจกต์ฝึกมือ — สำหรับคนที่ไม่มีพื้นฐานเลย"
 ---
 

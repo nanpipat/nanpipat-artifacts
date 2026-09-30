@@ -1,0 +1,48 @@
+<svg viewBox="0 0 1600 900" xmlns="http://www.w3.org/2000/svg" font-family="Menlo, monospace">
+  <!-- python-data-science cover: figure inspecting a giant spreadsheet, chart popping out -->
+  <rect width="1600" height="900" fill="#ffffff"/>
+  <ellipse cx="700" cy="720" rx="620" ry="140" fill="#ddedea"/>
+  <circle cx="1430" cy="170" r="80" fill="#fbf3db"/>
+  <circle cx="170" cy="150" r="70" fill="#e7f3f8"/>
+
+  <!-- giant spreadsheet -->
+  <rect x="300" y="210" width="620" height="480" rx="10" fill="#ffffff" stroke="#191919" stroke-width="9"/>
+  <path d="M 300 290 L 920 290 M 300 370 L 920 370 M 300 450 L 920 450 M 300 530 L 920 530 M 300 610 L 920 610"
+        stroke="#c9c9c7" stroke-width="4"/>
+  <path d="M 440 210 L 440 690 M 580 210 L 580 690 M 720 210 L 720 690" stroke="#c9c9c7" stroke-width="4"/>
+  <path d="M 300 210 L 920 210 L 920 690 L 300 690 Z" stroke="#191919" stroke-width="9" fill="none"/>
+  <!-- some data scribbles -->
+  <path d="M 330 255 L 420 255 M 330 335 L 460 335 M 330 415 L 400 415 M 460 255 L 560 255 M 470 415 L 540 415 M 330 495 L 430 495 M 330 575 L 415 575 M 600 335 L 700 335 M 610 495 L 690 495"
+        stroke="#191919" stroke-width="5" stroke-linecap="round"/>
+  <!-- highlighted cell -->
+  <rect x="580" y="530" width="140" height="80" fill="#fbecdd" stroke="#191919" stroke-width="6"/>
+
+  <!-- stick figure with magnifying glass -->
+  <circle cx="1150" cy="360" r="56" fill="#ffffff" stroke="#191919" stroke-width="9"/>
+  <circle cx="1134" cy="352" r="6" fill="#191919"/>
+  <circle cx="1166" cy="352" r="6" fill="#191919"/>
+  <path d="M 1136 380 Q 1150 390 1164 380" stroke="#191919" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <path d="M 1148 416 Q 1140 510 1144 620" stroke="#191919" stroke-width="9" stroke-linecap="round" fill="none"/>
+  <path d="M 1146 450 Q 1120 540 1074 590" stroke="#191919" stroke-width="9" stroke-linecap="round" fill="none"/>
+  <path d="M 1150 446 Q 1090 480 1000 470" stroke="#191919" stroke-width="9" stroke-linecap="round" fill="none"/>
+  <!-- magnifying glass over the highlighted cell -->
+  <circle cx="742" cy="560" r="56" fill="#ffffff" opacity="0.85" stroke="#191919" stroke-width="10"/>
+  <path d="M 700 480 L 780 480 M 700 560 L 700 640" stroke="#787774" stroke-width="3" opacity="0.6"/>
+  <path d="M 782 602 L 856 676" stroke="#191919" stroke-width="14" stroke-linecap="round"/>
+
+  <!-- bar chart popping out -->
+  <rect x="1080" y="500" width="90" height="180" rx="6" fill="#ddedea" stroke="#191919" stroke-width="8"/>
+  <rect x="1190" y="420" width="90" height="260" rx="6" fill="#88ccca" stroke="#191919" stroke-width="8"/>
+  <rect x="1300" y="560" width="90" height="120" rx="6" fill="#ddedea" stroke="#191919" stroke-width="8"/>
+  <path d="M 1052 682 L 1420 682" stroke="#191919" stroke-width="8" stroke-linecap="round"/>
+  <!-- winner star -->
+  <path d="M 1235 388 l 10 22 24 3 -17 17 4 24 -21 -11 -21 11 4 -24 -17 -17 24 -3 Z"
+        fill="#fbf3db" stroke="#191919" stroke-width="6" stroke-linejoin="round"/>
+
+  <!-- floating coffee cups (the coffee shop story) -->
+  <path d="M 240 700 L 296 700 L 290 742 L 246 742 Z" fill="#fbecdd" stroke="#191919" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M 298 710 Q 322 714 294 730" stroke="#191919" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <path d="M 260 682 Q 264 670 258 660 M 278 682 Q 282 670 276 660" stroke="#191919" stroke-width="5" stroke-linecap="round" fill="none"/>
+  <path d="M 1330 120 L 1386 120 L 1380 162 L 1336 162 Z" fill="#fbecdd" stroke="#191919" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M 1350 102 Q 1354 90 1348 80 M 1368 102 Q 1372 90 1366 80" stroke="#191919" stroke-width="5" stroke-linecap="round" fill="none"/>
+</svg>

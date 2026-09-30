@@ -1,0 +1,45 @@
+<svg viewBox="0 0 1600 900" xmlns="http://www.w3.org/2000/svg" font-family="Menlo, monospace">
+  <!-- python-101 cover: stick figure writing its first Hello World, snake watching -->
+  <rect width="1600" height="900" fill="#ffffff"/>
+  <!-- soft backdrop blobs -->
+  <ellipse cx="800" cy="700" rx="640" ry="150" fill="#fbf3db"/>
+  <circle cx="250" cy="180" r="90" fill="#fbecdd"/>
+  <circle cx="1420" cy="140" r="60" fill="#e7f3f8"/>
+
+  <!-- desk -->
+  <path d="M 520 640 L 1180 638" stroke="#191919" stroke-width="9" stroke-linecap="round" fill="none"/>
+  <path d="M 570 642 L 566 810" stroke="#191919" stroke-width="9" stroke-linecap="round" fill="none"/>
+  <path d="M 1130 640 L 1136 812" stroke="#191919" stroke-width="9" stroke-linecap="round" fill="none"/>
+
+  <!-- laptop -->
+  <path d="M 810 530 L 1080 528 L 1096 636 L 794 638 Z" fill="#ffffff" stroke="#191919" stroke-width="9" stroke-linejoin="round"/>
+  <rect x="838" y="556" width="216" height="60" rx="8" fill="#e7f3f8" stroke="#191919" stroke-width="6"/>
+  <text x="858" y="595" font-size="30" fill="#191919">print("Hi")</text>
+  <path d="M 806 636 L 1088 634 L 1104 662 L 792 664 Z" fill="#ffffff" stroke="#191919" stroke-width="8" stroke-linejoin="round"/>
+
+  <!-- stick figure behind the desk, typing -->
+  <circle cx="620" cy="380" r="58" fill="#ffffff" stroke="#191919" stroke-width="9"/>
+  <circle cx="602" cy="372" r="6" fill="#191919"/>
+  <circle cx="636" cy="372" r="6" fill="#191919"/>
+  <path d="M 606 398 Q 620 410 636 398" stroke="#191919" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <path d="M 618 438 Q 610 520 612 600" stroke="#191919" stroke-width="9" stroke-linecap="round" fill="none"/>
+  <!-- arms reaching to the laptop -->
+  <path d="M 616 470 Q 700 500 800 552" stroke="#191919" stroke-width="9" stroke-linecap="round" fill="none"/>
+  <path d="M 622 452 Q 720 470 812 540" stroke="#191919" stroke-width="9" stroke-linecap="round" fill="none"/>
+
+  <!-- friendly python snake, coiled, looking at the screen -->
+  <path d="M 1300 700 Q 1330 640 1270 610 Q 1210 580 1250 545 Q 1285 515 1235 495 Q 1200 480 1225 455"
+        stroke="#0f9d76" stroke-width="12" stroke-linecap="round" fill="none"/>
+  <circle cx="1218" cy="448" r="26" fill="#0f9d76" stroke="#191919" stroke-width="6"/>
+  <circle cx="1226" cy="440" r="4.5" fill="#ffffff"/>
+  <path d="M 1196 448 L 1168 444 M 1168 444 L 1156 436 M 1168 444 L 1158 454" stroke="#e03e3e" stroke-width="5" stroke-linecap="round" fill="none"/>
+  <path d="M 1232 700 Q 1265 668 1300 700" stroke="#0f9d76" stroke-width="12" stroke-linecap="round" fill="none"/>
+
+  <!-- coffee mug on the desk -->
+  <path d="M 700 596 L 756 596 L 750 638 L 706 638 Z" fill="#fbecdd" stroke="#191919" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M 758 606 Q 782 610 754 626" stroke="#191919" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <path d="M 722 578 Q 726 566 720 556 M 738 578 Q 742 566 736 556" stroke="#191919" stroke-width="5" stroke-linecap="round" fill="none"/>
+
+  <!-- first steps doodles on the floor -->
+  <text x="180" y="820" font-size="34" fill="#787774">step 1. print("Hello World")</text>
+</svg>

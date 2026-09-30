@@ -3,6 +3,7 @@ title: "Data Science with Python — เปลี่ยนตารางยา�
 level: "Part 2 of 4"
 tags: ["python", "data-science", "pandas"]
 updated: "2026-09-30"
+cover: "/covers/python-data-science.svg"
 summary: "โหลดตาราง ตรวจข้อมูล ทำความสะอาด รวมข้อมูล แล้วเปลี่ยนผลเป็นกราฟที่ช่วยตัดสินใจ — จากยอดขาย 200 แถวสู่คำตอบที่ใช้ได้จริง"
 ---
 
