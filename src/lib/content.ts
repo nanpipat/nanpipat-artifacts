@@ -15,7 +15,9 @@ export interface Article {
   tags: string[]
   excerpt: string
   cover: string | null
-  sourceUrl?: string
+  /** course slug this article belongs to, if any (frontmatter `course:`) */
+  course: string | null
+  sourceUrl: string | null
 }
 
 export interface Deck {
@@ -196,7 +198,8 @@ export function getAllArticles(): Article[] {
         tags: Array.isArray(data.tags) ? data.tags.map(String) : [],
         excerpt: String(data.excerpt ?? firstParagraph(content)),
         cover: data.cover ? String(data.cover) : firstImage(content) ?? null,
-        sourceUrl: data.source_url ? String(data.source_url) : undefined,
+        course: data.course ? String(data.course) : null,
+        sourceUrl: data.source_url ? String(data.source_url) : null,
       } as Article
     })
     .sort((a, b) => b.date.localeCompare(a.date))
@@ -330,7 +333,8 @@ export async function getArticle(slug: string): Promise<{ article: Article; html
     tags: Array.isArray(data.tags) ? data.tags.map(String) : [],
     excerpt: String(data.excerpt ?? firstParagraph(rawContent)),
     cover: frontCover ?? autoCover ?? null,
-    sourceUrl: data.source_url ? String(data.source_url) : undefined,
+    course: data.course ? String(data.course) : null,
+    sourceUrl: data.source_url ? String(data.source_url) : null,
   }
   return { article, html: processed.toString() }
 }

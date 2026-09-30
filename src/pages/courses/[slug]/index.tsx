@@ -12,12 +12,12 @@ import {
 } from "@chakra-ui/react";
 import { useColorModeValue } from "@/components/ui/color-mode";
 import { GetStaticPaths, GetStaticProps } from "next";
-import { IoChevronBack, IoDocumentTextOutline, IoDownloadOutline, IoDocumentOutline, IoEaselOutline, IoSchoolOutline } from "react-icons/io5";
+import { IoBookOutline, IoChevronBack, IoDocumentTextOutline, IoDownloadOutline, IoDocumentOutline, IoEaselOutline, IoSchoolOutline } from "react-icons/io5";
 import Main from "@/components/layouts/main";
 import DeckPreview from "@/components/deck-preview";
 import Cover from "@/components/cover";
 import { proseCss } from "@/lib/prose";
-import { getAllCourseSlugs, getAllCourses, getCourse } from "@/lib/content";
+import { getAllArticles, getAllCourseSlugs, getAllCourses, getCourse } from "@/lib/content";
 
 function SectionPill({
   href,
@@ -70,6 +70,11 @@ interface CoursePageProps {
     url: string;
     size: string;
   }[];
+  related: {
+    slug: string;
+    title: string;
+    date: string;
+  }[];
 }
 
 export default function CoursePage({
@@ -82,11 +87,12 @@ export default function CoursePage({
   html,
   decks,
   materials,
+  related,
 }: CoursePageProps) {
   const muted = useColorModeValue("gray.500", "whiteAlpha.600");
   const border = useColorModeValue("gray.200", "whiteAlpha.200");
   const navBg = useColorModeValue("#f0e7dbdd", "#202023dd");
-  const hasNav = decks.length > 0 || materials.length > 0;
+  const hasNav = decks.length > 0 || materials.length > 0 || related.length > 0;
 
   return (
     <Main width="768px" title={`${title} - Artifacts`}>
@@ -137,6 +143,11 @@ export default function CoursePage({
           <SectionPill href="#overview" icon={IoDocumentTextOutline}>
             Overview
           </SectionPill>
+          {related.length > 0 && (
+            <SectionPill href="#articles" icon={IoBookOutline}>
+              Articles ({related.length})
+            </SectionPill>
+          )}
           {decks.length > 0 && (
             <SectionPill href="#slides" icon={IoEaselOutline}>
               Slides ({decks.length})
@@ -151,6 +162,44 @@ export default function CoursePage({
       )}
 
       <Box id="overview" css={proseCss} className="article-content" dangerouslySetInnerHTML={{ __html: html }} />
+
+      {related.length > 0 && (
+        <Box id="articles" css={{ scrollMarginTop: "90px" }} mt={10}>
+          <Heading as="h2" size="lg" mb={2}>
+            Articles
+          </Heading>
+          <Text color={muted} fontSize="sm" mb={5}>
+            บทความฉบับเต็มประกอบคอร์สนี้ อ่านแยกตามหัวข้อได้เลย
+          </Text>
+          {related.map((a) => (
+            <ChakraLink
+              as={Link}
+              href={`/articles/${a.slug}`}
+              key={a.slug}
+              _hover={{ textDecoration: "none" }}
+            >
+              <HStack
+                borderWidth="1px"
+                borderColor={border}
+                borderRadius="md"
+                px={4}
+                py={3}
+                mb={2}
+                transition="all 0.15s"
+                _hover={{ borderColor: "teal.500" }}
+              >
+                <Icon as={IoBookOutline} color="teal.500" />
+                <Box flex={1}>
+                  <Text fontWeight="medium">{a.title}</Text>
+                  <Text fontSize="xs" color={muted}>
+                    {a.date}
+                  </Text>
+                </Box>
+              </HStack>
+            </ChakraLink>
+          ))}
+        </Box>
+      )}
 
       {decks.length > 0 && (
         <Box id="slides" css={{ scrollMarginTop: "90px" }} mt={10}>
@@ -243,6 +292,9 @@ export const getStaticProps: GetStaticProps<CoursePageProps> = async ({
       html: course.html,
       decks: course.decks,
       materials: course.materials,
+      related: getAllArticles()
+        .filter((a) => a.course === slug)
+        .map((a) => ({ slug: a.slug, title: a.title, date: a.date })),
     },
   };
 };

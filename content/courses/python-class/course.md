@@ -2,27 +2,14 @@
 title: "Python Class — 101, Data Science & AI/ML"
 level: "Multi-Day Class"
 tags: ["python", "data-science", "ml"]
-updated: "2025-06-01"
-summary: "คลาส Python ครบวงจร — Part 1: Python 101, Part 2: Data Science กับ pandas/notebook, Part 3: AI & Machine Learning พร้อมสไลด์ สคริปต์สอน และชุดโค้ดฝึกหัด"
+updated: "2026-09-30"
+summary: "คลาส Python ครบวงจร 4 ตอน — เขียนโปรแกรมครั้งแรก, วิเคราะห์ข้อมูล, สร้างโมเดล ML และสั่ง browser ทดสอบเว็บแทนเรา อ่านฉบับเต็มแยกตามหัวข้อได้ในบทความประกอบคอร์ส"
 ---
 
 # Python Class — 101, Data Science & AI/ML
 
-คลาสสอน Python สำหรับทีม แบ่งเป็น 3 ส่วนตามระดับ:
+คลาสสอน Python สำหรับทีม เรียงเนื้อหาต่อเนื่อง 4 ตอน ตั้งแต่เขียนโปรแกรมครั้งแรกในชีวิต ไปจนถึงสั่ง browser ทดสอบเว็บแทนคน
 
-## Part 1 — Python 101
+**อ่านเนื้อหาฉบับเต็มแยกตามหัวข้อได้ในหมวด Articles ด้านล่าง** — แต่ละตอนเขียนให้อ่านรู้เรื่องตั้งแต่ไม่มีพื้นฐาน พร้อมโค้ดตัวอย่างและโปรเจกต์ฝึกมือ
 
-พื้นฐานภาษา Python สำหรับคนเริ่มต้น — ตัวแปร, control flow, function, และการเขียน script ใช้งานจริง
-
-## Part 2 — Data Science
-
-วิเคราะห์ข้อมูลด้วย Jupyter Notebook จากชุดข้อมูลจริง (sales, coffee shop) — pandas, visualization, และการสรุป insight
-
-## Part 3 — AI & Machine Learning
-
-แนวคิด ML เบื้องต้นและการใช้งานจริง พร้อมโค้ดตัวอย่าง regression (house price forecast) และ OCR
-
-## วัสดุประกอบ
-
-- สไลด์แต่ละ Part ดาวน์โหลดได้ด้านล่าง (PPTX)
-- ชุดโค้ดฝึกหัดครบ: notebooks, pytest automation, ML scripts อยู่ใน `code-samples.zip`
+ส่วนสไลด์ประกอบการสอน (PPTX) และชุดโค้ดฝึกหัดทั้งหมด (notebooks, pytest automation, ML scripts) ดาวน์โหลดได้จากหมวด Materials
