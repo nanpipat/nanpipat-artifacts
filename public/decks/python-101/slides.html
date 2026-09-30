@@ -1,0 +1,2315 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Python 101 · คาบที่ 1 · Motion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#191919;--ink2:#37352f;--muted:#787774;--faint:#b9b8b4;--line:#e6e6e3;--soft:#f6f6f4;--bg:#fff;
+  --blue:#2383e2;--blue-d:#0b6bcb;--blue-bg:#e3effb;--blue-bg2:#f1f7fd;--blue-line:#bcd8f4;
+  --orange:#d9730d;--orange-bg:#fbecdd;--green:#0f7b6c;--green-bg:#ddedea;--red:#e03e3e;--red-bg:#fbe4e4;--purple:#6940a5;--purple-bg:#eae4f2;
+  --ease:cubic-bezier(.22,1,.36,1);--ease-io:cubic-bezier(.76,0,.24,1);--spring:cubic-bezier(.34,1.56,.64,1);
+  --sans:'IBM Plex Sans Thai','Sukhumvit Set','Thonburi',sans-serif;--mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#efefec}
+body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased;cursor:default}
+#stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;margin:-540px 0 0 -960px;transform:scale(var(--k,1));background:#fff;overflow:hidden;box-shadow:0 10px 60px rgba(0,0,0,.06)}
+h1,h2,h3,p{margin:0}
+
+/* ---------- background layer ---------- */
+#bg{position:absolute;inset:0;pointer-events:none}
+#bg .grid{position:absolute;top:0;bottom:0;left:-480px;right:-480px;background-image:radial-gradient(#dcdcd8 1.5px,transparent 1.7px);background-size:40px 40px;opacity:.5;transform:translateX(var(--gx,0px));transition:transform 1.4s var(--ease-io),opacity .8s}
+#bg .orb,#bg .ring,#bg .dot{position:absolute;left:0;top:0;border-radius:50%;will-change:transform}
+#bg .orb{width:1000px;height:1000px;margin:-500px 0 0 -500px;background:var(--blue-bg2);transform:translate(var(--ox),var(--oy)) scale(var(--os));transition:transform 1.25s var(--ease-io),background-color .9s var(--ease-io)}
+#bg .ring{width:1000px;height:1000px;margin:-500px 0 0 -500px;border:2px solid #d7e7f8;transform:translate(var(--rx),var(--ry)) scale(var(--rs));transition:transform 1.45s var(--ease-io),border-color .9s,opacity .6s}
+#bg .dot{width:36px;height:36px;margin:-18px 0 0 -18px;background:var(--blue);transform:translate(var(--dx),var(--dy)) scale(var(--ds));transition:transform 1.1s var(--spring)}
+#bg.flood .orb{background:var(--blue)}
+#bg.flood .ring{border-color:rgba(255,255,255,.25)}
+#bg.flood .grid{opacity:0}
+
+/* ---------- scenes ---------- */
+.scene{position:absolute;inset:0;padding:132px 150px 118px;display:flex;flex-direction:column;visibility:hidden}
+.scene.active,.scene.leaving{visibility:visible}
+.scene.active{transition:transform 1s var(--ease)}
+.scene.leaving{opacity:0;transform:translateX(calc(var(--dir,1) * -90px));filter:blur(5px);transition:opacity .5s var(--ease),transform .65s var(--ease),filter .5s}
+.scene[data-t=zoom].leaving{transform:scale(1.07)}
+.scene[data-t=zoom].enter{transform:scale(.93)}
+.scene.enter{transform:translateX(calc(var(--dir,1) * 50px))}
+.scene.snap,.scene.snap *{transition:none!important}
+
+/* animated element base */
+.a,[data-s]{opacity:0;transform:var(--from,translateY(38px));transition:opacity .6s var(--ease) var(--delay,0s),transform .95s var(--ease) var(--delay,0s),clip-path 1s var(--ease) var(--delay,0s),filter .6s var(--ease) var(--delay,0s)}
+.on{opacity:1;transform:none}
+.fx-left{--from:translateX(-70px)}
+.fx-right{--from:translateX(70px)}
+.fx-down{--from:translateY(-40px)}
+.fx-fade{--from:none}
+.fx-zoom{--from:scale(1.12);filter:blur(6px)}
+.fx-zoom.on{filter:none}
+.fx-pop{--from:scale(.55);transition:opacity .4s var(--ease) var(--delay,0s),transform .75s var(--spring) var(--delay,0s)}
+.fx-grow{--from:scaleX(0);transform-origin:left center;transition:opacity .3s var(--ease) var(--delay,0s),transform .7s var(--ease-io) var(--delay,0s)}
+.fx-growy{--from:scaleY(0);transform-origin:center bottom;transition:opacity .3s var(--ease) var(--delay,0s),transform .9s var(--ease) var(--delay,0s)}
+.fx-wipe{opacity:1;transform:none;clip-path:inset(0 100% 0 0)}
+.fx-wipe.on{clip-path:inset(0 0 0 0)}
+.st{opacity:1;transform:none}
+.mask{display:block;overflow:hidden;padding:.14em 0 .1em;margin:-.14em 0 -.1em;opacity:1;transform:none}
+.mask>span{display:block;transform:translateY(110%);transition:transform 1.1s var(--ease) var(--delay,0s)}
+.mask.on>span{transform:none}
+svg .draw{opacity:1;transform:none;stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset 1.1s var(--ease-io) var(--delay,0s)}
+svg .draw.on{stroke-dashoffset:0}
+
+/* ---------- typography ---------- */
+.eyebrow{font-family:var(--mono);font-size:21px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:22px}
+.title{font-size:70px;font-weight:600;line-height:1.22;letter-spacing:-.015em;margin-bottom:18px}
+.lead{font-size:34px;line-height:1.5;color:var(--muted);font-weight:300}
+.t{font-size:32px;line-height:1.55;color:var(--ink2)}
+.s{font-size:26px;line-height:1.5;color:var(--muted)}
+.mono{font-family:var(--mono)}
+b,strong{font-weight:600;color:var(--ink)}
+.blue{color:var(--blue)}.green{color:var(--green)}.orange{color:var(--orange)}.red{color:var(--red)}.purple{color:var(--purple)}.muted{color:var(--muted)}
+.mt{margin-top:28px}.mt2{margin-top:48px}.mb{margin-bottom:28px}
+.grow{flex:1;min-height:0}
+.center-x{text-align:center;align-items:center}
+
+/* ---------- layout ---------- */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:40px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:32px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:28px}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center}
+.col{display:flex;flex-direction:column}
+.row{display:flex;align-items:center;gap:20px}
+.body{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center}
+
+/* ---------- components ---------- */
+.card{background:#fff;border:2px solid var(--line);border-radius:24px;padding:36px 40px}
+.card h3{font-size:38px;font-weight:600;line-height:1.3;margin-bottom:10px}
+.card .k{font-family:var(--mono);font-size:20px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;display:block}
+.card.blue{border-color:var(--blue-line);background:var(--blue-bg2)}
+.card.soft{background:var(--soft);border-color:transparent}
+.card.dash{border-style:dashed}
+.card .t+.t{margin-top:8px}
+
+.callout{margin-top:auto;display:flex;gap:22px;align-items:center;padding:24px 34px;border-radius:18px;background:var(--soft);font-size:30px;line-height:1.5;color:var(--ink2)}
+.callout .ico{font-size:38px;flex:none;line-height:1}
+.callout.blue{background:var(--blue-bg);color:#0b5ea8}
+.callout.orange{background:var(--orange-bg);color:#9b4a00}
+.callout.green{background:var(--green-bg);color:#0b665a}
+.callout.red{background:var(--red-bg);color:#a82929}
+.callout b{color:inherit}
+
+.chip{display:inline-flex;align-items:center;gap:12px;padding:16px 32px;border-radius:999px;border:2px solid var(--line);font-size:34px;font-weight:500;background:#fff;white-space:nowrap}
+.chip.blue{background:var(--blue);border-color:var(--blue);color:#fff}
+.chip.sm{font-size:24px;padding:8px 20px}
+.tag{display:inline-block;font-family:var(--mono);font-size:20px;font-weight:500;padding:5px 14px;border-radius:8px;background:var(--soft);color:var(--muted);letter-spacing:.04em;white-space:nowrap}
+.tag.blue{background:var(--blue-bg);color:var(--blue-d)}.tag.green{background:var(--green-bg);color:var(--green)}.tag.red{background:var(--red-bg);color:var(--red)}.tag.orange{background:var(--orange-bg);color:var(--orange)}.tag.purple{background:var(--purple-bg);color:var(--purple)}
+
+.nrow{display:grid;grid-template-columns:120px 1fr;align-items:baseline;padding:22px 0;border-bottom:2px solid var(--line)}
+.nrow .n{font-family:var(--mono);font-size:30px;font-weight:500;color:var(--blue)}
+.nrow b{font-size:36px;margin-right:14px}
+.nrow .t{font-size:32px}
+.nlist{display:flex;flex-direction:column}
+
+.kv{display:grid;grid-template-columns:300px 1fr;align-items:baseline;padding:20px 0;border-bottom:2px solid var(--line)}
+.kv>b{font-size:34px}.kv>span{font-size:32px;color:var(--ink2)}
+
+/* check rows */
+.tick{display:grid;grid-template-columns:80px 1fr;align-items:center;padding:22px 0;border-bottom:2px solid var(--line)}
+.chk{width:48px;height:48px;border-radius:12px;border:3px solid var(--faint);display:grid;place-items:center;transition:background-color .35s var(--ease) calc(var(--delay,0s) + .45s),border-color .35s calc(var(--delay,0s) + .45s)}
+.chk svg{width:30px;height:30px}
+.chk path{fill:none;stroke:#fff;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset .45s var(--ease) calc(var(--delay,0s) + .6s)}
+.tick.on .chk{background:var(--green);border-color:var(--green)}
+.tick.on .chk path{stroke-dashoffset:0}
+.tick .t{font-size:34px}
+.tick.q .chk{border-radius:50%}
+
+/* window (Cowork prompt) */
+.win{background:#fff;border:2px solid var(--line);border-radius:24px;box-shadow:0 34px 80px -40px rgba(18,52,96,.35);overflow:hidden;display:flex;flex-direction:column}
+.win .wbar{display:flex;align-items:center;gap:10px;padding:16px 26px;border-bottom:2px solid var(--line);background:var(--soft);font-family:var(--mono);font-size:19px;color:var(--muted);letter-spacing:.06em}
+.win .wbar i{width:14px;height:14px;border-radius:50%;background:#dededa;display:block}
+.win .wbar i:nth-child(1){background:#f3b1ab}.win .wbar i:nth-child(2){background:#f5d38f}.win .wbar i:nth-child(3){background:#a8d9b4}
+.win .wbar span{margin-left:14px}
+.win .wbody{padding:30px 38px;font-size:32px;line-height:1.62;white-space:pre-wrap;color:var(--ink)}
+.win .wfoot{display:flex;justify-content:flex-end;align-items:center;gap:14px;padding:0 26px 22px;font-family:var(--mono);font-size:18px;color:var(--faint)}
+.win .send{width:52px;height:52px;border-radius:50%;background:var(--line);display:grid;place-items:center;color:#fff;font-size:26px;transition:background-color .4s}
+.win.sent .send{background:var(--blue)}
+.fill{color:var(--blue);background:var(--blue-bg);border-radius:8px;padding:0 .2em}
+.ch{visibility:hidden}
+.ch.v{visibility:visible}
+.ch.cur{position:relative}
+.ch.cur::after{content:"";position:absolute;right:-5px;top:.18em;bottom:.12em;width:3px;border-radius:2px;background:var(--blue);animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+
+/* file chip */
+.file{display:inline-flex;align-items:center;gap:14px;padding:14px 24px 14px 18px;border-radius:14px;border:2px solid var(--line);font-family:var(--mono);font-size:26px;background:#fff;white-space:nowrap;position:relative}
+.file svg{width:30px;height:30px;flex:none}
+.file.ghost{border-style:dashed;color:var(--faint);background:transparent}
+.file.new{border-color:var(--green);color:var(--ink)}
+.file.new::after{content:"";position:absolute;inset:-2px;border-radius:14px;border:3px solid var(--green);opacity:0}
+.file.new.on::after{animation:ping 1.2s var(--ease) calc(var(--delay,0s) + .3s) 2}
+.file .nb{font-family:var(--sans);font-size:18px;font-weight:600;color:#fff;background:var(--green);border-radius:999px;padding:2px 12px;margin-left:4px}
+@keyframes ping{0%{opacity:.9;transform:scale(1)}100%{opacity:0;transform:scale(1.25)}}
+
+/* flow */
+.flow{display:flex;align-items:center;flex-wrap:nowrap}
+.node{padding:18px 30px;border:2px solid var(--line);border-radius:18px;font-size:32px;font-weight:500;background:#fff;white-space:nowrap}
+.node.blue{border-color:var(--blue);background:var(--blue);color:#fff}
+.node.lb{border-color:var(--blue-line);background:var(--blue-bg2);color:var(--blue-d)}
+.arr{width:64px;height:3px;background:var(--faint);position:relative;margin:0 6px;flex:none}
+.arr::after{content:"";position:absolute;right:-2px;top:50%;width:14px;height:14px;border-top:3px solid var(--faint);border-right:3px solid var(--faint);transform:translateY(-50%) rotate(45deg)}
+.arr.blue{background:var(--blue)}.arr.blue::after{border-color:var(--blue)}
+
+/* role badge */
+.role{display:flex;flex-direction:column;align-items:flex-start;gap:18px}
+.role .rb{width:150px;height:150px;border-radius:50%;background:var(--blue);color:#fff;display:grid;place-items:center;font-family:var(--mono);font-size:46px;font-weight:600;box-shadow:0 0 0 14px var(--blue-bg)}
+.role .rn{font-family:var(--mono);font-size:22px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+
+/* divider scenes */
+.scene.divider{justify-content:center;color:#fff;padding-left:170px}
+.divider .num{font-family:var(--mono);font-size:30px;font-weight:500;letter-spacing:.2em;color:rgba(255,255,255,.7);margin-bottom:34px}
+.divider h1{font-size:128px;font-weight:600;line-height:1.08;letter-spacing:-.025em}
+.divider .lead{color:rgba(255,255,255,.78);margin-top:34px;font-size:38px}
+.divider .bignum{position:absolute;right:130px;bottom:40px;font-family:var(--mono);font-size:420px;font-weight:600;line-height:1;color:rgba(255,255,255,.12);letter-spacing:-.04em}
+
+/* ---------- HUD ---------- */
+#hud{position:absolute;inset:0;pointer-events:none;z-index:5}
+#hud-ch{position:absolute;left:150px;top:54px;height:30px;overflow:hidden;font-family:var(--mono);font-size:20px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);transition:color .6s}
+#hud-ch span{display:block;height:30px;line-height:30px;transition:transform .7s var(--ease),opacity .5s}
+#hud-ch span.out{transform:translateY(-100%);opacity:0}
+#hud-ch span.in{transform:translateY(100%);opacity:0}
+#prog{position:absolute;left:0;bottom:0;height:6px;background:var(--blue);width:0;transition:width .9s var(--ease),background-color .6s}
+#beats{position:absolute;left:150px;bottom:46px;display:flex;gap:10px}
+#beats i{width:11px;height:11px;border-radius:50%;background:#e1e1dd;transition:background-color .35s,transform .35s var(--spring)}
+#beats i.on{background:var(--blue)}
+#beats i.now{transform:scale(1.35)}
+#hud-n{position:absolute;right:150px;bottom:40px;font-family:var(--mono);font-size:20px;color:var(--faint);letter-spacing:.08em;transition:color .6s}
+#stage.dark #hud-ch,#stage.dark #hud-n{color:rgba(255,255,255,.7)}
+#stage.dark #beats i{background:rgba(255,255,255,.3)}
+#stage.dark #beats i.on{background:#fff}
+#stage.dark #prog{background:#fff}
+#roles{position:absolute;right:150px;top:40px;display:flex;align-items:flex-start;opacity:0;transform:translateY(-14px);transition:opacity .6s,transform .6s var(--ease)}
+#roles.show{opacity:1;transform:none}
+#roles .r{display:flex;flex-direction:column;align-items:center;gap:8px;width:118px}
+#roles .r i{width:30px;height:30px;border-radius:50%;border:3px solid #d9d9d5;background:#fff;display:grid;place-items:center;font-style:normal;font-size:16px;color:#fff;font-weight:700;transition:all .5s var(--ease)}
+#roles .r b{font-family:var(--mono);font-size:17px;font-weight:600;color:var(--faint);letter-spacing:.08em;transition:color .5s}
+#roles .r small{font-family:var(--mono);font-size:13px;color:var(--faint);transition:color .5s}
+#roles .ln{width:26px;height:3px;background:#e1e1dd;margin-top:14px;transition:background-color .5s}
+#roles .r.cur i{border-color:var(--blue);background:var(--blue);box-shadow:0 0 0 7px var(--blue-bg)}
+#roles .r.cur b{color:var(--blue)}#roles .r.cur small{color:var(--ink2)}
+#roles .r.done i{border-color:var(--green);background:var(--green)}
+#roles .r.done i::after{content:"✓"}
+#roles .r.done b{color:var(--ink2)}
+#roles .ln.done{background:var(--green)}
+
+/* ---------- overlays (not scaled) ---------- */
+.ovl{position:fixed;inset:0;z-index:20;display:none;background:rgba(250,250,249,.97);backdrop-filter:blur(6px);overflow:auto;padding:44px 56px 60px;font-family:var(--sans)}
+.ovl.show{display:block;animation:ovIn .35s var(--ease)}
+@keyframes ovIn{from{opacity:0;transform:scale(1.02)}}
+#ov h4{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:26px 0 10px;font-weight:500}
+#ov .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+#ov button{all:unset;cursor:pointer;background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:14px;line-height:1.4;color:var(--ink2);display:flex;gap:10px;transition:border-color .2s,transform .2s}
+#ov button:hover{border-color:var(--blue);transform:translateY(-2px)}
+#ov button.cur{border-color:var(--blue);background:var(--blue-bg2)}
+#ov button span{font-family:var(--mono);font-size:12px;color:var(--muted);padding-top:2px;flex:none;width:24px}
+#ov .top{display:flex;justify-content:space-between;align-items:baseline}
+#ov .top b{font-size:22px}#ov .top small{color:var(--muted);font-size:13px}
+#help .box{max-width:560px;margin:8vh auto;background:#fff;border:1px solid var(--line);border-radius:16px;padding:30px 36px;box-shadow:0 20px 60px rgba(0,0,0,.08)}
+#help h4{margin:0 0 16px;font-size:20px}
+#help table{width:100%;border-collapse:collapse;font-size:15px}
+#help td{padding:8px 0;border-bottom:1px solid var(--line);color:var(--ink2)}
+#help td:first-child{font-family:var(--mono);font-size:13px;color:var(--muted);width:44%}
+#blank{position:fixed;inset:0;background:#fff;z-index:15;opacity:0;pointer-events:none;transition:opacity .5s}
+#blank.show{opacity:1;pointer-events:auto}
+#toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,10px);z-index:12;background:rgba(25,25,25,.88);color:#fff;font-size:14px;padding:10px 18px;border-radius:999px;opacity:0;transition:opacity .5s,transform .5s var(--ease);pointer-events:none;font-family:var(--sans)}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#toast kbd{font-family:var(--mono);font-size:12px;background:rgba(255,255,255,.18);border-radius:5px;padding:1px 7px;margin:0 2px}
+
+@media (prefers-reduced-motion:reduce){
+  .a,[data-s],.mask>span,#bg *{transition-duration:.01s!important;animation-duration:.01s!important}
+}
+@media print{
+  @page{size:1920px 1080px;margin:0}
+  html,body{overflow:visible;height:auto;background:#fff}
+  #stage{position:static;margin:0;transform:none;width:1920px;height:auto;overflow:visible;box-shadow:none}
+  #bg,#hud,.ovl,#blank,#toast{display:none!important}
+  .scene{position:relative;width:1920px;height:1080px;visibility:visible!important;opacity:1!important;transform:none!important;filter:none!important;break-after:page;page-break-after:always;overflow:hidden}
+  .scene.divider{background:var(--blue)}
+  .scene *{transition:none!important;animation:none!important}
+  html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+
+/* ===== component library ===== */
+/* ---- from p2-open.html ---- */
+/* scene-specific: opening + AI 101 */
+.hero-t{font-size:150px;font-weight:600;line-height:1.04;letter-spacing:-.03em}
+.core{position:absolute;left:150px;bottom:140px;font-size:46px;line-height:1.35;font-weight:300;color:var(--ink2)}
+.core b{font-weight:600}
+.core svg{display:block;width:760px;height:26px;margin-top:6px}
+.core path{fill:none;stroke:var(--blue);stroke-width:6;stroke-linecap:round}
+.verbs{display:grid;grid-template-columns:repeat(4,1fr);gap:28px}
+.verb{border:2px solid var(--line);border-radius:28px;padding:44px 40px;background:#fff;min-height:300px;display:flex;flex-direction:column;justify-content:space-between}
+.verb .v{font-size:88px;font-weight:600;letter-spacing:-.02em;line-height:1.1}
+.verb .t{color:var(--muted)}
+.verb .ix{font-family:var(--mono);font-size:20px;color:var(--faint)}
+.verb.hot{background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:0 30px 70px -30px rgba(35,131,226,.7)}
+.verb.hot .t,.verb.hot .ix{color:rgba(255,255,255,.8)}
+.imgbox{border-radius:24px;overflow:hidden;background:#fff;border:2px solid var(--line)}
+.imgbox img{display:block;width:100%;height:auto}
+.ba{display:flex;flex-direction:column;gap:14px;padding:30px 0;border-bottom:2px solid var(--line)}
+.ba .t{font-size:38px;line-height:1.45}
+/* rings */
+.rings-wrap{display:grid;grid-template-columns:600px 1fr;gap:70px;align-items:center}
+.rings{position:relative;width:560px;height:560px;margin-left:10px}
+.rg{position:absolute;border-radius:50%;border:2px solid var(--line);display:flex;justify-content:center;background:#fff}
+.rg>span{font-family:var(--mono);font-size:19px;font-weight:500;letter-spacing:.08em;color:var(--muted);margin-top:18px}
+.r1{inset:0;background:var(--soft)}
+.r2{inset:58px}
+.r3{inset:116px;background:var(--blue-bg2);border-color:var(--blue-line)}.r3>span{color:var(--blue-d)}
+.r4{inset:182px;background:var(--blue);border-color:var(--blue);align-items:center}.r4>span{color:#fff;margin:0;font-size:24px}
+.orbitA{position:absolute;inset:92px;border-radius:50%;border:3px dashed var(--orange);animation:spin 26s linear infinite}
+.orbitA::before{content:"";position:absolute;left:50%;top:-11px;width:20px;height:20px;margin-left:-10px;border-radius:50%;background:var(--orange)}
+.lblA{position:absolute;right:-70px;top:250px}
+.lblM{position:absolute;left:50%;top:352px;margin-left:-72px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.defs{display:flex;flex-direction:column}
+.def{display:grid;grid-template-columns:380px 1fr;align-items:baseline;padding:16px 0;border-bottom:2px solid var(--line)}
+.def b{font-size:30px}.def span{font-size:28px;color:var(--ink2);line-height:1.45}
+.quote-card{align-self:center;font-size:52px;font-weight:500;padding:34px 60px;border-radius:24px;background:var(--ink);color:#fff;letter-spacing:-.01em}
+.links{display:block;width:100%;height:80px}
+.links path{fill:none;stroke:var(--faint);stroke-width:2.5}
+.wcard h3{font-size:34px}
+.pills{display:flex;gap:12px;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:10px;padding:10px 20px;border-radius:999px;background:var(--green-bg);color:var(--green);font-size:25px;font-weight:500}
+.klbl{font-family:var(--mono);font-size:22px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
+.klbl.blue{color:var(--blue)}
+.four{display:grid;grid-template-columns:repeat(4,1fr);gap:40px}
+.four .bn{font-family:var(--mono);font-size:120px;font-weight:500;color:var(--blue);line-height:1;letter-spacing:-.04em}
+.four b{display:block;font-size:44px;margin:26px 0 12px}
+.four .it{border-top:3px solid var(--ink);padding-top:30px}
+.kit{display:grid;grid-template-columns:1fr 400px 1fr;gap:56px;align-items:center}
+.kcol{display:flex;flex-direction:column;gap:22px}
+.kt{display:flex;align-items:center;gap:22px;padding:20px 28px;border:2px solid var(--line);border-radius:20px;background:#fff}
+.kt .e{font-size:44px;width:56px;text-align:center}
+.kt b{font-size:32px;display:block;line-height:1.3}.kt small{font-size:24px;color:var(--muted)}
+.inL{--from:translateX(240px) scale(.8)}.inR{--from:translateX(-240px) scale(.8)}
+.kcenter{width:400px;height:400px;border-radius:50%;background:var(--blue);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;box-shadow:0 0 0 26px var(--blue-bg),0 0 0 52px var(--blue-bg2)}
+.kcenter .face{font-size:110px;line-height:1.1}
+.kcenter b{color:#fff;font-size:40px}.kcenter small{font-size:26px;opacity:.8}
+
+/* ---- from p3-anatomy.html ---- */
+/* anatomy */
+.mrow{display:grid;grid-template-columns:360px 1fr 380px;gap:40px;align-items:center;padding:24px 0;border-bottom:2px solid var(--line)}
+.mrow b{font-size:34px}.mrow .t{font-size:30px}
+.meter{height:16px;border-radius:99px;background:var(--soft);overflow:hidden;position:relative}
+.meter i{position:absolute;left:0;top:0;bottom:0;width:var(--w);border-radius:99px;background:var(--blue);transform:scaleX(0);transform-origin:left;transition:transform 1.1s var(--ease-io) calc(var(--delay,0s) + .25s)}
+.mrow.on .meter i{transform:scaleX(1)}
+.meter-l{display:flex;justify-content:space-between;font-family:var(--mono);font-size:17px;color:var(--faint);margin-top:8px}
+.ticket-wrap{display:flex;justify-content:center}
+.ticket{width:560px;background:#fff;border:2px solid var(--line);border-radius:22px;padding:30px 34px;box-shadow:0 30px 70px -36px rgba(0,0,0,.35);transform:rotate(-3deg)}
+.drop{--from:translateY(-420px) rotate(8deg);transition:opacity .3s var(--ease) var(--delay,0s),transform 1s var(--spring) var(--delay,0s)}
+.ticket .id{font-family:var(--mono);font-size:20px;color:var(--blue);font-weight:600}
+.ticket h3{font-size:36px;margin:10px 0 18px}
+.ticket .meta{display:flex;gap:10px}
+.qs{display:flex;flex-direction:column;gap:16px}
+.q{display:flex;align-items:center;gap:18px;font-size:32px;color:var(--ink2)}
+.q .qm{width:48px;height:48px;border-radius:50%;background:var(--orange-bg);color:var(--orange);display:grid;place-items:center;font-weight:700;font-size:26px;flex:none}
+.res{border-radius:18px;padding:22px 28px;font-size:29px;line-height:1.55;margin-top:22px;white-space:pre-line}
+.res.bad{background:var(--red-bg);color:#8f2222}
+.res.good{background:var(--green-bg);color:#0b5c51}
+.res .v{display:block;font-weight:600;margin-top:6px}
+.layer{display:grid;grid-template-columns:320px 1fr;align-items:center;gap:30px;padding:26px 36px;border-radius:20px;border:2px solid var(--line);background:#fff;margin-bottom:18px}
+.layer b{font-size:36px}.layer .t{font-size:31px}
+.layer .ix{font-family:var(--mono);font-size:18px;color:var(--faint);display:block;margin-bottom:4px;letter-spacing:.1em}
+.stack4 .layer:nth-child(1){border-left:10px solid var(--blue)}
+.stack4 .layer:nth-child(2){border-left:10px solid var(--purple)}
+.stack4 .layer:nth-child(3){border-left:10px solid var(--red)}
+.stack4 .layer:nth-child(4){border-left:10px solid var(--orange)}
+.sticky{width:250px;padding:20px 22px;background:#fdf6d8;border-radius:6px;font-size:24px;line-height:1.45;color:#6b5a14;box-shadow:0 12px 26px -16px rgba(0,0,0,.35)}
+.mess{position:relative;height:330px}
+.toolg{display:grid;grid-template-columns:repeat(3,1fr);gap:26px}
+.tool{border:2px solid var(--line);border-radius:22px;padding:30px 34px;background:#fff}
+.tool code{font-family:var(--mono);font-size:22px;color:var(--blue-d);background:var(--blue-bg);padding:4px 12px;border-radius:8px}
+.tool b{display:block;font-size:38px;margin:18px 0 6px}.tool .t{font-size:28px;color:var(--muted)}
+.diag{position:relative;width:1620px;height:420px}
+.diag svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.diag .wire{fill:none;stroke:var(--faint);stroke-width:3}
+.diag .pk{fill:var(--blue)}
+.dn{position:absolute;display:flex;align-items:center;justify-content:center;border-radius:20px;border:2px solid var(--line);background:#fff;font-size:32px;font-weight:600}
+.hub{position:absolute;left:730px;top:130px;width:160px;height:160px;border-radius:50%;background:var(--blue);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--mono);font-weight:600;font-size:32px;box-shadow:0 0 0 18px var(--blue-bg)}
+.hub small{font-size:30px;line-height:1}
+.pingring{position:absolute;inset:-18px;border-radius:50%;border:3px solid var(--blue);animation:pr 2.4s var(--ease) infinite;opacity:0}
+@keyframes pr{0%{transform:scale(.9);opacity:.6}100%{transform:scale(1.5);opacity:0}}
+.bounce{animation:bnc 1.6s var(--ease-io) infinite alternate}
+@keyframes bnc{from{transform:translateX(-120px)}to{transform:translateX(120px)}}
+.lane{display:flex;align-items:center;justify-content:space-between;padding:30px 40px;border-radius:22px;background:var(--soft);position:relative;overflow:hidden}
+.lane .node{font-size:28px}
+.sent-hl{font-size:48px;line-height:1.7;font-weight:500;color:var(--ink)}
+.hl{border-radius:10px;padding:2px 6px;-webkit-box-decoration-break:clone;box-decoration-break:clone;background-repeat:no-repeat;background-size:0% 100%;transition:background-size .8s var(--ease-io) var(--delay,0s),color .4s;position:relative}
+.hl.on{background-size:100% 100%}
+.hl.hm{background-image:linear-gradient(var(--purple-bg),var(--purple-bg))}
+.hl.hk{background-image:linear-gradient(var(--orange-bg),var(--orange-bg))}
+.hl.hc{background-image:linear-gradient(var(--blue-bg),var(--blue-bg))}
+.hl .pop{position:absolute;left:50%;top:-34px;transform:translateX(-50%) scale(.6);opacity:0;font-family:var(--mono);font-size:18px;font-weight:600;white-space:nowrap;background:var(--green);color:#fff;padding:3px 12px;border-radius:99px;transition:all .6s var(--spring) .2s;line-height:1.4}
+.hl.ht.on .pop{opacity:1;transform:translateX(-50%) scale(1)}
+.map4 .card{padding:28px 32px}
+.map4 .card h3{font-size:34px;margin-bottom:4px}
+.map4 .card .s{font-size:24px}
+.map4 .card.m{border-color:#d5c7ea}.map4 .card.m h3{color:var(--purple)}
+.map4 .card.k{border-color:#f1cfa9}.map4 .card.k h3{color:var(--orange)}
+.map4 .card.c{border-color:var(--blue-line)}.map4 .card.c h3{color:var(--blue)}
+.map4 .card.tl{border-color:#b5dbd4}.map4 .card.tl h3{color:var(--green)}
+
+/* ---- from p4-prompt.html ---- */
+.eqlabel{font-family:var(--mono);font-size:26px;letter-spacing:.14em;color:var(--muted);text-align:center;margin-bottom:26px}
+.eq{display:flex;align-items:flex-start;justify-content:center}
+.term{display:flex;flex-direction:column;align-items:center;gap:8px;padding:0 8px}
+.term b{font-size:52px;font-weight:600;line-height:1.2;transition:font-size 1.1s var(--ease-io),color .8s}
+.term small{font-size:24px;color:var(--muted);white-space:nowrap}
+.plus{font-size:52px;color:var(--faint);font-weight:300;padding:0 8px;line-height:1.2}
+.xp{max-width:0;opacity:0;overflow:hidden;transform:none;transition:max-width 1.1s var(--ease-io) var(--delay,0s),opacity .6s var(--ease) calc(var(--delay,0s) + .25s)}
+.xp.on{max-width:460px;opacity:1}
+.xp>div{display:flex;align-items:flex-start;white-space:nowrap}
+.shrink b{font-size:190px;color:var(--blue);letter-spacing:-.03em}
+.shrink.on b{font-size:52px;color:var(--ink);letter-spacing:0}
+.shrink small{transition:font-size 1.1s var(--ease-io)}
+.frow{display:grid;grid-template-columns:300px 1fr;gap:40px;align-items:center;padding:36px 0;border-bottom:2px solid var(--line)}
+.frow .klbl{margin:0}
+.frow .s{margin-top:14px}
+.loopbox{position:relative;width:540px;height:540px;flex:none}
+.loopbox svg{position:absolute;inset:0}
+.loopbox .orb2{position:absolute;inset:60px;border-radius:50%;animation:spin 7s linear infinite}
+.loopbox .orb2::before{content:"";position:absolute;left:50%;top:-12px;width:24px;height:24px;margin-left:-12px;border-radius:50%;background:var(--blue);box-shadow:0 0 0 8px var(--blue-bg)}
+.lp{position:absolute;transform:translate(-50%,-50%)}
+.lp .node{font-size:30px;padding:14px 26px}
+.lp .node.lb{font-weight:600}
+.resp{display:flex;flex-direction:column;gap:12px;margin-top:6px}
+.resp li{font-size:30px;color:var(--ink2);list-style:none;padding-left:34px;position:relative;line-height:1.45}
+.resp li::before{content:"";position:absolute;left:4px;top:.55em;width:14px;height:14px;border-radius:50%;background:var(--blue)}
+.resp.h li::before{background:var(--ink)}
+ul.resp{margin:0;padding:0}
+.bc{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.bc .chip{font-size:28px;padding:12px 26px}
+.bc .sep{font-size:28px;color:var(--faint)}
+.bigico{width:96px;height:96px;border-radius:26px;display:grid;place-items:center;font-size:52px;background:var(--blue-bg);margin-bottom:24px}
+.slash{font-family:var(--mono);font-size:70px;font-weight:600;color:var(--blue);line-height:1;margin-bottom:22px}
+.tile4{display:grid;grid-template-columns:repeat(4,1fr);gap:26px}
+.tile4 .tool b{font-size:34px}
+
+/* ---- from p5-build.html ---- */
+.pipe{display:flex;align-items:center;margin-top:60px}
+.pipe .pn{padding:16px 30px;border-radius:999px;border:2px solid rgba(255,255,255,.55);font-family:var(--mono);font-size:28px;font-weight:600;color:#fff}
+.pipe .pa{width:60px;height:3px;background:rgba(255,255,255,.55);margin:0 4px}
+.prole{display:grid;grid-template-columns:1fr 440px;gap:70px;align-items:center}
+.side{display:flex;flex-direction:column;gap:40px}
+.out .klbl{margin-bottom:12px}
+.tree{display:flex;flex-direction:column;gap:14px}
+.tree .file{align-self:flex-start}
+.tree .indent{padding-left:44px;display:flex;flex-direction:column;gap:14px}
+.qtag{display:inline-flex;align-items:center;gap:12px;font-size:30px;padding:14px 26px;border-radius:16px;background:var(--orange-bg);color:#9b4a00;font-weight:500}
+.app{background:#fff;border:2px solid var(--line);border-radius:26px;box-shadow:0 40px 90px -40px rgba(18,52,96,.4);overflow:hidden}
+.app .top{display:flex;justify-content:space-between;align-items:center;padding:30px 38px;border-bottom:2px solid var(--line)}
+.app h4{font-size:38px;margin:0;font-weight:600}
+.app .cnt{font-size:23px;color:var(--muted);position:relative;display:block;height:34px}
+.swap{position:relative;display:inline-block}
+.swap>span{transition:opacity .45s var(--ease) calc(var(--delay,0s) + .5s)}
+.swap>span:last-child{position:absolute;left:0;top:0;opacity:0;white-space:nowrap}
+.swap.on>span:first-child{opacity:0}.swap.on>span:last-child{opacity:1}
+.app .btn{background:var(--blue);color:#fff;padding:14px 26px;border-radius:14px;font-size:25px;font-weight:600}
+.trow{display:grid;grid-template-columns:50px 1fr 70px 120px;gap:18px;align-items:center;padding:22px 38px;border-bottom:2px solid var(--line);font-size:29px}
+.trow:last-child{border:0}
+.cb{width:34px;height:34px;border-radius:9px;border:3px solid var(--faint);display:grid;place-items:center;color:#fff;font-size:20px;font-weight:700;transition:all .4s var(--ease) calc(var(--delay,0s) + .2s)}
+.cb.done{background:var(--green);border-color:var(--green)}
+.flip.on .cb{background:var(--green);border-color:var(--green)}
+.cb::after{content:"✓";opacity:0;transition:opacity .3s calc(var(--delay,0s) + .35s)}
+.cb.done::after,.flip.on .cb::after{opacity:1}
+.nm{transition:color .4s calc(var(--delay,0s) + .3s)}
+.flip.on .nm,.nm.done{color:var(--faint);text-decoration:line-through}
+.trow .tag{text-align:center}
+.cburst{position:relative}
+.burst{position:absolute;left:58px;top:50%;width:0;height:0}
+.burst i{position:absolute;width:14px;height:14px;margin:-7px;border-radius:50%;background:var(--blue);opacity:0}
+.burst i:nth-child(3n){background:var(--orange)}.burst i:nth-child(4n){background:var(--green)}
+.cburst.on .burst i{animation:bst 1.2s var(--ease) calc(var(--delay,0s) + .25s) both}
+@keyframes bst{0%{opacity:1;transform:translate(0,0) scale(.3)}100%{opacity:0;transform:translate(var(--x),var(--y)) scale(1)}}
+.bug{font-size:120px;line-height:1;animation:wig 2.4s ease-in-out infinite}
+@keyframes wig{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg) translateY(-8px)}}
+
+/* ---- from p6-wrap.html ---- */
+.track{display:flex;align-items:flex-start}
+.stn{width:280px;flex:none;display:flex;flex-direction:column;align-items:center;text-align:center;gap:22px}
+.stn .c{width:110px;height:110px;border-radius:50%;background:var(--blue);color:#fff;display:grid;place-items:center;font-family:var(--mono);font-weight:600;font-size:28px;box-shadow:0 0 0 12px var(--blue-bg)}
+.stn .t{font-size:28px;line-height:1.45}
+.seg{flex:1;height:4px;background:var(--blue);margin-top:53px}
+.team{display:grid;grid-template-columns:repeat(4,1fr);gap:24px}
+.team .card{padding:28px 30px}
+.team .card b{font-size:30px;display:block;margin-bottom:8px}
+.team .card .s{font-size:25px}
+.team .msg{background:var(--ink);border-color:var(--ink);color:#fff;display:flex;flex-direction:column;justify-content:center}
+.team .msg p{font-size:30px;line-height:1.35;color:rgba(255,255,255,.7)}
+.team .msg p b{color:#fff}
+.loop5{display:grid;grid-template-columns:repeat(5,1fr);gap:0}
+.l5{position:relative;padding:0 26px;border-left:3px solid var(--line)}
+.l5:first-child{border-left-color:var(--ink)}
+.l5 .n{font-family:var(--mono);font-size:22px;color:var(--muted)}
+.l5 b{display:block;font-family:var(--mono);font-size:50px;font-weight:600;letter-spacing:-.01em;margin:14px 0 18px;color:var(--ink)}
+.l5 .t{font-size:30px}
+.l5.last b{color:var(--blue)}
+.l5 .ar{position:absolute;right:-18px;top:62px;font-size:30px;color:var(--faint)}
+.close-big{font-size:112px;font-weight:600;line-height:1.1;letter-spacing:-.03em}
+.close-big .muted{font-weight:300}
+.stairs{display:grid;grid-template-columns:repeat(3,1fr);gap:40px;align-items:end;height:460px}
+.stair{display:flex;flex-direction:column;justify-content:flex-end}
+.stair .lbl{margin-bottom:18px}
+.stair .lbl b{display:block;font-size:34px}.stair .lbl span{font-size:28px;color:var(--muted)}
+.stair .blk{border-radius:20px 20px 0 0;background:var(--blue-bg);border:2px solid var(--blue-line);border-bottom:0}
+.stair:nth-child(2) .blk{background:#cfe3f8}
+.stair:nth-child(3) .blk{background:var(--blue);border-color:var(--blue)}
+.docs{position:relative;height:300px;display:flex;align-items:flex-end;justify-content:center}
+.pg{position:absolute;width:190px;height:240px;border-radius:12px;background:#fff;border:2px solid var(--line);box-shadow:0 8px 20px -14px rgba(0,0,0,.3)}
+.pg::before{content:"";position:absolute;left:24px;right:24px;top:30px;height:90px;background:repeating-linear-gradient(var(--line) 0 5px,transparent 5px 22px)}
+.meterbig{height:22px;border-radius:99px;background:var(--soft);overflow:hidden;margin-top:26px}
+.meterbig i{display:block;height:100%;width:var(--w);border-radius:99px;background:var(--blue);transform:scaleX(0);transform-origin:left;transition:transform 1.4s var(--ease-io) calc(var(--delay,0s) + .3s)}
+.on>.meterbig i,.on .meterbig i{transform:scaleX(1)}
+.fl{display:flex;flex-direction:column;gap:14px}
+.fl .file{align-self:flex-start;transition:all .5s var(--ease) var(--delay,0s)}
+.fl .file.st.on{border-color:var(--blue);background:var(--blue-bg2);color:var(--blue-d)}
+.fl.no .file.st.on{opacity:.4;text-decoration:line-through;border-style:dashed}
+.retry{display:flex;align-items:baseline;gap:18px;font-family:var(--mono)}
+.retry .big{font-size:120px;font-weight:600;color:var(--red);line-height:1}
+.retry span{font-size:30px;color:var(--muted)}
+.cash{font-size:40px;letter-spacing:4px;height:56px;overflow:hidden;white-space:nowrap}
+.cash span{display:inline-block;opacity:0;transform:translateY(20px);transition:all .4s var(--spring)}
+.cash.on span{opacity:1;transform:none}
+.form .fr{display:grid;grid-template-columns:300px 1fr;align-items:end;padding:22px 0}
+.form .fr b{font-family:var(--mono);font-size:32px;font-weight:500}
+.form .fr .ln2{height:3px;background:var(--ink);opacity:.8}
+
+/* ===== code & terminal components (kit v2) ===== */
+.win pre.code,.codebox pre.code{margin:0;padding:28px 38px;font-family:var(--mono);font-size:28px;line-height:1.62;white-space:pre;color:var(--ink);tab-size:4;overflow:hidden}
+pre.code .l{display:block;border-radius:6px;margin:0 -12px;padding:0 12px;transition:background-color .5s var(--ease)}
+pre.code .l.hot,pre.code .l.st.on.mark{background:var(--blue-bg)}
+pre.code .l.bad.on{background:var(--red-bg)}
+pre.code .l.good.on{background:var(--green-bg)}
+.tk-k{color:#8a3ffc;font-weight:500}.tk-s{color:#0f7b6c}.tk-c{color:#9b9a97;font-style:italic}.tk-n{color:#d9730d}.tk-f{color:#0b6bcb}.tk-b{color:#c2410c}.tk-p{color:#b4b4b0}.tk-key{color:#0b6bcb;font-weight:500}.tk-flag{color:#8a3ffc}.tk-kw2{color:#e03e3e;font-weight:600}
+.shell{background:#1c1c1e;border-radius:22px;box-shadow:0 34px 80px -40px rgba(0,0,0,.55);overflow:hidden;display:flex;flex-direction:column}
+.shell .sbar{display:flex;align-items:center;gap:10px;padding:16px 24px;background:#2a2a2d;font-family:var(--mono);font-size:18px;color:#8e8e93;letter-spacing:.06em}
+.shell .sbar i{width:14px;height:14px;border-radius:50%;display:block}
+.shell .sbar i:nth-child(1){background:#ff5f57}.shell .sbar i:nth-child(2){background:#febc2e}.shell .sbar i:nth-child(3){background:#28c840}
+.shell .sbar span{margin-left:14px}
+.shell .sbody{padding:26px 34px;font-family:var(--mono);font-size:26px;line-height:1.6;color:#e5e5e7;white-space:pre}
+.shell .cmd{display:block;color:#fff}
+.shell .cmd::before{content:"$ ";color:#30d158;font-weight:600}
+.shell .out{display:block;color:#a1a1a6}
+.shell .out.err{color:#ff6961}.shell .out.ok{color:#30d158}.shell .out.hl{color:#ffd60a}
+.shell .ch.cur::after{background:#30d158}
+.shell .tk-flag{color:#bf9bff}.shell .tk-s{color:#7ee2b8}.shell .tk-c{color:#8e8e93}.shell .tk-n{color:#ffb86b}.shell .tk-k{color:#bf9bff}
+.kbd{display:inline-block;font-family:var(--mono);font-size:.8em;padding:2px 12px;border-radius:8px;border:2px solid var(--line);border-bottom-width:4px;background:#fff}
+.anno{position:absolute;display:flex;align-items:center;gap:12px;font-size:24px;font-weight:500;color:var(--blue-d);background:var(--blue-bg);padding:8px 18px;border-radius:12px;white-space:nowrap}
+.anno.orange{color:#9b4a00;background:var(--orange-bg)}.anno.green{color:var(--green);background:var(--green-bg)}.anno.red{color:#a82929;background:var(--red-bg)}
+.tbl{width:100%;border-collapse:collapse;font-size:30px}
+.tbl th{font-family:var(--mono);font-size:20px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-align:left;padding:0 20px 14px;border-bottom:2px solid var(--ink)}
+.tbl td{padding:18px 20px;border-bottom:2px solid var(--line);color:var(--ink2);vertical-align:top}
+.tbl td code,.t code,.s code,p code,li code,.card code{font-family:var(--mono);font-size:.86em;background:var(--soft);border:1.5px solid var(--line);border-radius:8px;padding:1px 10px;color:var(--ink)}
+.tbl tr.on td{} 
+
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="bg"><div class="grid"></div><div class="orb"></div><div class="ring"></div><div class="dot"></div></div>
+<style>
+/* ===== Python 101 deck (prefix py-) ===== */
+/* Thai glyphs inside mono text (code, labels) fall back to Plex Sans Thai */
+:root{--mono:'IBM Plex Mono','IBM Plex Sans Thai',ui-monospace,Menlo,monospace}
+.py-h{display:flex;align-items:center;gap:26px;margin-bottom:18px}
+.py-h .title{margin-bottom:0}
+.py-lab{display:inline-flex;align-items:center;gap:10px;padding:8px 22px;border-radius:999px;background:var(--green-bg);color:var(--green);font-family:var(--sans);font-size:24px;font-weight:600;white-space:nowrap;letter-spacing:0}
+.win pre.code.lg{font-size:34px;line-height:1.6;padding:30px 40px}
+.win pre.code.sm{font-size:24px;line-height:1.55;padding:22px 32px}
+.win pre.code.xs{font-size:21px;line-height:1.5;padding:20px 30px}
+.shell.sm .sbody{font-size:23px;line-height:1.5;padding:20px 30px}
+.shell.xs .sbody{font-size:21px;line-height:1.45;padding:18px 28px}
+.shell .py-in{color:#ffd60a}
+.shell .py-dim{color:#77777c;font-style:italic}
+.shell .out.big{font-size:40px;font-weight:600}
+.py-wait{display:inline-block;width:.55em;height:1.05em;vertical-align:-.18em;background:#30d158;animation:blink 1s steps(1) infinite}
+.py-wait.on{display:none}
+/* step-scoped line highlight: only while the scene sits on that beat */
+.scene[data-step="1"] pre.code .l.hs1,.scene[data-step="2"] pre.code .l.hs2,.scene[data-step="3"] pre.code .l.hs3,.scene[data-step="4"] pre.code .l.hs4,.scene[data-step="5"] pre.code .l.hs5,.scene[data-step="6"] pre.code .l.hs6{background:var(--blue-bg)}
+.scene[data-step="1"] pre.code .l.gs1,.scene[data-step="2"] pre.code .l.gs2,.scene[data-step="3"] pre.code .l.gs3,.scene[data-step="4"] pre.code .l.gs4,.scene[data-step="5"] pre.code .l.gs5{background:var(--green-bg)}
+.scene[data-step="1"] pre.code .l.rs1,.scene[data-step="2"] pre.code .l.rs2,.scene[data-step="3"] pre.code .l.rs3,.scene[data-step="4"] pre.code .l.rs4{background:var(--red-bg)}
+.py-colon{border-radius:6px;padding:0 3px;transition:background-color .5s var(--ease) var(--delay,0s),color .5s}
+.py-colon.on{background:var(--orange);color:#fff}
+.py-fix{font-weight:inherit;border-radius:6px;background:var(--green-bg);box-shadow:0 0 0 2px var(--green-bg)}
+
+/* hero */
+.py-snake{font-size:96px;line-height:1;margin-bottom:6px}
+.py-hc{position:absolute;right:150px;top:300px;width:600px}
+.py-rocket{font-size:120px;line-height:1;margin-bottom:10px}
+
+/* agenda + summary */
+.py-ag{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(4,auto);grid-auto-flow:column;column-gap:72px}
+.py-agr{display:grid;grid-template-columns:84px 1fr auto;align-items:center;padding:24px 0;border-bottom:2px solid var(--line)}
+.py-agr .n{font-family:var(--mono);font-size:30px;font-weight:500;color:var(--blue)}
+.py-agr b{font-size:34px;font-weight:600}
+.py-goal{display:flex;align-items:center;gap:18px;padding:18px 28px;margin-top:16px;border:2px dashed var(--blue-line);border-radius:18px;background:var(--blue-bg2);font-size:30px;color:var(--blue-d);align-self:center}
+.py-sum{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(4,auto);grid-auto-flow:column;column-gap:64px}
+.py-sum .tick{grid-template-columns:76px 1fr auto;padding:16px 0}
+.py-sum .tick .t b{display:block;font-size:32px;line-height:1.35}
+.py-sum .tick .t small{display:block;font-family:var(--mono);font-size:22px;color:var(--muted)}
+
+/* high-level scale */
+.py-scale{display:flex;align-items:center;gap:22px;margin:4px 0 30px;font-size:26px;color:var(--muted)}
+.py-scale .bar{flex:1;height:10px;border-radius:99px;background:linear-gradient(90deg,var(--faint),var(--blue))}
+
+/* compiled vs interpreted */
+.py-cv{display:flex;flex-direction:column;padding:30px 36px}
+.py-cv h3{font-size:32px;margin-bottom:6px}
+.py-mini{font-family:var(--mono);font-size:26px;line-height:1.6;background:var(--soft);border-radius:14px;padding:12px 22px;margin:14px 0 16px;white-space:pre}
+.py-irow{display:grid;grid-template-columns:1fr 130px;align-items:center;gap:16px;margin-top:10px}
+.py-irow:first-of-type{margin-top:14px}
+.py-irow .c{font-family:var(--mono);font-size:26px;padding:6px 20px;border-radius:12px;background:#fff;border:2px solid var(--blue-line);transition:background-color .45s var(--ease) var(--delay,0s),border-color .45s}
+.py-irow.on .c{background:var(--blue-bg);border-color:var(--blue)}
+.py-irow .o{font-family:var(--mono);font-size:26px;color:var(--green);font-weight:600;opacity:0;transform:translateX(-16px);transition:opacity .45s var(--ease) calc(var(--delay,0s) + .35s),transform .6s var(--ease) calc(var(--delay,0s) + .35s)}
+.py-irow.on .o{opacity:1;transform:none}
+.py-cv .s{margin-top:auto;padding-top:16px}
+
+/* uses tiles */
+.py-uses .tool{padding:26px 32px}
+.py-uses .tool b{margin:0 0 6px;font-size:36px}
+.py-uses .tool .t{margin-bottom:14px}
+
+/* install track */
+.py-track .stn{width:270px}
+.py-track .stn .c{font-size:50px;font-family:var(--sans)}
+.py-track .stn b{font-size:30px;display:block;line-height:1.35}
+.py-track code,.py-code{font-family:var(--mono);font-size:21px;color:var(--blue-d);background:var(--blue-bg);padding:4px 12px;border-radius:8px;white-space:nowrap}
+
+/* installer mock */
+.py-inst .send{display:none}
+.py-ib{padding:30px 40px;display:flex;flex-direction:column;gap:20px}
+.py-ih{font-size:40px;font-weight:600}
+.py-ibtn{display:flex;flex-direction:column;gap:2px;padding:18px 26px;border:2px solid var(--line);border-radius:16px;transition:all .5s var(--ease) var(--delay,0s)}
+.py-ibtn b{font-size:32px}.py-ibtn small{font-family:var(--mono);font-size:19px;color:var(--muted)}
+.py-ibtn.on{border-color:var(--blue);background:var(--blue-bg2);box-shadow:0 0 0 7px var(--blue-bg)}
+.py-opt{display:flex;align-items:center;gap:18px;font-size:27px;color:var(--ink2);padding:10px 14px;border-radius:12px;transition:background-color .5s var(--ease) var(--delay,0s)}
+.py-opt.flip.on{background:var(--orange-bg)}
+.py-note{font-family:var(--sans);font-size:24px;font-weight:600;color:#9b4a00;background:var(--orange-bg);padding:4px 14px;border-radius:10px;white-space:nowrap}
+.py-note.g{color:var(--green);background:var(--green-bg)}
+.py-note.b{color:var(--blue-d);background:var(--blue-bg)}
+.py-note.r{color:#a82929;background:var(--red-bg)}
+
+/* terminal keys */
+.py-keys{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:28px;margin-top:6px}
+.py-keys .kbd{font-size:24px}
+.py-steps .nrow{padding:16px 0}
+.py-keys i{font-style:normal;color:var(--faint)}
+
+/* extensions */
+.py-ext{display:grid;grid-template-columns:92px 1fr auto;gap:26px;align-items:center;padding:24px 30px}
+.py-ico{width:92px;height:92px;border-radius:22px;display:grid;place-items:center;font-family:var(--mono);font-weight:600;font-size:28px;color:#fff}
+.py-ext b{font-size:34px;display:block}.py-ext .s{font-size:25px}
+.py-btn{position:relative;display:inline-block;min-width:210px;text-align:center;padding:12px 22px;border-radius:12px;background:var(--blue);color:#fff;font-size:25px;font-weight:600;transition:background-color .4s calc(var(--delay,0s) + .5s)}
+.py-btn.on{background:var(--green)}
+.py-btn.swap>span:last-child{left:0;right:0;top:12px}
+
+/* variable boxes */
+.py-boxes{display:flex;gap:40px;justify-content:center;align-items:flex-end;padding-top:70px}
+.py-box{position:relative;width:260px;height:176px;border:4px solid var(--ink2);border-top:0;border-radius:0 0 26px 26px;background:linear-gradient(#fff,var(--blue-bg2));display:flex;align-items:center;justify-content:center}
+.py-box::before{content:"";position:absolute;left:-16px;right:-16px;top:0;height:5px;background:var(--ink2);border-radius:4px}
+.py-box .nm{position:absolute;left:50%;top:-64px;transform:translateX(-50%);font-family:var(--mono);font-size:30px;font-weight:600;color:#fff;background:var(--blue);padding:4px 20px;border-radius:10px;white-space:nowrap}
+.py-box .v{font-family:var(--mono);font-size:50px;font-weight:600;color:var(--ink)}
+.py-box .ty{position:absolute;right:14px;bottom:12px}
+.py-box.sm{width:210px;height:130px}
+.py-box.sm .v{font-size:44px}
+
+/* naming table */
+.py-ok,.py-no{font-family:var(--mono);font-size:28px;padding:2px 12px;border-radius:8px;white-space:nowrap}
+.py-ok{background:var(--green-bg);color:var(--green)}
+.py-no{background:var(--red-bg);color:var(--red);text-decoration:line-through;text-decoration-thickness:2px}
+
+/* data types */
+.py-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:24px}
+.py-tile{border:2px solid var(--line);border-radius:22px;padding:22px 28px;background:#fff}
+.py-tile .tn{font-family:var(--mono);font-size:40px;font-weight:600;color:var(--blue);line-height:1.2}
+.py-tile .ex{display:block;font-family:var(--mono);font-size:28px;margin:8px 0 4px;white-space:nowrap}
+.py-tile .t{font-size:26px;color:var(--muted)}
+.py-tile.c{background:var(--soft);border-color:transparent}
+.py-tile.c .tn{color:var(--purple)}
+.py-cap{display:flex;align-items:baseline;gap:16px;margin-bottom:12px}
+.py-cap b{font-family:var(--mono);font-size:30px;color:var(--purple)}
+.py-cap span{font-size:26px;color:var(--muted)}
+.py-dup{transition:opacity .5s calc(var(--delay,0s) + .2s)}
+.py-dup.st.on{opacity:.35;text-decoration:line-through;text-decoration-color:var(--red);text-decoration-thickness:3px}
+
+/* operators */
+.py-ops td{padding:9px 20px;vertical-align:middle}
+.py-ops th{padding-bottom:10px}
+.py-ops .op{font-family:var(--mono);font-size:36px;font-weight:600;color:var(--blue);line-height:1.2}
+.py-ops .ex{font-family:var(--mono)}
+.py-ops .rs{font-family:var(--mono);font-size:34px;font-weight:600;color:var(--ink)}
+.py-mod{display:grid;grid-template-columns:auto 1fr;gap:6px 24px;align-items:center;padding:24px 30px}
+.py-mod .e{font-family:var(--mono);font-size:38px;font-weight:600;white-space:nowrap}
+.py-mod .e em{font-style:normal;color:var(--faint);margin:0 8px}
+.py-mod .t{font-size:28px}
+.py-calc{display:grid;grid-template-columns:1fr auto;align-items:center;gap:4px 20px;padding:16px 24px;border-radius:18px;border:2px solid var(--line);background:#fff}
+.py-calc small{font-family:var(--mono);font-size:21px;color:var(--muted)}
+.py-calc span{font-family:var(--mono);font-size:24px;color:var(--ink2)}
+.py-calc b{grid-row:1/3;grid-column:2;font-family:var(--mono);font-size:40px;color:var(--blue)}
+.py-calc.hot{background:var(--blue);border-color:var(--blue)}
+.py-calc.hot small,.py-calc.hot span{color:rgba(255,255,255,.8)}.py-calc.hot b{color:#fff}
+.py-cmp{padding:24px 30px}
+.py-cmp .op{font-family:var(--mono);font-size:58px;font-weight:600;color:var(--blue);line-height:1.1}
+.py-cmp .t{font-size:28px;margin:4px 0 14px}
+.py-cmp .ex{display:flex;align-items:center;gap:14px;font-family:var(--mono);font-size:28px}
+.py-cmp .ex i{font-style:normal;color:var(--faint)}
+.py-tf{display:inline-block;font-family:var(--mono);font-size:26px;font-weight:600;padding:4px 16px;border-radius:10px;white-space:nowrap}
+.py-tf.t{background:var(--green-bg);color:var(--green)}.py-tf.f{background:var(--red-bg);color:var(--red)}
+.py-eq{display:flex;flex-direction:column;align-items:flex-start;gap:18px;padding:40px 46px}
+.py-eq .big{font-family:var(--mono);font-size:100px;font-weight:600;line-height:1;letter-spacing:-.02em}
+.py-eq .t{font-size:34px}
+.py-lg{display:grid;grid-template-columns:130px 1fr;align-items:center;gap:6px 24px;padding:20px 0;border-bottom:2px solid var(--line)}
+.py-lg .op{font-family:var(--mono);font-size:44px;font-weight:600;color:var(--blue);grid-row:1/3}
+.py-lg .t{font-size:30px}
+.py-lg .ex{display:flex;align-items:center;gap:14px;font-family:var(--mono);font-size:25px;color:var(--ink2)}
+.py-lg .ex i{font-style:normal;color:var(--faint)}
+
+/* control structure */
+.py-mode{padding:28px 32px;display:flex;flex-direction:column}
+.py-mode svg{width:100%;height:190px;margin:6px 0 10px}
+.py-mode svg path{fill:none;stroke:var(--blue);stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+.py-mode svg path.g{stroke:var(--faint)}
+.py-mode svg text{font-family:var(--mono);font-size:17px;fill:var(--muted)}
+.py-mode h3{font-size:34px;margin-bottom:4px}
+.py-kw{display:grid;grid-template-columns:130px 1fr;align-items:baseline;padding:20px 0;border-bottom:2px solid var(--line)}
+.py-kw b{font-family:var(--mono);font-size:34px;color:#8a3ffc}
+.py-kw span{font-size:30px;color:var(--ink2)}
+.py-fc{position:relative;width:860px;height:392px}
+.py-fc svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.py-fc .w{fill:none;stroke:var(--line);stroke-width:4}
+.py-fc .wt{fill:none;stroke:var(--blue);stroke-width:5;stroke-linecap:round}
+.py-fn{position:absolute;display:flex;align-items:center;justify-content:center;gap:14px;border-radius:18px;border:3px solid var(--line);background:#fff;font-family:var(--mono);font-size:28px;font-weight:600;color:var(--ink2);transition:background-color .5s var(--ease) var(--delay,0s),border-color .5s var(--ease) var(--delay,0s),color .5s,box-shadow .5s,opacity .5s}
+.py-fn.q{border-style:dashed;border-color:var(--orange);background:var(--orange-bg)}
+.py-fn.r{font-family:var(--sans);font-size:28px}
+.py-fn.dim{opacity:.45}
+.py-fn .bd{font-size:22px;padding:2px 12px;border-radius:8px;opacity:0;transition:opacity .4s calc(var(--delay,0s) + .35s)}
+.py-fn.on .bd{opacity:1}
+.py-fn.no.on{border-color:var(--red);background:var(--red-bg);border-style:solid}
+.py-fn.no .bd{background:var(--red);color:#fff}
+.py-fn.yes.on{border-color:var(--green);background:var(--green-bg);border-style:solid}
+.py-fn.yes .bd{background:var(--green);color:#fff}
+.py-fn.r.st.on{background:var(--blue);border-color:var(--blue);color:#fff;opacity:1;box-shadow:0 0 0 10px var(--blue-bg)}
+.py-fl{position:absolute;font-family:var(--mono);font-size:19px;font-weight:600;color:var(--faint)}
+.py-ind{border-radius:6px;transition:background-color .5s var(--ease) var(--delay,0s),box-shadow .5s}
+.py-ind.on{background:var(--blue-bg);box-shadow:inset 0 0 0 2px var(--blue)}
+.py-it{display:flex;gap:14px;align-items:center}
+.py-it span{width:70px;height:70px;border-radius:18px;display:grid;place-items:center;font-family:var(--mono);font-size:34px;font-weight:600;background:var(--blue-bg);color:var(--blue-d);border:2px solid var(--blue-line)}
+.py-it.sm span{width:54px;height:54px;font-size:26px;border-radius:14px}
+.py-rg{padding:22px 28px}
+.py-rg code{display:block;font-family:var(--mono);font-size:28px;font-weight:600;margin-bottom:14px}
+.py-o2{display:grid;grid-template-columns:1fr 1fr;column-gap:34px}
+.py-cdw{display:flex;gap:30px;align-items:center;margin-top:26px}
+.py-cd{position:relative;width:190px;height:190px;border-radius:28px;border:4px solid var(--ink2);overflow:hidden;background:#fff;flex:none}
+.py-cd>span{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--mono);font-size:110px;font-weight:600;color:var(--blue);background:#fff}
+.py-cd>span.z{color:var(--red)}
+.py-cond{display:flex;flex-direction:column;gap:14px}
+.py-cond code{font-family:var(--mono);font-size:34px;font-weight:600}
+
+/* input */
+.py-eqn{display:flex;align-items:center;gap:18px;font-family:var(--mono);font-size:40px;font-weight:600;flex-wrap:wrap}
+.py-eqn i{font-style:normal;color:var(--faint);font-weight:400}
+.py-cvrow{display:grid;grid-template-columns:860px 1fr;align-items:center;gap:30px;padding:18px 0;border-bottom:2px solid var(--line)}
+.py-val{display:inline-flex;align-items:baseline;gap:10px;font-family:var(--mono);font-size:34px;font-weight:600;padding:10px 22px;border-radius:14px;border:2px solid var(--line);background:#fff;white-space:nowrap}
+.py-val small{font-size:19px;font-weight:500;color:var(--muted)}
+.py-cvrow .node{font-family:var(--mono);font-size:30px}
+.py-cvrow .arr{width:54px}
+
+/* function */
+.py-blks{display:grid;grid-template-columns:repeat(6,66px);gap:10px}
+.py-blk{height:44px;border-radius:8px;border:2px solid #f1c5c5;background:linear-gradient(#e7a3a3,#e7a3a3) 9px 9px/58% 4px no-repeat,linear-gradient(#e7a3a3,#e7a3a3) 9px 18px/38% 4px no-repeat,linear-gradient(#e7a3a3,#e7a3a3) 9px 27px/48% 4px no-repeat,var(--red-bg)}
+.py-bigx{font-family:var(--mono);font-size:110px;font-weight:600;color:var(--red);line-height:1}
+.py-ben{display:flex;align-items:center;gap:16px;padding:20px 24px;border-radius:18px;background:var(--soft);font-size:28px;font-weight:500}
+.py-ben .e{font-size:38px}
+.py-mach{display:flex;align-items:center;justify-content:center}
+.py-mcol{display:flex;flex-direction:column;align-items:center;gap:12px}
+.py-mlbl{font-size:24px;color:var(--muted);white-space:nowrap}
+.py-chip{font-family:var(--mono);font-size:30px;font-weight:600;padding:10px 24px;border-radius:14px;background:#fff;border:2px solid var(--blue-line);color:var(--blue-d);white-space:nowrap}
+.py-chip.g{border-color:var(--green);background:var(--green-bg);color:var(--green)}
+.py-mbox{width:300px;height:140px;border-radius:28px;background:var(--blue);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;box-shadow:0 0 0 14px var(--blue-bg)}
+.py-mbox b{font-family:var(--mono);font-size:34px;color:#fff}
+.py-gear{display:inline-block;font-size:38px;animation:spin 6s linear infinite}
+.py-mach .arr{width:70px;margin:0 16px}
+.py-parts td{font-size:26px;padding:13px 16px}
+.py-parts td:first-child{font-family:var(--mono);font-weight:600;color:var(--ink);white-space:nowrap}
+.py-grs{display:flex;flex-direction:column;gap:16px}
+.py-gr{display:grid;grid-template-columns:70px 200px 1fr;align-items:center;gap:18px}
+.py-gr .g{font-family:var(--mono);font-size:50px;font-weight:600;line-height:1}
+.py-gr .r{font-family:var(--mono);font-size:26px;color:var(--muted)}
+.py-gr .bar{height:26px;border-radius:99px;background:currentColor;opacity:.8;width:var(--w)}
+.py-stu{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.py-sc{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-radius:18px;border:2px solid var(--line);background:#fff}
+.py-sc b{font-size:30px;display:block;line-height:1.3}.py-sc small{font-family:var(--mono);font-size:22px;color:var(--muted)}
+.py-sc .g{font-family:var(--mono);font-size:54px;font-weight:600;line-height:1}
+.py-used{display:flex;flex-wrap:wrap;gap:12px}
+.py-used .chip{font-size:24px;padding:8px 20px}
+</style>
+
+<!-- ================= 00 · OPENING ================= -->
+
+<!-- S01 -->
+<section class="scene" data-bg="hero" data-chapter="00 · Opening" data-title="Python 101">
+  <div class="body" style="justify-content:flex-start;padding-top:30px">
+    <div class="eyebrow a">Python Class · Lesson 01</div>
+    <div class="py-snake a fx-pop">🐍</div>
+    <h1 class="hero-t"><span class="mask a"><span>Python 101</span></span></h1>
+    <p class="lead a mt" style="font-size:44px">Introduction to Python · Basic Programming</p>
+  </div>
+  <div class="py-hc">
+    <div class="win fx-right" data-s="1" data-label="main.py"><pre class="code lg type" data-lang="py" data-s="1">print("Hello World")</pre></div>
+    <div class="shell" data-s="1" data-d="1.3" data-label="output" style="margin-top:22px"><div class="sbody"><span class="out ok big">Hello World</span></div></div>
+  </div>
+  <div class="core" data-s="2">เริ่มจากศูนย์ ไม่ต้องเคยเขียนโปรแกรมมาก่อน<br><b>ดูอย่างเดียวไม่พอ ต้องลงมือเขียนไปด้วยกัน</b>
+    <svg viewBox="0 0 760 26"><path class="draw" data-s="2" data-d=".5" pathLength="1" d="M4 16 C180 4 420 4 756 14"/></svg>
+  </div>
+</section>
+
+<!-- S02 -->
+<section class="scene" data-bg="tr" data-title="Agenda">
+  <h2 class="title a">วันนี้เรียน 7 หัวข้อ</h2>
+  <p class="lead a">แต่ละหัวข้อต่อยอดจากหัวข้อก่อน แล้วจบด้วยโปรแกรมจริงหนึ่งตัว</p>
+  <div class="body">
+    <div class="py-ag">
+      <div class="py-agr" data-s="1"><span class="n">01</span><b>Python คืออะไร · ใช้ทำอะไร</b><span class="tag">Intro</span></div>
+      <div class="py-agr" data-s="1"><span class="n">02</span><b>ติดตั้ง Python และ VS Code</b><span class="tag">Setup</span></div>
+      <div class="py-agr" data-s="1"><span class="n">03</span><b>Variable และ Data Type</b><span class="tag blue">Basics</span></div>
+      <div class="py-agr" data-s="1"><span class="n">04</span><b>Operators</b><span class="tag blue">Basics</span></div>
+      <div class="py-agr" data-s="1"><span class="n">05</span><b>Control Structure</b><span class="tag purple">Flow</span></div>
+      <div class="py-agr" data-s="1"><span class="n">06</span><b>Input</b><span class="tag orange">I/O</span></div>
+      <div class="py-agr" data-s="1"><span class="n">07</span><b>Function</b><span class="tag green">Core</span></div>
+      <div class="py-goal fx-pop" data-s="1" data-d=".7">🎯 ปลายทาง: <b style="color:inherit">ระบบตัดเกรด</b> ที่ใช้ครบทุกข้อ</div>
+    </div>
+  </div>
+  <div class="callout green" data-s="2"><span class="ico">🟢</span><span>เห็นป้าย <b>ลองใน Colab</b> เมื่อไร = สลับไป Google Colab แล้วเขียนโค้ดพร้อมกัน กด <span class="kbd">Shift</span> + <span class="kbd">Enter</span> เพื่อรัน</span></div>
+</section>
+
+<!-- ================= 01 · WHAT IS PYTHON ================= -->
+
+<!-- S03 -->
+<section class="scene divider" data-chapter="01 · What is Python" data-title="Python คืออะไร?">
+  <div class="num a">PART 01</div>
+  <h1><span class="mask a"><span>Python คืออะไร?</span></span></h1>
+  <p class="lead a">High-level · Interpreted Programming Language</p>
+  <div class="bignum a fx-zoom">01</div>
+</section>
+
+<!-- S04 -->
+<section class="scene" data-bg="br" data-role="p1" data-title="High-level Language">
+  <div class="py-h"><h2 class="title a">High-level = ใกล้ภาษาคน</h2><span class="py-lab a">🟢 ลองใน Colab</span></div>
+  <p class="lead a">“ระดับสูง” ไม่ได้แปลว่ายาก แต่แปลว่าใกล้ภาษาคนมากกว่าภาษาเครื่อง</p>
+  <div class="py-scale"><span class="a">🖥️ ใกล้ภาษาเครื่อง</span><div class="bar a fx-grow"></div><span class="a">ใกล้ภาษาคน 🗣️</span></div>
+  <div class="g2 grow" style="gap:56px;align-content:start">
+    <div class="col">
+      <div class="klbl a">Assembly · low-level</div>
+      <div class="win fx-left" data-s="1" data-label="add.asm"><pre class="code">
+<span class="l" data-s="1" data-d=".2">MOV AX, 5</span>
+<span class="l" data-s="1" data-d=".45">MOV BX, 3</span>
+<span class="l" data-s="1" data-d=".7">ADD AX, BX</span>
+</pre></div>
+      <p class="s mt" data-s="1" data-d="1">แค่บวก 5 กับ 3 ยังต้องบอกว่าเก็บค่าไว้ register ไหน</p>
+    </div>
+    <div class="col">
+      <div class="klbl blue a">Python · high-level</div>
+      <div class="win fx-right" data-s="2" data-label="main.py"><pre class="code lg type" data-lang="py" data-s="2">print(5 + 3)</pre></div>
+      <div class="shell sm mt" data-s="3" data-label="output"><div class="sbody"><span class="out ok big">8</span></div></div>
+    </div>
+  </div>
+  <div class="callout blue" data-s="4"><span class="ico">💡</span><span>บรรทัดเดียวจบ ไม่ต้อง compile ไม่ต้องตั้งค่า — Python อ่านง่าย <b>เหมาะกับมือใหม่</b></span></div>
+</section>
+
+<!-- S05 -->
+<section class="scene" data-bg="tr" data-role="p1" data-title="Interpreted vs Compiled">
+  <h2 class="title a">Compiled vs Interpreted</h2>
+  <div class="g2 grow" style="gap:48px;margin-top:18px">
+    <div class="card py-cv fx-left" data-s="1">
+      <span class="k">Compiled · C, C++, Java</span>
+      <h3>แปลงโค้ดทั้งหมดก่อน แล้วจึงรันได้</h3>
+      <div class="py-mini">x = 5
+print(x)
+print(x * 2)</div>
+      <div data-s="1" data-d=".4"><p class="s">⏳ compile ทั้งไฟล์…</p><div class="meterbig" style="margin-top:10px"><i style="--w:100%"></i></div></div>
+      <div class="res good fx-pop" data-s="1" data-d="1.9" style="margin-top:18px">▶ รันทีเดียว ได้ผล 5 และ 10</div>
+      <p class="s">📖 เหมือน<b>แปลหนังสือทั้งเล่ม</b>ก่อน แล้วค่อยอ่าน</p>
+    </div>
+    <div class="card blue py-cv fx-right" data-s="2">
+      <span class="k" style="color:var(--blue)">Interpreted · Python, JavaScript</span>
+      <h3>แปลและรันทีละบรรทัด เห็นผลทันที</h3>
+      <div class="py-irow st" data-s="2" data-d=".3"><span class="c">x = 5</span><span class="o">✓</span></div>
+      <div class="py-irow st" data-s="3"><span class="c">print(x)</span><span class="o">→ 5</span></div>
+      <div class="py-irow st" data-s="4"><span class="c">print(x * 2)</span><span class="o">→ 10</span></div>
+      <p class="s">🗣️ เหมือน<b>มีล่ามแปลให้ฟังทีละประโยค</b></p>
+    </div>
+  </div>
+  <div class="callout blue" data-s="5" style="margin-top:28px"><span class="ico">⚡</span><span>สำหรับมือใหม่: เขียนปุ๊บ รันปั๊บ เห็นผลเลย เลยเรียนรู้ได้เร็วกว่ามาก</span></div>
+</section>
+
+<!-- S06 -->
+<section class="scene" data-bg="bl" data-role="p1" data-title="Python ใช้ทำอะไรได้บ้าง?">
+  <h2 class="title a">Python ใช้ทำอะไรได้บ้าง?</h2>
+  <p class="lead a">เกือบทุกสาย เพราะมี Library สำเร็จรูปให้เรียกใช้</p>
+  <div class="body">
+    <div class="toolg py-uses">
+      <div class="tool fx-pop" data-s="1"><b>🌐 Web Dev</b><p class="t">สร้างเว็บและ API</p><code>FastAPI · Django · Flask</code></div>
+      <div class="tool fx-pop" data-s="1"><b>📊 Data Science</b><p class="t">วิเคราะห์ข้อมูล สร้างกราฟ</p><code>Pandas · NumPy · Matplotlib</code></div>
+      <div class="tool fx-pop" data-s="1"><b>🤖 AI / ML</b><p class="t">พัฒนา AI และ Machine Learning</p><code>TensorFlow · PyTorch</code></div>
+      <div class="tool fx-pop" data-s="2"><b>⚙️ Automation</b><p class="t">ทำงานซ้ำ ๆ ให้อัตโนมัติ</p><code>Selenium · Requests</code></div>
+      <div class="tool fx-pop" data-s="2"><b>🎮 Game Dev</b><p class="t">สร้างเกม 2D</p><code>Pygame</code></div>
+      <div class="tool fx-pop" data-s="2"><b>🔌 IoT</b><p class="t">เขียนโปรแกรมคุม hardware</p><code>Raspberry Pi</code></div>
+    </div>
+  </div>
+  <div class="callout blue" data-s="3"><span class="ico">🧩</span><span>แทบทุกอย่างมีคนทำ Library ไว้ให้แล้ว เราแค่เรียกใช้</span></div>
+</section>
+
+<!-- S07 -->
+<section class="scene" data-bg="tr" data-role="p1" data-title="ทำไมต้องเรียน Python?">
+  <h2 class="title a">ทำไมต้องเรียน Python?</h2>
+  <p class="lead a">ติดอันดับภาษาที่ developer ชอบที่สุดใน Stack Overflow Survey มาหลายปีติด</p>
+  <div class="body">
+    <div class="four">
+      <div class="it" data-s="1"><div class="bn">01</div><b>อ่านง่าย</b><p class="t">อ่านแล้วเข้าใจเกือบทันที แม้ไม่เคยเขียนมาก่อน</p></div>
+      <div class="it" data-s="2"><div class="bn">02</div><b>ชุมชนใหญ่</b><p class="t">คนใช้เยอะ หาคำตอบและตัวอย่างได้ง่าย</p></div>
+      <div class="it" data-s="3"><div class="bn">03</div><b>Library เยอะ</b><p class="t">มีของสำเร็จรูปแทบทุกอย่าง ไม่ต้องเขียนใหม่</p></div>
+      <div class="it" data-s="4"><div class="bn">04</div><b>ตลาดงานกว้าง</b><p class="t">ต้องการ Python Developer ทุกอุตสาหกรรม</p></div>
+    </div>
+  </div>
+  <div class="callout blue" data-s="5"><span class="ico">🐍</span><span>เรียนง่ายสำหรับมือใหม่ แต่<b>ทรงพลังพอสำหรับงานมืออาชีพ</b></span></div>
+</section>
+
+<!-- ================= 02 · SETUP ================= -->
+
+<!-- S08 -->
+<section class="scene divider" data-chapter="02 · Setup" data-title="การติดตั้ง Python">
+  <div class="num a">PART 02</div>
+  <h1><span class="mask a"><span>การติดตั้ง Python</span></span></h1>
+  <p class="lead a">Python + VS Code + Extensions</p>
+  <div class="bignum a fx-zoom">02</div>
+</section>
+
+<!-- S09 -->
+<section class="scene" data-bg="low" data-role="p2" data-title="ขั้นตอนการติดตั้ง">
+  <h2 class="title a">ติดตั้งครบใน 5 ขั้น</h2>
+  <p class="lead a">Colab ใช้เรียนได้เลย แต่ต้องใช้เน็ตและ session หมดเวลาได้ — ติดตั้งบนเครื่องไว้ทำงาน offline และโปรเจกต์จริง</p>
+  <div class="body">
+    <div class="track py-track">
+      <div class="stn fx-pop" data-s="1"><div class="c">📥</div><b>ติดตั้ง Python</b><code>python.org/downloads</code></div>
+      <div class="seg fx-grow" data-s="2"></div>
+      <div class="stn fx-pop" data-s="2" data-d=".35"><div class="c">✅</div><b>ตรวจสอบ</b><code>python --version</code></div>
+      <div class="seg fx-grow" data-s="3"></div>
+      <div class="stn fx-pop" data-s="3" data-d=".35"><div class="c">💻</div><b>ติดตั้ง VS Code</b><code>code.visualstudio.com</code></div>
+      <div class="seg fx-grow" data-s="4"></div>
+      <div class="stn fx-pop" data-s="4" data-d=".35"><div class="c">🧩</div><b>Extensions</b><code>Python + Jupyter</code></div>
+      <div class="seg fx-grow" data-s="5"></div>
+      <div class="stn fx-pop" data-s="5" data-d=".35"><div class="c">🚀</div><b>Hello World!</b><code>print("Hello World")</code></div>
+    </div>
+  </div>
+  <div class="callout orange" data-s="6"><span class="ico">⚠️</span><span>Windows: ต้องติ๊ก <b>“Add Python to PATH”</b> ก่อนกด Install! · วันนี้ใช้ Colab ไปก่อน กลับบ้านค่อยติดตั้ง</span></div>
+</section>
+
+<!-- S10 -->
+<section class="scene" data-bg="r" data-role="p2" data-title="ติดตั้ง Python (Add to PATH)">
+  <div class="eyebrow a">Step 1 / 5</div>
+  <h2 class="title a">ติดตั้ง Python: จุดเดียวที่ห้ามพลาด</h2>
+  <div class="split grow" style="grid-template-columns:1.15fr 1fr;gap:60px">
+    <div class="win py-inst a fx-left" data-label="Python 3.x Setup · Windows">
+      <div class="py-ib">
+        <div class="py-ih">Install Python 3.x (64-bit)</div>
+        <div class="py-ibtn st" data-s="3"><b>⚡ Install Now</b><small>C:\Users\you\AppData\Local\Programs\Python</small></div>
+        <div class="py-opt"><span class="cb done"></span><span>Use admin privileges when installing py.exe</span></div>
+        <div class="py-opt flip st" data-s="2"><span class="cb"></span><b>Add python.exe to PATH</b><span class="py-note fx-pop" data-s="2" data-d=".5">← ต้องติ๊ก!</span></div>
+      </div>
+    </div>
+    <div class="col py-steps" style="gap:20px">
+      <div class="nlist">
+        <div class="nrow" data-s="1"><span class="n">01</span><span class="t">ไปที่ <span class="py-code">python.org/downloads</span></span></div>
+        <div class="nrow" data-s="1"><span class="n">02</span><span class="t">กด <b>Download Python 3.x.x</b></span></div>
+        <div class="nrow" data-s="2"><span class="n" style="color:var(--orange)">03</span><span class="t">ติ๊ก <b>Add Python to PATH</b></span></div>
+        <div class="nrow" data-s="3"><span class="n">04</span><span class="t">กด <b>Install Now</b> แล้วรอ</span></div>
+      </div>
+      <div class="card soft" data-s="4" style="padding:26px 32px"><span class="k">macOS</span><p class="t">โหลด <code>.pkg</code> แล้วทำตาม wizard ได้เลย</p></div>
+    </div>
+  </div>
+  <div class="callout orange" data-s="5"><span class="ico">⚠️</span><span>ถ้าลืมติ๊ก PATH เครื่องจะไม่รู้จักคำสั่ง <span class="mono">python</span> ใน Terminal — ใช้งานลำบากมาก</span></div>
+</section>
+
+<!-- S11 -->
+<section class="scene" data-bg="br" data-role="p2" data-title="ตรวจสอบการติดตั้ง">
+  <div class="eyebrow a">Step 2 / 5</div>
+  <h2 class="title a">ตรวจสอบว่าติดตั้งสำเร็จ</h2>
+  <div class="split grow" style="grid-template-columns:1fr 1fr;gap:64px">
+    <div class="col" style="gap:26px">
+      <p class="t a">เปิด Terminal ก่อน</p>
+      <div class="card" data-s="1"><span class="k">Windows</span>
+        <div class="py-keys"><span class="kbd">Windows</span> + <span class="kbd">R</span><i>→</i>พิมพ์ <span class="mono">cmd</span><i>→</i><span class="kbd">Enter</span></div></div>
+      <div class="card" data-s="1"><span class="k">macOS</span>
+        <div class="py-keys"><span class="kbd">Command</span> + <span class="kbd">Space</span><i>→</i>พิมพ์ <span class="mono">terminal</span><i>→</i><span class="kbd">Enter</span></div></div>
+    </div>
+    <div class="shell a fx-right" data-label="Terminal"><div class="sbody" style="font-size:32px;padding:34px 40px;min-height:230px">
+      <span class="cmd type" data-s="2">python --version</span>
+      <span class="out ok" data-s="3">Python 3.12.0</span>
+    </div></div>
+  </div>
+  <div class="callout green" data-s="3"><span class="ico">✅</span><span>เห็นเลข version = ติดตั้งสำเร็จ พร้อมไปต่อ</span></div>
+</section>
+
+<!-- S12 -->
+<section class="scene" data-bg="tr" data-role="p2" data-title="VS Code + Extensions">
+  <div class="eyebrow a">Step 3–4 / 5</div>
+  <h2 class="title a">VS Code + Extensions</h2>
+  <p class="lead a">โปรแกรมเขียนโค้ด ฟรี และใช้ง่ายที่สุดตัวหนึ่ง</p>
+  <div class="body" style="gap:34px">
+    <div class="flow">
+      <span class="node fx-pop" data-s="1">code.visualstudio.com</span><span class="arr fx-grow" data-s="1" data-d=".25"></span>
+      <span class="node fx-pop" data-s="1" data-d=".45">เลือก Windows / macOS</span><span class="arr fx-grow" data-s="1" data-d=".7"></span>
+      <span class="node lb fx-pop" data-s="1" data-d=".9">ติดตั้งตาม wizard</span>
+    </div>
+    <div class="py-keys" data-s="2">เปิดแถบ Extensions: กดไอคอนสี่เหลี่ยมซ้อนทางซ้าย หรือ <span class="kbd">Ctrl</span> + <span class="kbd">Shift</span> + <span class="kbd">X</span></div>
+    <div class="g2" style="gap:32px">
+      <div class="card py-ext fx-pop" data-s="3"><span class="py-ico" style="background:#3776ab">Py</span><div><b>Python</b><span class="s">Microsoft · รันไฟล์ <span class="mono">.py</span></span></div><span class="py-btn swap st" data-s="4"><span>Install</span><span>✓ Installed</span></span></div>
+      <div class="card py-ext fx-pop" data-s="3" data-d=".2"><span class="py-ico" style="background:#f37626">Jup</span><div><b>Jupyter</b><span class="s">Microsoft · รันไฟล์ <span class="mono">.ipynb</span></span></div><span class="py-btn swap st" data-s="4" data-d=".25"><span>Install</span><span>✓ Installed</span></span></div>
+    </div>
+  </div>
+  <div class="callout" data-s="4"><span class="ico">🧩</span><span>VS Code เองไม่รู้จัก Python — ต้องติดตั้ง Extension เพิ่มก่อน</span></div>
+</section>
+
+<!-- S13 -->
+<section class="scene" data-bg="bl" data-role="p2" data-title="Hello World!">
+  <div class="eyebrow a">Step 5 / 5</div>
+  <div class="py-h"><h2 class="title a">ทดสอบ Hello World!</h2><span class="py-lab a">🟢 ลองใน Colab</span></div>
+  <div class="split grow" style="grid-template-columns:520px 1fr;gap:60px">
+    <div class="col" style="gap:22px">
+      <div class="card soft tree" data-s="1">
+        <span class="file dir">python-practice/</span>
+        <div class="indent"><span class="file new fx-pop" data-s="1" data-d=".3">main.py<span class="nb">NEW</span></span></div>
+      </div>
+      <p class="s" data-s="1" data-d=".5">VS Code: <b>File › Open Folder</b> แล้วสร้างไฟล์ <span class="mono">main.py</span></p>
+      <p class="s" data-s="3">เปิด <b>Terminal › New Terminal</b> แล้วรันไฟล์</p>
+    </div>
+    <div class="col" style="gap:24px">
+      <div class="win a fx-right" data-label="main.py"><pre class="code lg type" data-lang="py" data-s="2">print("Hello World")</pre></div>
+      <div class="shell" data-s="3" data-label="Terminal"><div class="sbody" style="font-size:30px;min-height:150px">
+        <span class="cmd type" data-s="3" data-d=".2">python main.py</span>
+        <span class="out ok" data-s="4">Hello World</span>
+      </div></div>
+    </div>
+  </div>
+  <div class="callout blue" data-s="5"><span class="ico">📄</span><span><span class="mono">.py</span> = รันทั้งไฟล์ เหมาะกับโปรเจกต์จริง · <span class="mono">.ipynb</span> = รันทีละ cell เหมาะกับเรียนและทดลอง</span></div>
+</section>
+
+<!-- ================= 03 · VARIABLES & DATA TYPES ================= -->
+
+<!-- S14 -->
+<section class="scene divider" data-chapter="03 · Variables &amp; Data Types" data-title="Variable &amp; Data Type">
+  <div class="num a">PART 03</div>
+  <h1><span class="mask a"><span>Variable &amp; Data Type</span></span></h1>
+  <p class="lead a">ตัวแปร และ ชนิดของข้อมูล</p>
+  <div class="bignum a fx-zoom">03</div>
+</section>
+
+<!-- S15 -->
+<section class="scene" data-bg="tr" data-role="p3" data-title="Variable = กล่อง">
+  <h2 class="title a">ตัวแปร = กล่องที่มีป้ายชื่อ</h2>
+  <p class="lead a">เก็บข้อมูลไว้ในกล่อง ตั้งชื่อไว้ แล้วเรียกใช้ทีหลังด้วยชื่อนั้น</p>
+  <div class="split grow" style="grid-template-columns:560px 1fr;gap:60px">
+    <div class="win a fx-left" data-label="variables.py"><pre class="code lg" data-lang="py">
+<span class="l" data-s="1">x       = 10</span>
+<span class="l" data-s="2">name    = "Bas"</span>
+<span class="l" data-s="3">is_open = True</span>
+</pre></div>
+    <div class="py-boxes">
+      <div class="py-box fx-pop" data-s="1"><span class="nm">x</span><span class="v drop" data-s="1" data-d=".45"><span class="tk-n">10</span></span><span class="tag ty fx-fade" data-s="1" data-d="1">int</span></div>
+      <div class="py-box fx-pop" data-s="2"><span class="nm">name</span><span class="v drop" data-s="2" data-d=".45"><span class="tk-s">"Bas"</span></span><span class="tag green ty fx-fade" data-s="2" data-d="1">str</span></div>
+      <div class="py-box fx-pop" data-s="3"><span class="nm">is_open</span><span class="v drop" data-s="3" data-d=".45"><span class="tk-k">True</span></span><span class="tag purple ty fx-fade" data-s="3" data-d="1">bool</span></div>
+    </div>
+  </div>
+  <div class="callout blue" data-s="4"><span class="ico">💡</span><span>เครื่องหมาย <b class="mono">=</b> แปลว่า <b>“กำหนดค่า”</b> (ใส่ของลงกล่อง) ไม่ใช่ “เท่ากับ” แบบคณิตศาสตร์</span></div>
+</section>
+
+<!-- S16 -->
+<section class="scene" data-bg="br" data-role="p3" data-title="เปลี่ยนค่าตัวแปร">
+  <div class="py-h"><h2 class="title a">ตัวแปรเปลี่ยนค่าได้ตลอด</h2><span class="py-lab a">🟢 ลองใน Colab</span></div>
+  <div class="split grow" style="grid-template-columns:1fr 700px;gap:56px">
+    <div class="win a fx-left" data-label="Colab · cell"><pre class="code" data-lang="py">
+<span class="l" data-s="1">name = "Bas"</span>
+<span class="l" data-s="1" data-d=".2">age = 25</span>
+<span class="l" data-s="2">print(name)</span>
+<span class="l" data-s="2" data-d=".15">print(age)</span>
+<span class="l" data-s="3"> </span>
+<span class="l hs3" data-s="3">age = 30</span>
+<span class="l" data-s="4">print("ชื่อ:", name, "อายุ:", age)</span>
+</pre></div>
+    <div class="col" style="gap:30px">
+      <div class="py-boxes" style="padding-top:64px;gap:36px">
+        <div class="py-box sm fx-pop" data-s="1"><span class="nm">name</span><span class="v drop" data-s="1" data-d=".4"><span class="tk-s">"Bas"</span></span></div>
+        <div class="py-box sm fx-pop" data-s="1" data-d=".2"><span class="nm">age</span><span class="v drop" data-s="1" data-d=".6"><span class="swap st tk-n" data-s="3"><span>25</span><span>30</span></span></span></div>
+      </div>
+      <div class="shell sm" data-s="2" data-label="output"><div class="sbody" style="min-height:170px">
+        <span class="out" data-s="2" data-d=".3">Bas</span>
+        <span class="out" data-s="2" data-d=".45">25</span>
+        <span class="out ok" data-s="4" data-d=".3">ชื่อ: Bas อายุ: 30</span>
+      </div></div>
+    </div>
+  </div>
+  <div class="callout green" data-s="5"><span class="ico">✍️</span><span>ลองเอง 1 นาที: สร้างตัวแปร <span class="mono">my_name</span> เก็บชื่อตัวเอง แล้ว <span class="mono">print</span> ออกมาดู</span></div>
+</section>
+
+<!-- S17 -->
+<section class="scene" data-bg="tl" data-role="p3" data-title="กฎการตั้งชื่อตัวแปร">
+  <h2 class="title a">กฎการตั้งชื่อตัวแปร</h2>
+  <div class="body">
+    <table class="tbl">
+      <tr class="a"><th>กฎ</th><th>✓ ถูก</th><th>✗ ผิด</th></tr>
+      <tr data-s="1"><td><b>ใช้ตัวอักษร ตัวเลข หรือ _</b></td><td><span class="py-ok">my_name</span> <span class="py-ok">age2</span></td><td><span class="py-no">my name</span> <span class="py-no">2age</span></td></tr>
+      <tr data-s="2"><td><b>ห้ามเริ่มด้วยตัวเลข</b></td><td><span class="py-ok">score1</span></td><td><span class="py-no">1score</span></td></tr>
+      <tr data-s="3"><td><b>ห้ามใช้ช่องว่าง</b></td><td><span class="py-ok">first_name</span></td><td><span class="py-no">first name</span></td></tr>
+      <tr data-s="4"><td><b>ตัวพิมพ์ใหญ่-เล็กต่างกัน</b></td><td colspan="2"><span class="py-ok">name</span> กับ <span class="py-ok">Name</span> คือ<b>คนละตัวแปร</b></td></tr>
+    </table>
+  </div>
+  <div class="callout blue" data-s="5"><span class="ico">🐍</span><span>Python นิยม <b>snake_case</b> ใช้ _ คั่นคำ เช่น <span class="mono">first_name</span> · <span class="mono">is_active</span> · <span class="mono">total_price</span></span></div>
+</section>
+
+<!-- S18 -->
+<section class="scene" data-bg="low" data-role="p3" data-title="Data Types 8 ชนิด">
+  <h2 class="title a">Data Type: ข้อมูลทุกตัวมี “ชนิด”</h2>
+  <div class="body" style="gap:14px">
+    <div class="klbl a">Basic types</div>
+    <div class="py-tiles">
+      <div class="py-tile fx-pop" data-s="1"><div class="tn">int</div><span class="ex tk-n">25</span><p class="t">จำนวนเต็ม</p></div>
+      <div class="py-tile fx-pop" data-s="1"><div class="tn">float</div><span class="ex tk-n">1.75</span><p class="t">ทศนิยม</p></div>
+      <div class="py-tile fx-pop" data-s="1"><div class="tn">str</div><span class="ex tk-s">"Bas"</span><p class="t">ข้อความ ครอบด้วย " หรือ '</p></div>
+      <div class="py-tile fx-pop" data-s="1"><div class="tn">bool</div><span class="ex tk-k">True / False</span><p class="t">ตรรกะ · T, F ตัวใหญ่</p></div>
+    </div>
+    <div class="klbl mt" data-s="2" style="color:var(--purple)">Collection types · เก็บหลายค่า</div>
+    <div class="py-tiles">
+      <div class="py-tile c fx-pop" data-s="2"><div class="tn">list</div><span class="ex">[<span class="tk-s">"a"</span>, <span class="tk-s">"b"</span>]</span><p class="t">รายการ (แก้ไขได้)</p></div>
+      <div class="py-tile c fx-pop" data-s="2"><div class="tn">tuple</div><span class="ex">(<span class="tk-n">1</span>, <span class="tk-n">2</span>)</span><p class="t">รายการ (แก้ไม่ได้)</p></div>
+      <div class="py-tile c fx-pop" data-s="2"><div class="tn">dict</div><span class="ex">{<span class="tk-s">"k"</span>: <span class="tk-s">"v"</span>}</span><p class="t">key: value</p></div>
+      <div class="py-tile c fx-pop" data-s="2"><div class="tn">set</div><span class="ex">{<span class="tk-s">"a"</span>, <span class="tk-s">"b"</span>}</span><p class="t">ไม่ซ้ำ ไม่มีลำดับ</p></div>
+    </div>
+  </div>
+  <div class="callout" data-s="3"><span class="ico">📝</span><span>list · tuple · dict · set วันนี้แค่รู้จักหน้าตา — เจาะลึกในหัวข้อ Data Structure</span></div>
+</section>
+
+<!-- S19 -->
+<section class="scene" data-bg="br" data-role="p3" data-title="Collection types ตัวอย่าง">
+  <h2 class="title a">หน้าตา Collection ในโค้ดจริง</h2>
+  <div class="g2 grow" style="gap:30px 36px;align-content:center">
+    <div class="col" data-s="1">
+      <div class="py-cap"><b>list</b><span>ใช้ [ ] คั่นด้วย , · แก้ไขได้</span></div>
+      <div class="win" data-label="list"><pre class="code sm" data-lang="py">fruits = ["apple", "banana", "cherry"]
+scores = [85, 90, 78, 92]</pre></div>
+    </div>
+    <div class="col" data-s="2">
+      <div class="py-cap"><b>tuple</b><span>ใช้ ( ) · ห้ามแก้ไข เหมาะกับพิกัด</span></div>
+      <div class="win" data-label="tuple"><pre class="code sm" data-lang="py">coordinates = (13.7563, 100.5018)
+# ละติจูด, ลองจิจูดของกรุงเทพ</pre></div>
+    </div>
+    <div class="col" data-s="3">
+      <div class="py-cap"><b>dict</b><span>เก็บแบบ key: value ใช้ { }</span></div>
+      <div class="win" data-label="dict"><pre class="code sm" data-lang="py">person = {
+    "name": "Bas",
+    "age": 25,
+    "city": "Bangkok"
+}</pre></div>
+    </div>
+    <div class="col" data-s="4" style="align-self:start">
+      <div class="py-cap"><b>set</b><span>ไม่ซ้ำ ไม่มีลำดับ · ของซ้ำถูกตัดเอง</span></div>
+      <div class="win" data-label="set"><pre class="code sm" data-lang="py">
+<span class="l">visitors = {"Alice", "Bob", <span class="py-dup st" data-s="4" data-d=".6">"Alice"</span>, "Charlie"}</span>
+<span class="l" data-s="4" data-d="1.1"># → {"Alice", "Bob", "Charlie"}</span>
+</pre></div>
+    </div>
+  </div>
+</section>
+
+<!-- S20 -->
+<section class="scene" data-bg="tr" data-role="p3" data-title="type() บอกชนิดข้อมูล">
+  <div class="py-h"><h2 class="title a">type() บอกชนิดของข้อมูล</h2><span class="py-lab a">🟢 ลองใน Colab</span></div>
+  <div class="split grow" style="grid-template-columns:1fr 620px;gap:40px;align-items:start;margin-top:10px">
+    <div class="win a fx-left" data-label="my_info.py"><pre class="code xs" data-lang="py">
+<span class="l" data-s="1">age        = 25</span>
+<span class="l" data-s="1" data-d=".1">height     = 1.75</span>
+<span class="l" data-s="1" data-d=".2">name       = "Bas"</span>
+<span class="l" data-s="1" data-d=".3">is_student = True</span>
+<span class="l"> </span>
+<span class="l" data-s="2">print("=== ข้อมูลของฉัน ===")</span>
+<span class="l" data-s="2" data-d=".1">print("ชื่อ:", name,           "→ ชนิด:", type(name))</span>
+<span class="l" data-s="2" data-d=".2">print("อายุ:", age,            "→ ชนิด:", type(age))</span>
+<span class="l" data-s="2" data-d=".3">print("ส่วนสูง:", height,      "→ ชนิด:", type(height))</span>
+<span class="l" data-s="2" data-d=".4">print("นักเรียน:", is_student,  "→ ชนิด:", type(is_student))</span>
+</pre></div>
+    <div class="col" style="gap:22px">
+      <div class="shell xs" data-s="3" data-label="output"><div class="sbody">
+        <span class="out" data-s="3" data-d=".2">=== ข้อมูลของฉัน ===</span>
+        <span class="out" data-s="3" data-d=".4">ชื่อ: Bas → ชนิด: <span class="py-in">&lt;class 'str'&gt;</span></span>
+        <span class="out" data-s="3" data-d=".6">อายุ: 25 → ชนิด: <span class="py-in">&lt;class 'int'&gt;</span></span>
+        <span class="out" data-s="3" data-d=".8">ส่วนสูง: 1.75 → ชนิด: <span class="py-in">&lt;class 'float'&gt;</span></span>
+        <span class="out" data-s="3" data-d="1">นักเรียน: True → ชนิด: <span class="py-in">&lt;class 'bool'&gt;</span></span>
+      </div></div>
+      <div class="win" data-s="4" data-label="cell 2"><pre class="code sm" data-lang="py">print(type("25"))</pre></div>
+      <div class="shell xs" data-s="4" data-d=".4" data-label="output"><div class="sbody"><span class="out hl">&lt;class 'str'&gt;</span></div></div>
+    </div>
+  </div>
+  <div class="callout orange" data-s="4" data-d=".6"><span class="ico">⚠️</span><span>ตัวเลขที่มี <b>"" ครอบ</b> กลายเป็น str ไม่ใช่ตัวเลข! เช่น <span class="mono">phone = "0812345678"</span> เอาไปบวกลบไม่ได้</span></div>
+</section>
+
+<!-- ================= 04 · OPERATORS ================= -->
+
+<!-- S21 -->
+<section class="scene divider" data-chapter="04 · Operators" data-title="Operators">
+  <div class="num a">PART 04</div>
+  <h1><span class="mask a"><span>Operators</span></span></h1>
+  <p class="lead a">Arithmetic · Comparison · Logical</p>
+  <div class="bignum a fx-zoom">04</div>
+</section>
+
+<!-- S22 -->
+<section class="scene" data-bg="tr" data-role="p4" data-title="Arithmetic Operators">
+  <h2 class="title a">Arithmetic: คำนวณตัวเลข</h2>
+  <div class="body">
+    <table class="tbl py-ops">
+      <tr class="a"><th>Operator</th><th>ความหมาย</th><th>ตัวอย่าง</th><th>ผลลัพธ์</th></tr>
+      <tr data-s="1"><td class="op">+</td><td>บวก</td><td class="ex">10 + 3</td><td class="rs" data-s="1" data-to="13" data-d=".3" data-dur=".8">0</td></tr>
+      <tr data-s="1"><td class="op">-</td><td>ลบ</td><td class="ex">10 - 3</td><td class="rs" data-s="1" data-to="7" data-d=".4" data-dur=".8">0</td></tr>
+      <tr data-s="1"><td class="op">*</td><td>คูณ</td><td class="ex">10 * 3</td><td class="rs" data-s="1" data-to="30" data-d=".5" data-dur=".8">0</td></tr>
+      <tr data-s="2"><td class="op">/</td><td>หาร (ได้ทศนิยมเสมอ)</td><td class="ex">10 / 3</td><td class="rs fx-pop" data-s="2" data-d=".3">3.333…</td></tr>
+      <tr data-s="2"><td class="op">%</td><td>หารเอาเศษ (Modulus)</td><td class="ex">10 % 3</td><td class="rs fx-pop" data-s="2" data-d=".4">1</td></tr>
+      <tr data-s="3"><td class="op">**</td><td>ยกกำลัง</td><td class="ex">10 ** 3</td><td class="rs" data-s="3" data-to="1000" data-d=".3" data-dur="1.2">0</td></tr>
+      <tr data-s="3"><td class="op">//</td><td>หารปัดทิ้ง (ตัดทศนิยม)</td><td class="ex">10 // 3</td><td class="rs fx-pop" data-s="3" data-d=".4">3</td></tr>
+    </table>
+  </div>
+  <div class="callout blue" data-s="4"><span class="ico">💡</span><span><span class="mono">/</span> ได้ทศนิยมเสมอ · <span class="mono">//</span> ตัดทศนิยมทิ้ง · <span class="mono">%</span> เอาแค่เศษ</span></div>
+</section>
+
+<!-- S23 -->
+<section class="scene" data-bg="br" data-role="p4" data-title="ทายผลก่อนรัน + Modulus">
+  <div class="py-h"><h2 class="title a">ทายก่อนรัน: ได้เท่าไร?</h2><span class="py-lab a">🟢 ลองใน Colab</span></div>
+  <div class="grow" style="display:grid;grid-template-columns:420px 440px 1fr;gap:34px;align-items:center">
+    <div class="win a fx-left" data-label="Colab · cell"><pre class="code" data-lang="py">
+<span class="l" data-s="1">print(10 / 3)</span>
+<span class="l" data-s="1" data-d=".1">print(10 // 3)</span>
+<span class="l" data-s="1" data-d=".2">print(10 % 3)</span>
+<span class="l" data-s="1" data-d=".3">print(2 ** 10)</span>
+</pre></div>
+    <div class="shell" data-s="2" data-label="output"><div class="sbody" style="line-height:1.62;padding:28px 34px">
+      <span class="out" data-s="2" data-d=".3">3.3333333333333335</span>
+      <span class="out" data-s="2" data-d=".5">3</span>
+      <span class="out" data-s="2" data-d=".7">1</span>
+      <span class="out hl" data-s="2" data-d=".9"><span data-s="2" data-to="1024" data-d=".9" data-dur="1.2">0</span></span>
+    </div></div>
+    <div class="col" style="gap:20px">
+      <div class="klbl" data-s="3">% เช็กเลขคู่ / คี่</div>
+      <div class="card py-mod fx-pop" data-s="3"><span class="e">10 % 2<em>→</em><span class="green">0</span></span><span class="t">หารลงตัว = <b class="green">เลขคู่</b></span></div>
+      <div class="card py-mod fx-pop" data-s="3" data-d=".3"><span class="e">7 % 2<em>→</em><span class="orange">1</span></span><span class="t">มีเศษเหลือ = <b class="orange">เลขคี่</b></span></div>
+    </div>
+  </div>
+  <div class="callout blue" data-s="4"><span class="ico">🎯</span><span>2 ยกกำลัง 10 ได้ <b>1024</b> ใครทายถูกบ้าง? · <span class="mono">n % 2 == 0</span> → เลขคู่ ใช้บ่อยมาก</span></div>
+</section>
+
+<!-- S24 -->
+<section class="scene" data-bg="tl" data-role="p4" data-title="ตัวอย่าง: คำนวณค่าเดินทาง">
+  <h2 class="title a">ตัวอย่าง: คำนวณค่าเดินทาง</h2>
+  <div class="split grow" style="grid-template-columns:1fr 600px;gap:40px;align-items:start;margin-top:6px">
+    <div class="win a fx-left" data-label="trip.py"><pre class="code xs" data-lang="py">
+<span class="l" data-s="1">distance_km = 250      # ระยะทาง กิโลเมตร</span>
+<span class="l" data-s="1" data-d=".1">fuel_per_km = 0.08     # อัตราการใช้น้ำมัน ลิตร/กม.</span>
+<span class="l" data-s="1" data-d=".2">fuel_price  = 42.50    # ราคาน้ำมัน บาท/ลิตร</span>
+<span class="l" data-s="1" data-d=".3">num_people  = 4        # จำนวนคน</span>
+<span class="l"> </span>
+<span class="l hs2" data-s="2">total_fuel  = distance_km * fuel_per_km</span>
+<span class="l hs2" data-s="2" data-d=".5">total_cost  = total_fuel * fuel_price</span>
+<span class="l hs2" data-s="2" data-d="1">cost_each   = total_cost / num_people</span>
+<span class="l"> </span>
+<span class="l" data-s="3">print("=== คำนวณค่าเดินทาง ===")</span>
+<span class="l" data-s="3" data-d=".1">print(f"ระยะทาง: {distance_km} กม.")</span>
+<span class="l" data-s="3" data-d=".2">print(f"น้ำมันที่ใช้: {total_fuel:.2f} ลิตร")</span>
+<span class="l" data-s="3" data-d=".3">print(f"ค่าน้ำมันรวม: {total_cost:.2f} บาท")</span>
+<span class="l" data-s="3" data-d=".4">print(f"หารกัน {num_people} คน คนละ: {cost_each:.2f} บาท")</span>
+</pre></div>
+    <div class="col" style="gap:14px">
+      <div class="py-calc fx-right" data-s="2" data-d=".2"><small>total_fuel</small><span>250 × 0.08</span><b><span data-s="2" data-to="20" data-d=".3" data-dur=".8" data-suffix=" ลิตร">0</span></b></div>
+      <div class="py-calc fx-right" data-s="2" data-d=".7"><small>total_cost</small><span>20 × 42.50</span><b><span data-s="2" data-to="850" data-d=".8" data-dur="1" data-suffix=" ฿">0</span></b></div>
+      <div class="py-calc hot fx-right" data-s="2" data-d="1.2"><small>cost_each</small><span>850 ÷ 4</span><b><span data-s="2" data-to="212" data-d="1.3" data-dur="1" data-suffix=".50 ฿">0</span></b></div>
+      <div class="shell xs" data-s="4" data-label="output" style="margin-top:8px"><div class="sbody">
+        <span class="out" data-s="4" data-d=".1">=== คำนวณค่าเดินทาง ===</span>
+        <span class="out" data-s="4" data-d=".25">ระยะทาง: 250 กม.</span>
+        <span class="out" data-s="4" data-d=".4">น้ำมันที่ใช้: 20.00 ลิตร</span>
+        <span class="out" data-s="4" data-d=".55">ค่าน้ำมันรวม: 850.00 บาท</span>
+        <span class="out ok" data-s="4" data-d=".7">หารกัน 4 คน คนละ: 212.50 บาท</span>
+      </div></div>
+    </div>
+  </div>
+</section>
+
+<!-- S25 -->
+<section class="scene" data-bg="bl" data-role="p4" data-title="Comparison Operators">
+  <h2 class="title a">Comparison: เปรียบเทียบสองค่า</h2>
+  <p class="lead a">ผลลัพธ์เป็น <b>True</b> หรือ <b>False</b> เสมอ</p>
+  <div class="body">
+    <div class="g3" style="gap:26px">
+      <div class="card py-cmp fx-pop" data-s="1"><div class="op">==</div><p class="t">เท่ากัน</p><div class="ex">10 == 10 <i>→</i><span class="py-tf t fx-pop" data-s="1" data-d=".5">True</span></div></div>
+      <div class="card py-cmp fx-pop" data-s="1" data-d=".1"><div class="op">!=</div><p class="t">ไม่เท่ากัน</p><div class="ex">10 != 5 <i>→</i><span class="py-tf t fx-pop" data-s="1" data-d=".6">True</span></div></div>
+      <div class="card py-cmp fx-pop" data-s="1" data-d=".2"><div class="op">&gt;</div><p class="t">มากกว่า</p><div class="ex">10 &gt; 5 <i>→</i><span class="py-tf t fx-pop" data-s="1" data-d=".7">True</span></div></div>
+      <div class="card py-cmp fx-pop" data-s="2"><div class="op">&lt;</div><p class="t">น้อยกว่า</p><div class="ex">10 &lt; 5 <i>→</i><span class="py-tf f fx-pop" data-s="2" data-d=".5">False</span></div></div>
+      <div class="card py-cmp fx-pop" data-s="2" data-d=".1"><div class="op">&gt;=</div><p class="t">มากกว่าหรือเท่ากับ</p><div class="ex">10 &gt;= 10 <i>→</i><span class="py-tf t fx-pop" data-s="2" data-d=".6">True</span></div></div>
+      <div class="card py-cmp fx-pop" data-s="2" data-d=".2"><div class="op">&lt;=</div><p class="t">น้อยกว่าหรือเท่ากับ</p><div class="ex">5 &lt;= 10 <i>→</i><span class="py-tf t fx-pop" data-s="2" data-d=".7">True</span></div></div>
+    </div>
+  </div>
+  <div class="callout blue" data-s="3"><span class="ico">🔀</span><span>True / False พวกนี้แหละ ที่จะเอาไปใช้เป็น<b>เงื่อนไข</b>ใน Part 5</span></div>
+</section>
+
+<!-- S26 -->
+<section class="scene" data-bg="center" data-role="p4" data-t="zoom" data-title="= vs ==">
+  <h2 class="title a">ระวัง! <span class="mono">=</span> กับ <span class="mono">==</span> ต่างกันมาก</h2>
+  <div class="g2 grow" style="gap:48px;align-content:center">
+    <div class="card py-eq fx-left" data-s="1">
+      <span class="tag blue">กำหนดค่า · assignment</span>
+      <div class="big">x = 5</div>
+      <p class="t"><b>ใส่</b>ค่า 5 ลงในกล่อง x</p>
+      <div class="py-box sm fx-pop" data-s="1" data-d=".4" style="margin-top:70px;align-self:center"><span class="nm">x</span><span class="v drop" data-s="1" data-d=".8"><span class="tk-n">5</span></span></div>
+    </div>
+    <div class="card blue py-eq fx-right" data-s="2">
+      <span class="tag purple">เปรียบเทียบ · comparison</span>
+      <div class="big blue">x == 5</div>
+      <p class="t"><b>ถาม</b>ว่า x เท่ากับ 5 ไหม?</p>
+      <div class="row" style="margin-top:70px;align-self:center;gap:24px;min-height:130px"><span class="qtag fx-pop" data-s="2" data-d=".4">? x เท่ากับ 5 ไหม</span><span class="py-tf t fx-pop" data-s="2" data-d=".9" style="font-size:44px;padding:10px 28px">True</span></div>
+    </div>
+  </div>
+  <div class="callout red" data-s="3"><span class="ico">⚠️</span><span><b class="mono">=</b> ตัวเดียว = ใส่ค่า · <b class="mono">==</b> สองตัว = ถามว่าเท่ากันไหม (ตอบ True / False)</span></div>
+</section>
+
+<!-- S27 -->
+<section class="scene" data-bg="tr" data-role="p4" data-title="Logical Operators">
+  <div class="py-h"><h2 class="title a">Logical: รวมหลายเงื่อนไข</h2><span class="py-lab a">🟢 ลองใน Colab</span></div>
+  <div class="split grow" style="grid-template-columns:1fr 1fr;gap:60px">
+    <div class="nlist">
+      <div class="py-lg" data-s="1"><span class="op">and</span><span class="t">และ — <b>ทั้งคู่</b>ต้องจริง</span><span class="ex">True and False <i>→</i><span class="py-tf f">False</span></span></div>
+      <div class="py-lg" data-s="2"><span class="op">or</span><span class="t">หรือ — <b>อย่างน้อยหนึ่ง</b>อันจริง</span><span class="ex">True or False <i>→</i><span class="py-tf t">True</span></span></div>
+      <div class="py-lg" data-s="3" style="border:0"><span class="op">not</span><span class="t">ไม่ใช่ — <b>กลับค่า</b></span><span class="ex">not True <i>→</i><span class="py-tf f">False</span></span></div>
+    </div>
+    <div class="col" style="gap:22px">
+      <div class="win" data-s="4" data-label="Colab · cell"><pre class="code sm" data-lang="py">
+<span class="l">age = 20</span>
+<span class="l hs5">print(age &gt;= 18 and age &lt;= 30)</span>
+<span class="l">print(age &gt;= 18 or age &lt;= 15)</span>
+</pre></div>
+      <div class="shell sm" data-s="5" data-label="output"><div class="sbody">
+        <span class="out ok" data-s="5" data-d=".2">True</span>
+        <span class="out ok" data-s="5" data-d=".4">True</span>
+      </div></div>
+      <p class="s" data-s="5" data-d=".6">20 &gt;= 18 จริง <b>และ</b> 20 &lt;= 30 จริง → ทั้งคู่จริง ได้ True</p>
+    </div>
+  </div>
+  <div class="callout green" data-s="6"><span class="ico">☕</span><span>จบ Part 4 แล้ว — <b>พัก 10–15 นาที</b> แล้วกลับมาต่อ Control Structure</span></div>
+</section>
+
+<!-- ================= 05 · CONTROL STRUCTURE ================= -->
+
+<!-- S28 -->
+<section class="scene divider" data-chapter="05 · Control Structure" data-title="Control Structure">
+  <div class="num a">PART 05</div>
+  <h1><span class="mask a"><span>Control Structure</span></span></h1>
+  <p class="lead a">if · elif · else · for · while</p>
+  <div class="bignum a fx-zoom">05</div>
+</section>
+
+<!-- S29 -->
+<section class="scene" data-bg="low" data-role="p5" data-title="Control Structure คืออะไร">
+  <h2 class="title a">โปรแกรมต้องตัดสินใจ และทำซ้ำได้</h2>
+  <p class="lead a">ปกติ Python รันจากบนลงล่างทีละบรรทัด — Control Structure ช่วยคุมว่าจะทำอะไร เมื่อไร และกี่รอบ</p>
+  <div class="body">
+    <div class="g3">
+      <div class="card py-mode" data-s="1">
+        <span class="k">Default</span>
+        <svg viewBox="0 0 300 190">
+          <path class="draw g" data-s="1" pathLength="1" d="M100 8 H200 V42 H100 Z"/>
+          <path class="draw g" data-s="1" data-d=".2" pathLength="1" d="M150 42 V74 M142 66 L150 74 L158 66"/>
+          <path class="draw g" data-s="1" data-d=".35" pathLength="1" d="M100 78 H200 V112 H100 Z"/>
+          <path class="draw g" data-s="1" data-d=".55" pathLength="1" d="M150 112 V144 M142 136 L150 144 L158 136"/>
+          <path class="draw g" data-s="1" data-d=".7" pathLength="1" d="M100 148 H200 V182 H100 Z"/>
+        </svg>
+        <h3>บนลงล่าง</h3><p class="s">ทีละบรรทัดตามลำดับ</p>
+      </div>
+      <div class="card py-mode" data-s="2">
+        <span class="k" style="color:var(--blue)">Conditional</span>
+        <svg viewBox="0 0 300 190">
+          <path class="draw" data-s="2" pathLength="1" d="M150 6 L205 48 L150 90 L95 48 Z"/>
+          <path class="draw" data-s="2" data-d=".35" pathLength="1" d="M95 48 H50 V140"/>
+          <path class="draw g" data-s="2" data-d=".35" pathLength="1" d="M205 48 H250 V140"/>
+          <path class="draw" data-s="2" data-d=".7" pathLength="1" d="M18 144 H82 V180 H18 Z"/>
+          <path class="draw g" data-s="2" data-d=".7" pathLength="1" d="M218 144 H282 V180 H218 Z"/>
+          <text x="150" y="54" text-anchor="middle">?</text><text x="40" y="36" text-anchor="middle">True</text><text x="262" y="36" text-anchor="middle">False</text>
+        </svg>
+        <h3>ตัดสินใจ</h3><p class="s">ทำเมื่อเงื่อนไขเป็นจริง · if / elif / else</p>
+      </div>
+      <div class="card py-mode" data-s="3">
+        <span class="k" style="color:var(--blue)">Loop</span>
+        <svg viewBox="0 0 300 190">
+          <path class="draw" data-s="3" pathLength="1" d="M150 22 A72 72 0 1 1 83 68"/>
+          <path class="draw" data-s="3" data-d=".9" pathLength="1" d="M72 50 L83 68 L101 58"/>
+          <text x="150" y="102" text-anchor="middle" style="font-size:26px;fill:var(--blue)">× N</text>
+        </svg>
+        <h3>ทำซ้ำ</h3><p class="s">วนตามจำนวนรอบ หรือจนกว่าเงื่อนไขหยุด · for / while</p>
+      </div>
+    </div>
+  </div>
+  <div class="callout blue" data-s="4"><span class="ico">🛒</span><span>“ถ้าเงินพอก็ซื้อ ถ้าไม่พอก็ไม่ซื้อ” = ตัดสินใจ · “ส่งอีเมลให้ลูกค้าทุกคน” = ทำซ้ำ</span></div>
+</section>
+
+<!-- S30 -->
+<section class="scene" data-bg="tr" data-role="p5" data-title="if / elif / else">
+  <h2 class="title a">if / elif / else</h2>
+  <div class="split grow" style="grid-template-columns:720px 1fr;gap:60px">
+    <div class="win a fx-left" data-label="syntax"><pre class="code lg" data-lang="py">
+<span class="l hs1">if เงื่อนไข<span class="py-colon st" data-s="4">:</span></span>
+<span class="l hs1">    # ทำเมื่อ True</span>
+<span class="l hs2">elif เงื่อนไขอื่น<span class="py-colon st" data-s="4" data-d=".15">:</span></span>
+<span class="l hs2">    # ทำเมื่อข้อแรก False</span>
+<span class="l hs3">else<span class="py-colon st" data-s="4" data-d=".3">:</span></span>
+<span class="l hs3">    # ทำเมื่อไม่ตรงเลย</span>
+</pre></div>
+    <div class="nlist">
+      <div class="py-kw" data-s="1"><b>if</b><span>ถ้าเงื่อนไขเป็น <b>True</b> ก็ทำ</span></div>
+      <div class="py-kw" data-s="2"><b>elif</b><span>ถ้า if ข้อแรกเป็น False แต่ข้อนี้ <b>True</b> ก็ทำ</span></div>
+      <div class="py-kw" data-s="3" style="border:0"><b>else</b><span>ถ้าไม่ตรงเงื่อนไขไหนเลย ก็ทำอันนี้</span></div>
+    </div>
+  </div>
+  <div class="callout orange" data-s="4"><span class="ico">⚠️</span><span>หลังเงื่อนไขต้องมี <b class="mono">:</b> เสมอ และโค้ดข้างในต้อง<b>เยื้องเข้า 4 spaces</b></span></div>
+</section>
+
+<!-- S31 -->
+<section class="scene" data-bg="br" data-role="p5" data-title="ตัวอย่าง: ตรวจอายุ age = 17">
+  <div class="py-h"><h2 class="title a">ตัวอย่าง: ระบบตรวจอายุ</h2><span class="py-lab a">🟢 ลองใน Colab</span></div>
+  <div class="split grow" style="grid-template-columns:620px 1fr;gap:50px;align-items:start;margin-top:10px">
+    <div class="col" style="gap:20px">
+      <div class="win a fx-left" data-label="age_check.py"><pre class="code sm" data-lang="py">
+<span class="l">age = 17</span>
+<span class="l"> </span>
+<span class="l st bad" data-s="1">if age &gt;= 18:</span>
+<span class="l">    print("เข้าได้")</span>
+<span class="l st good" data-s="2">elif age &gt;= 15:</span>
+<span class="l st mark" data-s="2" data-d=".5">    print("ต้องมีผู้ปกครอง")</span>
+<span class="l">else:</span>
+<span class="l">    print("เข้าไม่ได้")</span>
+</pre></div>
+      <div class="shell sm" data-s="3" data-label="output"><div class="sbody"><span class="out ok">ต้องมีผู้ปกครอง</span></div></div>
+    </div>
+    <div class="py-fc a fx-fade">
+      <svg viewBox="0 0 860 392">
+        <path class="w" d="M210 64 V104"/><path class="w" d="M390 139 H520"/><path class="w" d="M210 174 V214"/><path class="w" d="M390 249 H520"/><path class="w" d="M210 284 V324"/>
+        <path class="wt draw" data-s="1" pathLength="1" d="M210 64 V104"/>
+        <path class="wt draw" data-s="1" data-d=".6" pathLength="1" d="M210 174 V214"/>
+        <path class="wt draw" data-s="2" data-d=".3" pathLength="1" d="M390 249 H520"/>
+      </svg>
+      <div class="py-fn" style="left:60px;top:0;width:300px;height:64px">age = 17</div>
+      <div class="py-fn q no st" data-s="1" style="left:30px;top:104px;width:360px;height:70px">age &gt;= 18 ?<span class="bd">✗ False</span></div>
+      <div class="py-fn r dim" style="left:520px;top:104px;width:320px;height:70px">เข้าได้</div>
+      <div class="py-fn q yes st" data-s="2" style="left:30px;top:214px;width:360px;height:70px">age &gt;= 15 ?<span class="bd">✓ True</span></div>
+      <div class="py-fn r dim st" data-s="2" data-d=".6" style="left:520px;top:214px;width:320px;height:70px">ต้องมีผู้ปกครอง</div>
+      <div class="py-fn r dim" style="left:60px;top:324px;width:300px;height:64px">เข้าไม่ได้</div>
+      <span class="py-fl" style="left:420px;top:108px">True</span>
+      <span class="py-fl" style="left:222px;top:180px">False</span>
+      <span class="py-fl" style="left:420px;top:218px">True</span>
+      <span class="py-fl" style="left:222px;top:290px">False</span>
+    </div>
+  </div>
+  <div class="callout green" data-s="4"><span class="ico">✍️</span><span>ลองเปลี่ยนเป็น <span class="mono">age = 20</span> หรือ <span class="mono">age = 10</span> แล้ว<b>ทายผลก่อนรัน</b></span></div>
+</section>
+
+<!-- S32 -->
+<section class="scene" data-bg="tl" data-role="p5" data-title="Indentation">
+  <h2 class="title a">Indentation: การเยื้องคือไวยากรณ์</h2>
+  <div class="g2 grow" style="gap:48px;align-content:center">
+    <div class="col" style="gap:22px">
+      <div class="klbl" data-s="1" style="color:var(--green)">✓ ถูก</div>
+      <div class="win" data-s="1" data-label="correct.py"><pre class="code sm" data-lang="py">
+<span class="l">if x &gt; 0:</span>
+<span class="l st good" data-s="1" data-d=".3"><span class="py-ind st" data-s="1" data-d=".6">    </span>print("บวก")    # ← เยื้อง 4 spaces</span>
+</pre></div>
+      <div class="klbl mt" data-s="2" style="color:var(--red)">✗ ผิด — จะ error!</div>
+      <div class="win" data-s="2" data-label="wrong.py"><pre class="code sm" data-lang="py">
+<span class="l">if x &gt; 0:</span>
+<span class="l st bad" data-s="2" data-d=".3">print("บวก")        # ← ไม่เยื้อง</span>
+</pre></div>
+    </div>
+    <div class="col" style="gap:22px">
+      <div class="shell xs" data-s="3" data-label="output"><div class="sbody">
+        <span class="out">  File "wrong.py", line 2</span>
+        <span class="out">    print("บวก")</span>
+        <span class="out err">IndentationError: expected an indented block</span>
+        <span class="out err">after 'if' statement on line 1</span>
+      </div></div>
+      <div class="klbl mt" data-s="4">ภาษาอื่น เช่น JavaScript ใช้ { } ครอบ</div>
+      <div class="win" data-s="4" data-label="other.js"><pre class="code sm" data-lang="js">if (x &gt; 0) {
+  console.log(x)
+}</pre></div>
+    </div>
+  </div>
+  <div class="callout blue" data-s="5"><span class="ico">📐</span><span>Python ใช้<b>การเยื้อง 4 spaces</b> แทน { } — ไม่ใช่แค่ความสวยงาม เยื้องผิด = โปรแกรมพัง</span></div>
+</section>
+
+<!-- S33 -->
+<section class="scene" data-bg="bl" data-role="p5" data-title="for loop + range()">
+  <h2 class="title a">for loop: รู้จำนวนรอบที่แน่นอน</h2>
+  <div class="grow col" style="gap:30px;justify-content:center">
+    <div class="split" style="grid-template-columns:1fr 520px;gap:50px;align-items:start">
+      <div class="col" style="gap:26px">
+        <div class="win a fx-left" data-label="loop.py"><pre class="code lg" data-lang="py">
+<span class="l" data-s="1">for i in range(5):</span>
+<span class="l" data-s="1" data-d=".2">    print(i)</span>
+</pre></div>
+        <div class="row" style="gap:22px"><span class="klbl" data-s="2" style="margin:0">i แต่ละรอบ</span>
+          <div class="py-it">
+            <span class="fx-pop" data-s="2" data-d=".2">0</span><span class="fx-pop" data-s="2" data-d=".6">1</span><span class="fx-pop" data-s="2" data-d="1">2</span><span class="fx-pop" data-s="2" data-d="1.4">3</span><span class="fx-pop" data-s="2" data-d="1.8">4</span>
+          </div></div>
+      </div>
+      <div class="shell sm" data-s="2" data-label="output"><div class="sbody" style="min-height:250px">
+        <span class="out" data-s="2" data-d=".3">0</span><span class="out" data-s="2" data-d=".7">1</span><span class="out" data-s="2" data-d="1.1">2</span><span class="out" data-s="2" data-d="1.5">3</span><span class="out" data-s="2" data-d="1.9">4</span>
+      </div></div>
+    </div>
+    <div class="g3" style="gap:26px">
+      <div class="card py-rg" data-s="3"><code>range(5)</code><div class="py-it sm"><span class="fx-pop" data-s="3" data-d=".2">0</span><span class="fx-pop" data-s="3" data-d=".3">1</span><span class="fx-pop" data-s="3" data-d=".4">2</span><span class="fx-pop" data-s="3" data-d=".5">3</span><span class="fx-pop" data-s="3" data-d=".6">4</span></div></div>
+      <div class="card py-rg" data-s="3" data-d=".6"><code>range(1, 6)</code><div class="py-it sm"><span class="fx-pop" data-s="3" data-d=".8">1</span><span class="fx-pop" data-s="3" data-d=".9">2</span><span class="fx-pop" data-s="3" data-d="1">3</span><span class="fx-pop" data-s="3" data-d="1.1">4</span><span class="fx-pop" data-s="3" data-d="1.2">5</span></div></div>
+      <div class="card py-rg blue" data-s="3" data-d="1.2"><code>range(0, 10, 2)</code><div class="py-it sm"><span class="fx-pop" data-s="3" data-d="1.4">0</span><span class="fx-pop" data-s="3" data-d="1.5">2</span><span class="fx-pop" data-s="3" data-d="1.6">4</span><span class="fx-pop" data-s="3" data-d="1.7">6</span><span class="fx-pop" data-s="3" data-d="1.8">8</span></div></div>
+    </div>
+  </div>
+  <div class="callout blue" data-s="4"><span class="ico">🔢</span><span><span class="mono">range(start, stop, step)</span> — เริ่มที่ 0 ถ้าไม่บอก และ<b>ไม่รวมตัว stop</b></span></div>
+</section>
+
+<!-- S34 -->
+<section class="scene" data-bg="tr" data-role="p5" data-title="ตัวอย่าง for: ทักทาย + สูตรคูณ">
+  <div class="py-h"><h2 class="title a">for วนผ่าน list และ range</h2><span class="py-lab a">🟢 ลองใน Colab</span></div>
+  <div class="split grow" style="grid-template-columns:1fr 660px;gap:44px;align-items:center">
+    <div class="col" style="gap:26px">
+      <div class="win fx-left" data-s="1" data-label="greet.py"><pre class="code sm" data-lang="py">students = ["Alice", "Bob", "Charlie"]
+for student in students:
+    print(f"สวัสดี {student}!")</pre></div>
+      <div class="win fx-left" data-s="3" data-label="table3.py"><pre class="code sm" data-lang="py"># สูตรคูณแม่ 3
+for i in range(1, 11):
+    print(f"3 x {i} = {3 * i}")</pre></div>
+    </div>
+    <div class="shell sm" data-s="2" data-label="output"><div class="sbody" style="min-height:430px">
+      <span class="out ok" data-s="2" data-d=".2">สวัสดี Alice!</span>
+      <span class="out ok" data-s="2" data-d=".45">สวัสดี Bob!</span>
+      <span class="out ok" data-s="2" data-d=".7">สวัสดี Charlie!</span>
+      <span class="out"> </span>
+      <div class="py-o2">
+        <span class="out hl" data-s="4" data-d=".1">3 x 1 = 3</span><span class="out hl" data-s="4" data-d=".6">3 x 6 = 18</span>
+        <span class="out hl" data-s="4" data-d=".2">3 x 2 = 6</span><span class="out hl" data-s="4" data-d=".7">3 x 7 = 21</span>
+        <span class="out hl" data-s="4" data-d=".3">3 x 3 = 9</span><span class="out hl" data-s="4" data-d=".8">3 x 8 = 24</span>
+        <span class="out hl" data-s="4" data-d=".4">3 x 4 = 12</span><span class="out hl" data-s="4" data-d=".9">3 x 9 = 27</span>
+        <span class="out hl" data-s="4" data-d=".5">3 x 5 = 15</span><span class="out hl" data-s="4" data-d="1">3 x 10 = 30</span>
+      </div>
+    </div></div>
+  </div>
+  <div class="callout green" data-s="5"><span class="ico">✍️</span><span>แค่ 2 บรรทัด ได้สูตรคูณทั้งแม่ — ลองเปลี่ยนเป็น<b>แม่ที่ชอบ</b>ดู</span></div>
+</section>
+
+<!-- S35 -->
+<section class="scene" data-bg="br" data-role="p5" data-title="while loop: นับถอยหลัง">
+  <h2 class="title a">while loop: รู้เงื่อนไขที่จะหยุด</h2>
+  <p class="lead a">ใช้เมื่อไม่รู้จำนวนรอบแน่นอน วนไปเรื่อย ๆ จนเงื่อนไขเป็น False</p>
+  <div class="split grow" style="grid-template-columns:1fr 520px;gap:50px;align-items:center">
+    <div class="col">
+      <div class="win a fx-left" data-label="countdown.py"><pre class="code sm" data-lang="py">
+<span class="l" data-s="1">count = 5</span>
+<span class="l" data-s="1" data-d=".1">while count &gt; 0:</span>
+<span class="l" data-s="1" data-d=".2">    print(f"{count}...")</span>
+<span class="l st bad" data-s="3" data-d=".0"><span data-s="1" data-d=".3">    count -= 1   # ลดทีละ 1 ไม่งั้น loop ไม่จบ!</span></span>
+<span class="l" data-s="1" data-d=".4">print("🚀 ปล่อย!")</span>
+</pre></div>
+      <div class="py-cdw">
+        <div class="col" style="gap:10px;align-items:center"><span class="klbl" data-s="1" style="margin:0">count</span>
+          <div class="py-cd" data-s="1">
+            <span>5</span>
+            <span class="fx-down" data-s="2" data-d=".8">4</span>
+            <span class="fx-down" data-s="2" data-d="1.6">3</span>
+            <span class="fx-down" data-s="2" data-d="2.4">2</span>
+            <span class="fx-down" data-s="2" data-d="3.2">1</span>
+            <span class="fx-down z" data-s="2" data-d="4">0</span>
+          </div></div>
+        <div class="py-cond" data-s="1"><code>count &gt; 0 ?</code><span class="swap st" data-s="2" data-d="3.6"><span class="py-tf t" style="font-size:34px">True → วนต่อ</span><span class="py-tf f" style="font-size:34px">False → หยุด</span></span></div>
+      </div>
+    </div>
+    <div class="shell sm" data-s="2" data-label="output"><div class="sbody" style="min-height:330px">
+      <span class="out" data-s="2" data-d=".3">5...</span>
+      <span class="out" data-s="2" data-d="1.1">4...</span>
+      <span class="out" data-s="2" data-d="1.9">3...</span>
+      <span class="out" data-s="2" data-d="2.7">2...</span>
+      <span class="out" data-s="2" data-d="3.5">1...</span>
+      <span class="out ok" data-s="2" data-d="4.4">🚀 ปล่อย!</span>
+    </div></div>
+  </div>
+  <div class="callout orange" data-s="3"><span class="ico">♾️</span><span>ถ้าลืม <span class="mono">count -= 1</span> เงื่อนไขไม่มีวันเป็น False = <b>Infinite Loop!</b> กด <span class="kbd">Ctrl</span>+<span class="kbd">C</span> หรือปุ่ม ⏹️ เพื่อหยุด</span></div>
+</section>
+
+<!-- ================= 06 · INPUT ================= -->
+
+<!-- S36 -->
+<section class="scene divider" data-chapter="06 · Input" data-title="Input">
+  <div class="num a">PART 06</div>
+  <h1><span class="mask a"><span>Input</span></span></h1>
+  <p class="lead a">การรับข้อมูลจากผู้ใช้</p>
+  <div class="bignum a fx-zoom">06</div>
+</section>
+
+<!-- S37 -->
+<section class="scene" data-bg="tr" data-role="p6" data-title="input() หยุดรอผู้ใช้">
+  <div class="py-h"><h2 class="title a">input() หยุดรอให้ผู้ใช้พิมพ์</h2><span class="py-lab a">🟢 ลองใน Colab</span></div>
+  <p class="lead a">ที่ผ่านมาข้อมูลเป็นค่าตายตัวในโค้ด แต่โปรแกรมจริงต้องรับข้อมูลจากผู้ใช้ได้</p>
+  <div class="body" style="gap:40px">
+    <div class="flow">
+      <span class="node fx-pop" data-s="1">💬 แสดงข้อความถาม</span><span class="arr fx-grow" data-s="1" data-d=".25"></span>
+      <span class="node lb fx-pop" data-s="1" data-d=".45">⏸️ หยุดรอ</span><span class="arr fx-grow" data-s="1" data-d=".7"></span>
+      <span class="node fx-pop" data-s="1" data-d=".9">⌨️ พิมพ์ + Enter</span><span class="arr fx-grow" data-s="1" data-d="1.15"></span>
+      <span class="node blue fx-pop" data-s="1" data-d="1.35">📦 เก็บในตัวแปร</span>
+    </div>
+    <div class="g2" style="gap:40px;align-items:start">
+      <div class="win" data-s="2" data-label="Colab · cell"><pre class="code sm" data-lang="py">
+<span class="l hs2 hs3">name = input("คุณชื่ออะไร: ")</span>
+<span class="l hs4">print("สวัสดีครับ", name, "!")</span>
+</pre></div>
+      <div class="shell sm" data-s="2" data-label="output"><div class="sbody" style="min-height:140px">
+        <span class="out" data-s="2" data-d=".3">คุณชื่ออะไร: <span class="py-wait st" data-s="3"></span><span class="py-in type" data-s="3">Bas</span></span>
+        <span class="out ok" data-s="4">สวัสดีครับ Bas !</span>
+      </div></div>
+    </div>
+  </div>
+  <div class="callout green" data-s="5"><span class="ico">✍️</span><span>ทุกคนลองรัน แล้วพิมพ์<b>ชื่อตัวเอง</b>ลงไปดู</span></div>
+</section>
+
+<!-- S38 -->
+<section class="scene" data-bg="br" data-role="p6" data-title="input() คืน String เสมอ">
+  <h2 class="title a">พิมพ์ 5 แล้วบวกกัน… ได้ 55 ?!</h2>
+  <div class="grow col" style="gap:30px;justify-content:center">
+    <div class="g2" style="gap:40px;align-items:start">
+      <div class="win a fx-left" data-label="Colab · cell"><pre class="code" data-lang="py">
+<span class="l">num = input("ใส่ตัวเลข: ")</span>
+<span class="l st bad" data-s="2">print(num + num)</span>
+</pre></div>
+      <div class="shell" data-s="1" data-label="output"><div class="sbody" style="min-height:150px">
+        <span class="out">ใส่ตัวเลข: <span class="py-in type" data-s="1" data-d=".3">5</span></span>
+        <span class="out err big" data-s="2" data-d=".3">55</span>
+      </div></div>
+    </div>
+    <div class="g2" style="gap:40px">
+      <div class="card" data-s="3"><span class="k">ทำไม?</span>
+        <div class="py-eqn"><span class="tk-s">"5"</span><i>+</i><span class="tk-s">"5"</span><i>→</i><span class="tk-s">"55"</span></div>
+        <p class="t mt">input() ให้ค่ามาเป็น <b>str</b> — บวก string = <b>ต่อข้อความ</b> ไม่ใช่บวกเลข</p></div>
+      <div class="card" data-s="4"><span class="k">ถ้าเอาไปบวกกับตัวเลข</span>
+        <div class="py-eqn"><span class="tk-s">"25"</span><i>+</i><span class="tk-n">1</span><i>→</i><span class="py-tf f" style="font-size:32px">Error</span></div>
+        <div class="shell xs mt" data-label="error"><div class="sbody"><span class="out err">TypeError: can only concatenate str</span><span class="out err">(not "int") to str</span></div></div></div>
+    </div>
+  </div>
+  <div class="callout orange" data-s="5"><span class="ico">⚠️</span><span>input() คืนค่าเป็น <b>String เสมอ!</b> ต้องแปลง type ก่อนเอาไปคำนวณ</span></div>
+</section>
+
+<!-- S39 -->
+<section class="scene" data-bg="tl" data-role="p6" data-title="แก้ด้วย int()">
+  <h2 class="title a">แก้ด้วย int() ครอบ</h2>
+  <div class="grow col" style="gap:34px;justify-content:center">
+    <div class="split" style="grid-template-columns:1fr 1fr;gap:40px;align-items:start">
+      <div class="win a fx-left" data-label="Colab · cell"><pre class="code" data-lang="py">
+<span class="l st good" data-s="1"><span class="swap st" data-s="1"><span>num = input("ใส่ตัวเลข: ")</span><span>num = <span class="py-fix">int(</span>input("ใส่ตัวเลข: ")<span class="py-fix">)</span></span></span></span>
+<span class="l">print(num + num)</span>
+</pre></div>
+      <div class="shell" data-s="2" data-label="output"><div class="sbody" style="min-height:150px">
+        <span class="out">ใส่ตัวเลข: <span class="py-in type" data-s="2" data-d=".2">5</span></span>
+        <span class="out ok big" data-s="2" data-d=".8">10</span>
+      </div></div>
+    </div>
+    <div class="g2" style="gap:40px">
+      <div class="col" data-s="3"><div class="py-cap"><b style="color:var(--ink2)">วิธีที่ 1</b><span>แยกสองบรรทัด</span></div>
+        <div class="win" data-label="two lines"><pre class="code xs" data-lang="py">age_str = input("อายุ: ")   # ได้ "25" (string)
+age_int = int(age_str)       # แปลงเป็น 25 (int)</pre></div></div>
+      <div class="col" data-s="3" data-d=".3"><div class="py-cap"><b>วิธีที่ 2</b><span>บรรทัดเดียว · <b class="green">นิยมกว่า</b></span></div>
+        <div class="win" data-label="one line"><pre class="code xs" data-lang="py">age = int(input("อายุ: "))
+</pre></div></div>
+    </div>
+  </div>
+  <div class="callout green" data-s="4"><span class="ico">✅</span><span>ครอบด้วย <span class="mono">int()</span> ก็ได้ตัวเลขจริง ๆ บวกกันได้ถูกต้อง</span></div>
+</section>
+
+<!-- S40 -->
+<section class="scene" data-bg="low" data-role="p6" data-title="การแปลง Type">
+  <h2 class="title a">การแปลง Type</h2>
+  <div class="body">
+    <div class="nlist">
+      <div class="py-cvrow" data-s="1"><div class="flow"><span class="py-val tk-s">"25"<small>str</small></span><span class="arr fx-grow" data-s="1" data-d=".3"></span><span class="node blue fx-pop" data-s="1" data-d=".5">int()</span><span class="arr fx-grow" data-s="1" data-d=".8"></span><span class="py-val fx-pop" data-s="1" data-d="1"><span class="tk-n">25</span><small>int</small></span></div><p class="t">จำนวนเต็ม เช่น <b>อายุ คะแนน</b></p></div>
+      <div class="py-cvrow" data-s="2"><div class="flow"><span class="py-val tk-s">"1.75"<small>str</small></span><span class="arr fx-grow" data-s="2" data-d=".3"></span><span class="node blue fx-pop" data-s="2" data-d=".5">float()</span><span class="arr fx-grow" data-s="2" data-d=".8"></span><span class="py-val fx-pop" data-s="2" data-d="1"><span class="tk-n">1.75</span><small>float</small></span></div><p class="t">ทศนิยม เช่น <b>ส่วนสูง ราคา</b></p></div>
+      <div class="py-cvrow" data-s="3" style="border:0"><div class="flow"><span class="py-val"><span class="tk-n">42</span><small>int</small></span><span class="arr fx-grow" data-s="3" data-d=".3"></span><span class="node blue fx-pop" data-s="3" data-d=".5">str()</span><span class="arr fx-grow" data-s="3" data-d=".8"></span><span class="py-val tk-s fx-pop" data-s="3" data-d="1">"42"<small>str</small></span></div><p class="t">แปลงตัวเลข<b>กลับเป็นข้อความ</b></p></div>
+    </div>
+    <div class="win mt" data-s="4" data-label="convert.py"><pre class="code sm" data-lang="py">age = int(input("อายุ: "))       # → int
+h   = float(input("ส่วนสูง: "))  # → float
+txt = str(42)                    # → "42"</pre></div>
+  </div>
+</section>
+
+<!-- S41 -->
+<section class="scene" data-bg="tr" data-role="p6" data-title="ตัวอย่าง: คำนวณ BMI">
+  <h2 class="title a">ตัวอย่าง: โปรแกรมคำนวณ BMI</h2>
+  <div class="split grow" style="grid-template-columns:1fr 640px;gap:40px;align-items:start;margin-top:6px">
+    <div class="win a fx-left" data-label="bmi.py"><pre class="code xs" data-lang="py">
+<span class="l">print("=== คำนวณ BMI ===")</span>
+<span class="l hs1">weight   = float(input("ใส่น้ำหนัก (kg): "))</span>
+<span class="l hs1">height   = float(input("ใส่ส่วนสูง (cm): "))</span>
+<span class="l hs2">height_m = height / 100          # แปลง cm → m</span>
+<span class="l hs2">bmi      = weight / (height_m ** 2)</span>
+<span class="l hs3">print(f"\nBMI ของคุณ = {bmi:.1f}")</span>
+<span class="l st bad" data-s="3" data-d=".3">if bmi &lt; 18.5:</span>
+<span class="l">    print("ผอมเกินไป (น้ำหนักน้อย)")</span>
+<span class="l st good" data-s="3" data-d=".6">elif bmi &lt; 25:</span>
+<span class="l st good" data-s="3" data-d=".8">    print("✅ น้ำหนักปกติ")</span>
+<span class="l">elif bmi &lt; 30:</span>
+<span class="l">    print("น้ำหนักเกิน")</span>
+<span class="l">else:</span>
+<span class="l">    print("โรคอ้วน")</span>
+</pre></div>
+    <div class="col" style="gap:18px">
+      <div class="shell xs" data-s="1" data-label="output"><div class="sbody" style="min-height:250px">
+        <span class="out">=== คำนวณ BMI ===</span>
+        <span class="out">ใส่น้ำหนัก (kg): <span class="py-in type" data-s="1" data-d=".3">65</span></span>
+        <span class="out" data-s="1" data-d=".9">ใส่ส่วนสูง (cm): <span class="py-in type" data-s="1" data-d="1.1">170</span></span>
+        <span class="out" data-s="3"> </span>
+        <span class="out" data-s="3" data-d=".2">BMI ของคุณ = 22.5</span>
+        <span class="out ok" data-s="3" data-d="1">✅ น้ำหนักปกติ</span>
+      </div></div>
+      <div class="py-calc fx-right" data-s="2"><small>height_m</small><span>170 / 100</span><b>1.7</b></div>
+      <div class="py-calc hot fx-right" data-s="2" data-d=".4"><small>bmi</small><span>65 / (1.7 ** 2)</span><b>22.5</b></div>
+      <div class="py-used" data-s="4"><span class="chip sm">input()</span><span class="chip sm">float()</span><span class="chip sm">/ **</span><span class="chip sm">if / elif / else</span><span class="chip sm">f-string</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 07 · FUNCTION ================= -->
+
+<!-- S42 -->
+<section class="scene divider" data-chapter="07 · Function" data-title="Function">
+  <div class="num a">PART 07</div>
+  <h1><span class="mask a"><span>Function</span></span></h1>
+  <p class="lead a">เขียนครั้งเดียว เรียกใช้ซ้ำ</p>
+  <div class="bignum a fx-zoom">07</div>
+</section>
+
+<!-- S43 -->
+<section class="scene" data-bg="tr" data-role="p7" data-title="ทำไมต้องใช้ Function?">
+  <h2 class="title a">ต้องคำนวณ BMI ให้นักเรียน 30 คน…</h2>
+  <div class="grow col" style="gap:34px;justify-content:center">
+    <div class="g2" style="gap:48px;align-items:stretch">
+      <div class="card" data-s="1" style="display:flex;gap:34px;align-items:center">
+        <div class="py-blks">
+          <i class="py-blk fx-pop" data-s="1"></i><i class="py-blk fx-pop" data-s="1"></i><i class="py-blk fx-pop" data-s="1"></i><i class="py-blk fx-pop" data-s="1"></i><i class="py-blk fx-pop" data-s="1"></i><i class="py-blk fx-pop" data-s="1"></i>
+          <i class="py-blk fx-pop" data-s="1"></i><i class="py-blk fx-pop" data-s="1"></i><i class="py-blk fx-pop" data-s="1"></i><i class="py-blk fx-pop" data-s="1"></i><i class="py-blk fx-pop" data-s="1"></i><i class="py-blk fx-pop" data-s="1"></i>
+          <i class="py-blk fx-pop" data-s="1"></i><i class="py-blk fx-pop" data-s="1"></i><i class="py-blk fx-pop" data-s="1"></i><i class="py-blk fx-pop" data-s="1"></i><i class="py-blk fx-pop" data-s="1"></i><i class="py-blk fx-pop" data-s="1"></i>
+          <i class="py-blk fx-pop" data-s="1"></i><i class="py-blk fx-pop" data-s="1"></i><i class="py-blk fx-pop" data-s="1"></i><i class="py-blk fx-pop" data-s="1"></i><i class="py-blk fx-pop" data-s="1"></i><i class="py-blk fx-pop" data-s="1"></i>
+          <i class="py-blk fx-pop" data-s="1"></i><i class="py-blk fx-pop" data-s="1"></i><i class="py-blk fx-pop" data-s="1"></i><i class="py-blk fx-pop" data-s="1"></i><i class="py-blk fx-pop" data-s="1"></i><i class="py-blk fx-pop" data-s="1"></i>
+        </div>
+        <div class="col"><div class="py-bigx">×<span data-s="1" data-to="30" data-d="-2.1" data-dur="2">0</span></div><p class="t">ไม่มี function<br>= <b>copy-paste โค้ดซ้ำ 30 รอบ!</b></p></div>
+      </div>
+      <div class="card blue" data-s="2" style="display:flex;gap:30px;align-items:center">
+        <div style="font-size:120px;line-height:1">📖</div>
+        <div class="col"><span class="k" style="color:var(--blue)">Function = สูตรอาหาร</span><p class="t">เขียนวิธีทำ<b>ครั้งเดียว</b> ตั้งชื่อให้มัน<br>จะทำกี่รอบ ก็แค่<b>เรียกสูตรนั้น</b></p></div>
+      </div>
+    </div>
+    <div class="g4" style="gap:22px">
+      <div class="py-ben fx-pop" data-s="3"><span class="e">♻️</span>ไม่เขียนโค้ดซ้ำ</div>
+      <div class="py-ben fx-pop" data-s="3"><span class="e">🔧</span>แก้ไขที่เดียว</div>
+      <div class="py-ben fx-pop" data-s="3"><span class="e">👀</span>อ่านง่ายขึ้น</div>
+      <div class="py-ben fx-pop" data-s="3"><span class="e">🧩</span>แบ่งงานเป็นส่วนย่อย</div>
+    </div>
+  </div>
+  <div class="callout blue" data-s="4"><span class="ico">💡</span><span>แก้ที่เดียว ทุกที่ที่เรียกใช้ก็เปลี่ยนตาม</span></div>
+</section>
+
+<!-- S44 -->
+<section class="scene" data-bg="low" data-role="p7" data-title="Function = เครื่องจักร">
+  <div class="py-h"><h2 class="title a">Function = เครื่องจักร: รับเข้า → ทำงาน → ส่งกลับ</h2></div>
+  <div class="grow col" style="gap:40px;justify-content:center">
+    <div class="py-mach">
+      <div class="py-mcol"><div class="col" style="gap:12px"><span class="py-chip fx-left" data-s="2">a = 10</span><span class="py-chip fx-left" data-s="2" data-d=".2">b = 20</span></div><span class="py-mlbl" data-s="2">parameter (input)</span></div>
+      <span class="arr blue fx-grow" data-s="2" data-d=".5"></span>
+      <div class="py-mcol"><div class="py-mbox fx-pop" data-s="1"><span class="py-gear">⚙️</span><b>add(a, b)</b></div><span class="py-mlbl" data-s="1" style="margin-top:12px">def … : ทำงานข้างใน</span></div>
+      <span class="arr blue fx-grow" data-s="3"></span>
+      <div class="py-mcol"><span class="py-chip g fx-pop" data-s="3" data-d=".3">return 30</span><span class="py-mlbl" data-s="3" data-d=".3">return (output)</span></div>
+      <span class="arr blue fx-grow" data-s="3" data-d=".6"></span>
+      <div class="py-mcol" style="padding-top:64px"><div class="py-box sm" data-s="3" data-d=".6"><span class="nm">result</span><span class="v drop" data-s="3" data-d="1"><span class="tk-n">30</span></span></div></div>
+    </div>
+    <div class="split" style="grid-template-columns:1fr 600px;gap:40px;align-items:start">
+      <div class="win a" data-label="Colab · cell"><pre class="code sm" data-lang="py">
+<span class="l hs1">def add(a, b):</span>
+<span class="l hs1">    return a + b</span>
+<span class="l"> </span>
+<span class="l hs2 hs3">result = add(10, 20)</span>
+<span class="l">print("ผลลัพธ์:", result)</span>
+</pre></div>
+      <div class="col" style="gap:16px">
+        <div class="shell sm" data-s="4" data-label="output"><div class="sbody"><span class="out ok big">ผลลัพธ์: 30</span></div></div>
+        <p class="s" data-s="4" data-d=".3"><b>return</b> ส่งค่ากลับออกมา → เก็บไว้ในตัวแปร <span class="mono">result</span> แล้วเอาไปใช้ต่อได้</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- S45 -->
+<section class="scene" data-bg="tr" data-role="p7" data-title="โครงสร้าง Function">
+  <h2 class="title a">โครงสร้างของ Function</h2>
+  <div class="split grow" style="grid-template-columns:1fr 1fr;gap:50px;align-items:center">
+    <div class="win a fx-left" data-label="structure"><pre class="code" data-lang="py">
+<span class="l hs1">def function_name(param):</span>
+<span class="l hs2">    """docstring"""</span>
+<span class="l">    # logic here</span>
+<span class="l hs3">    return result</span>
+<span class="l"> </span>
+<span class="l"># เรียกใช้</span>
+<span class="l hs4">result = function_name(value)</span>
+</pre></div>
+    <table class="tbl py-parts">
+      <tr class="a"><th>ส่วน</th><th>ความหมาย</th><th>บังคับ?</th></tr>
+      <tr data-s="1"><td>def</td><td>keyword บอกว่ากำลังนิยาม function</td><td>✅</td></tr>
+      <tr data-s="1" data-d=".1"><td>ชื่อ function</td><td>ตั้งเอง ใช้กฎเดียวกับชื่อตัวแปร</td><td>✅</td></tr>
+      <tr data-s="1" data-d=".2"><td>( )</td><td>วงเล็บใส่ parameter (ว่างได้)</td><td>✅</td></tr>
+      <tr data-s="1" data-d=".3"><td>parameter</td><td>ข้อมูลที่รับเข้ามาใช้</td><td>—</td></tr>
+      <tr data-s="2"><td>"""…"""</td><td>docstring อธิบายว่าทำอะไร</td><td>แนะนำ</td></tr>
+      <tr data-s="3"><td>return</td><td>ส่งค่ากลับให้ผู้เรียก</td><td>—</td></tr>
+    </table>
+  </div>
+  <div class="callout blue" data-s="4"><span class="ico">💡</span><span><b>นิยามก่อน (def) → เรียกใช้ทีหลัง (call)</b> ต้องเขียน def ไว้ก่อนเสมอ</span></div>
+</section>
+
+<!-- S46 -->
+<section class="scene" data-bg="br" data-role="p7" data-title="นิยาม vs เรียกใช้">
+  <div class="py-h"><h2 class="title a">นิยาม ≠ รัน — ต้องเรียกใช้ก่อน</h2><span class="py-lab a">🟢 ลองใน Colab</span></div>
+  <div class="g2 grow" style="gap:44px;align-content:center">
+    <div class="col" style="gap:20px">
+      <div class="win a fx-left" data-label="say_hello.py"><pre class="code xs" data-lang="py">
+<span class="l hs1"># การนิยาม — โค้ดยังไม่รัน</span>
+<span class="l hs1">def say_hello():</span>
+<span class="l hs1">    print("สวัสดีครับ")</span>
+<span class="l"> </span>
+<span class="l" data-s="2"># การเรียกใช้ — โค้ดใน function ถึงจะรัน</span>
+<span class="l st mark" data-s="2">say_hello()   # ← ต้องมีวงเล็บ () เสมอ!</span>
+</pre></div>
+      <div class="shell xs" data-s="1" data-label="output"><div class="sbody"><span class="out"><span class="swap st" data-s="2" data-d=".2"><span class="py-dim">(ยังไม่มีอะไรเกิดขึ้น)</span><span style="color:#30d158">สวัสดีครับ</span></span></span></div></div>
+    </div>
+    <div class="col" style="gap:20px">
+      <div class="win fx-right" data-s="3" data-label="greet.py"><pre class="code xs" data-lang="py">
+<span class="l">def greet(name):</span>
+<span class="l">    print(f"สวัสดีครับ {name}!")</span>
+<span class="l"> </span>
+<span class="l hs4">greet("Alice")</span>
+<span class="l hs4">greet("Bob")</span>
+<span class="l hs4">greet("Charlie")</span>
+</pre></div>
+      <div class="shell xs" data-s="4" data-label="output"><div class="sbody">
+        <span class="out ok" data-s="4" data-d=".2">สวัสดีครับ Alice!</span>
+        <span class="out ok" data-s="4" data-d=".45">สวัสดีครับ Bob!</span>
+        <span class="out ok" data-s="4" data-d=".7">สวัสดีครับ Charlie!</span>
+      </div></div>
+    </div>
+  </div>
+  <div class="callout blue" data-s="5"><span class="ico">♻️</span><span>เขียนครั้งเดียว เรียกได้เรื่อย ๆ — อยากเปลี่ยนคำทักทาย <b>แก้ที่เดียว</b> ทุกที่เปลี่ยนตาม</span></div>
+</section>
+
+<!-- S47 -->
+<section class="scene" data-bg="tl" data-role="p7" data-title="ระบบตัดเกรด: calculate_grade">
+  <h2 class="title a">ตัวอย่าง: ระบบตัดเกรด</h2>
+  <div class="split grow" style="grid-template-columns:1fr 560px;gap:50px;align-items:center">
+    <div class="win a fx-left" data-label="grade.py"><pre class="code sm type" data-lang="py" data-s="1">def calculate_grade(score):
+    """รับคะแนน 0-100 แล้วคืนค่าเกรดเป็น A, B, C, D หรือ F"""
+    if score &gt;= 80:
+        return 'A'
+    elif score &gt;= 70:
+        return 'B'
+    elif score &gt;= 60:
+        return 'C'
+    elif score &gt;= 50:
+        return 'D'
+    else:
+        return 'F'</pre></div>
+    <div class="py-grs">
+      <div class="klbl" data-s="2">score → grade</div>
+      <div class="py-gr fx-left" data-s="2" style="color:var(--green)"><span class="g">A</span><span class="r">80–100</span><span class="bar fx-grow" data-s="2" data-d=".3" style="--w:100%"></span></div>
+      <div class="py-gr fx-left" data-s="2" style="color:var(--blue)"><span class="g">B</span><span class="r">70–79</span><span class="bar fx-grow" data-s="2" data-d=".4" style="--w:80%"></span></div>
+      <div class="py-gr fx-left" data-s="2" style="color:var(--purple)"><span class="g">C</span><span class="r">60–69</span><span class="bar fx-grow" data-s="2" data-d=".5" style="--w:60%"></span></div>
+      <div class="py-gr fx-left" data-s="2" style="color:var(--orange)"><span class="g">D</span><span class="r">50–59</span><span class="bar fx-grow" data-s="2" data-d=".6" style="--w:40%"></span></div>
+      <div class="py-gr fx-left" data-s="2" style="color:var(--red)"><span class="g">F</span><span class="r">0–49</span><span class="bar fx-grow" data-s="2" data-d=".7" style="--w:20%"></span></div>
+    </div>
+  </div>
+  <div class="callout blue" data-s="3"><span class="ico">🧩</span><span>โค้ดเดียวใช้ทุกอย่างที่เรียนมา: <b>ตัวแปร · comparison · if/elif/else · function</b></span></div>
+</section>
+
+<!-- S48 -->
+<section class="scene" data-bg="br" data-role="p7" data-title="เรียกใช้ show_result">
+  <h2 class="title a">เรียกใช้กับนักเรียนหลายคน</h2>
+  <div class="split grow" style="grid-template-columns:1fr 620px;gap:44px;align-items:center">
+    <div class="win a fx-left" data-label="grade.py"><pre class="code xs" data-lang="py">
+<span class="l">def show_result(student_name, score):</span>
+<span class="l">    """รับชื่อและคะแนน แล้วแสดงผลการตัดเกรด"""</span>
+<span class="l hs1 hs2 hs3">    grade = calculate_grade(score)</span>
+<span class="l">    print(f"  {student_name}: {score} คะแนน → เกรด {grade}")</span>
+<span class="l"> </span>
+<span class="l"># เรียกใช้ function กับนักเรียนหลายคน</span>
+<span class="l">print("=== ผลการเรียน ===")</span>
+<span class="l hs1">show_result("Alice",   85)</span>
+<span class="l hs2">show_result("Bob",     72)</span>
+<span class="l hs3">show_result("Charlie", 55)</span>
+<span class="l hs3">show_result("Diana",   40)</span>
+</pre></div>
+    <div class="col" style="gap:20px">
+      <div class="py-stu">
+        <div class="py-sc fx-pop" data-s="1"><div><b>Alice</b><small>85 คะแนน</small></div><span class="g green fx-pop" data-s="1" data-d=".5">A</span></div>
+        <div class="py-sc fx-pop" data-s="2"><div><b>Bob</b><small>72 คะแนน</small></div><span class="g blue fx-pop" data-s="2" data-d=".5">B</span></div>
+        <div class="py-sc fx-pop" data-s="3"><div><b>Charlie</b><small>55 คะแนน</small></div><span class="g orange fx-pop" data-s="3" data-d=".5">D</span></div>
+        <div class="py-sc fx-pop" data-s="3" data-d=".3"><div><b>Diana</b><small>40 คะแนน</small></div><span class="g red fx-pop" data-s="3" data-d=".8">F</span></div>
+      </div>
+      <div class="shell xs" data-s="1" data-label="output"><div class="sbody" style="min-height:210px">
+        <span class="out">=== ผลการเรียน ===</span>
+        <span class="out ok" data-s="1" data-d=".3">  Alice: 85 คะแนน → เกรด A</span>
+        <span class="out ok" data-s="2" data-d=".3">  Bob: 72 คะแนน → เกรด B</span>
+        <span class="out ok" data-s="3" data-d=".3">  Charlie: 55 คะแนน → เกรด D</span>
+        <span class="out ok" data-s="3" data-d=".6">  Diana: 40 คะแนน → เกรด F</span>
+      </div></div>
+    </div>
+  </div>
+  <div class="callout blue" data-s="4"><span class="ico">🔗</span><span>function เรียก function ได้: <span class="mono">show_result()</span> ใช้ <span class="mono">calculate_grade()</span> อยู่ข้างใน</span></div>
+</section>
+
+<!-- S49 -->
+<section class="scene" data-bg="tr" data-role="p7" data-title="รวมทุกอย่าง: ตัดเกรดจาก Input">
+  <div class="py-h"><h2 class="title a">รวมทุกอย่าง: ตัดเกรดจาก Input</h2><span class="py-lab a">🟢 Mini Project</span></div>
+  <div class="split grow" style="grid-template-columns:1fr 600px;gap:40px;align-items:start;margin-top:4px">
+    <div class="win a fx-left" data-label="grade_app.py"><pre class="code xs" data-lang="py" style="font-size:22px">
+<span class="l hs1">def calculate_grade(score):</span>
+<span class="l hs1">    if score &gt;= 80: return 'A'</span>
+<span class="l hs1">    elif score &gt;= 70: return 'B'</span>
+<span class="l hs1">    elif score &gt;= 60: return 'C'</span>
+<span class="l hs1">    elif score &gt;= 50: return 'D'</span>
+<span class="l hs1">    else: return 'F'</span>
+<span class="l hs2">def main():</span>
+<span class="l hs2">    print("=== ระบบตัดเกรด ===")</span>
+<span class="l hs2">    num_students = int(input("จำนวนนักเรียน: "))</span>
+<span class="l hs3 hs4">    for i in range(num_students):</span>
+<span class="l hs3 hs4">        name  = input(f"ชื่อนักเรียนคนที่ {i + 1}: ")</span>
+<span class="l hs3 hs4">        score = int(input(f"คะแนนของ {name}: "))</span>
+<span class="l hs3 hs4">        grade = calculate_grade(score)</span>
+<span class="l hs3 hs4">        print(f"  → {name}: {score} คะแนน เกรด {grade}\n")</span>
+<span class="l hs2">main()</span>
+</pre></div>
+    <div class="col" style="gap:18px">
+      <div class="shell xs" data-s="2" data-label="output"><div class="sbody" style="min-height:330px">
+        <span class="out" data-s="2">=== ระบบตัดเกรด ===</span>
+        <span class="out" data-s="2" data-d=".2">จำนวนนักเรียน: <span class="py-in type" data-s="2" data-d=".4">2</span></span>
+        <span class="out" data-s="3">ชื่อนักเรียนคนที่ 1: <span class="py-in type" data-s="3" data-d=".2">Alice</span></span>
+        <span class="out" data-s="3" data-d=".8">คะแนนของ Alice: <span class="py-in type" data-s="3" data-d="1">85</span></span>
+        <span class="out ok" data-s="3" data-d="1.5">  → Alice: 85 คะแนน เกรด A</span>
+        <span class="out" data-s="4"> </span>
+        <span class="out" data-s="4">ชื่อนักเรียนคนที่ 2: <span class="py-in type" data-s="4" data-d=".2">Bob</span></span>
+        <span class="out" data-s="4" data-d=".8">คะแนนของ Bob: <span class="py-in type" data-s="4" data-d="1">72</span></span>
+        <span class="out ok" data-s="4" data-d="1.5">  → Bob: 72 คะแนน เกรด B</span>
+      </div></div>
+      <div class="py-used" data-s="5"><span class="chip sm">variable</span><span class="chip sm">input() + int()</span><span class="chip sm">function</span><span class="chip sm">if / elif / else</span><span class="chip sm">for + range()</span><span class="chip sm">f-string</span></div>
+      <p class="s" data-s="5" data-d=".3">โปรแกรมเดียว ใช้ครบทุกอย่างที่เรียนมาวันนี้ 🎉</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 08 · WRAP-UP ================= -->
+
+<!-- S50 -->
+<section class="scene" data-bg="tr" data-chapter="08 · Wrap-up" data-role="done" data-title="Summary">
+  <h2 class="title a">สรุป Python 101</h2>
+  <div class="body">
+    <div class="py-sum">
+      <div class="tick" data-s="1"><span class="chk"></span><span class="t"><b>Python คืออะไร</b><small>High-level · Interpreted</small></span><span class="tag">Intro</span></div>
+      <div class="tick" data-s="1"><span class="chk"></span><span class="t"><b>การติดตั้ง</b><small>Python · VS Code · Extensions</small></span><span class="tag">Setup</span></div>
+      <div class="tick" data-s="1"><span class="chk"></span><span class="t"><b>Variable &amp; Data Type</b><small>int float str bool list tuple dict set</small></span><span class="tag blue">Basics</span></div>
+      <div class="tick" data-s="1"><span class="chk"></span><span class="t"><b>Operators</b><small>Arithmetic · Comparison · Logical</small></span><span class="tag blue">Basics</span></div>
+      <div class="tick" data-s="2"><span class="chk"></span><span class="t"><b>Control Structure</b><small>if/elif/else · for · while</small></span><span class="tag purple">Flow</span></div>
+      <div class="tick" data-s="2"><span class="chk"></span><span class="t"><b>Input</b><small>input() · int() float() str()</small></span><span class="tag orange">I/O</span></div>
+      <div class="tick" data-s="2"><span class="chk"></span><span class="t"><b>Function</b><small>def · parameter · return</small></span><span class="tag green">Core</span></div>
+      <div class="py-goal fx-pop" data-s="2" data-d=".6">🎯 ระบบตัดเกรด = ใช้ครบทั้ง 7 ข้อ</div>
+    </div>
+  </div>
+  <div class="callout blue" data-s="3"><span class="ico">🔗</span><span>ทุกหัวข้อต่อกันเป็นโปรแกรมเดียว — วันนี้ใช้ Colab แต่กลับไป<b>ติดตั้ง VS Code</b> ไว้ทำโปรเจกต์จริงด้วย</span></div>
+</section>
+
+<!-- S51 -->
+<section class="scene" data-bg="br" data-role="done" data-title="การบ้าน: BMI แบบ Function">
+  <div class="py-h"><h2 class="title a">การบ้าน: BMI แบบ Function</h2><span class="py-lab a">🟢 ลองต่อที่บ้าน</span></div>
+  <div class="split grow" style="grid-template-columns:1fr 560px;gap:44px;align-items:center">
+    <div class="win a fx-left" data-label="homework.py"><pre class="code xs type" data-lang="py" data-s="1">def check_bmi(weight, height_cm):
+    h = height_cm / 100
+    bmi = weight / (h ** 2)
+    if bmi &lt; 18.5: status = "น้ำหนักน้อย"
+    elif bmi &lt; 25: status = "ปกติ"
+    elif bmi &lt; 30: status = "น้ำหนักเกิน"
+    else: status = "อ้วน"
+    return bmi, status
+
+w = float(input("น้ำหนัก (kg): "))
+h = float(input("ส่วนสูง (cm): "))
+bmi, status = check_bmi(w, h)
+print(f"BMI = {bmi:.1f} → {status}")</pre></div>
+    <div class="col" style="gap:24px">
+      <div class="shell sm" data-s="2" data-label="output"><div class="sbody" style="min-height:160px">
+        <span class="out">น้ำหนัก (kg): <span class="py-in type" data-s="2" data-d=".2">65</span></span>
+        <span class="out" data-s="2" data-d=".7">ส่วนสูง (cm): <span class="py-in type" data-s="2" data-d=".9">170</span></span>
+        <span class="out ok" data-s="2" data-d="1.5">BMI = 22.5 → ปกติ</span>
+      </div></div>
+      <div class="nlist">
+        <div class="tick q" data-s="3"><span class="chk"></span><span class="t" style="font-size:28px">function + return หลายค่า</span></div>
+        <div class="tick q" data-s="3"><span class="chk"></span><span class="t" style="font-size:28px">input() + float()</span></div>
+        <div class="tick q" data-s="3" style="border:0"><span class="chk"></span><span class="t" style="font-size:28px">operators + if / elif / else</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- S52 -->
+<section class="scene" data-bg="hero" data-t="zoom" data-role="done" data-title="Happy Coding!">
+  <div class="body" style="justify-content:flex-start;padding-top:20px">
+    <div class="py-rocket a fx-pop">🚀</div>
+    <h1 class="hero-t"><span class="mask a"><span>Happy Coding!</span></span></h1>
+    <p class="lead a mt" style="font-size:44px">ลงมือเขียนโค้ดจริง ๆ คือการเรียนรู้ที่ดีที่สุด</p>
+    <div class="klbl mt2" data-s="1">Next →</div>
+    <div class="bc">
+      <span class="chip fx-pop" data-s="1">Data Structures</span><span class="sep fx-fade" data-s="1" data-d=".15">›</span>
+      <span class="chip fx-pop" data-s="1" data-d=".25">String Methods</span><span class="sep fx-fade" data-s="1" data-d=".4">›</span>
+      <span class="chip fx-pop" data-s="1" data-d=".5">File I/O</span><span class="sep fx-fade" data-s="1" data-d=".65">›</span>
+      <span class="chip fx-pop" data-s="1" data-d=".75">Error Handling</span><span class="sep fx-fade" data-s="1" data-d=".9">›</span>
+      <span class="chip fx-pop" data-s="1" data-d="1">Modules &amp; Libraries</span><span class="sep fx-fade" data-s="1" data-d="1.15">›</span>
+      <span class="chip blue fx-pop" data-s="1" data-d="1.25">OOP</span>
+    </div>
+  </div>
+  <div class="callout blue" data-s="2"><span class="ico">🔍</span><span>ติดตรงไหนอย่าท้อ — <b>อ่าน error message ให้ดี</b> Python มักบอกเลยว่าผิดบรรทัดไหน ผิดอะไร</span></div>
+</section>
+
+  <div id="hud">
+    <div id="hud-ch"><span></span></div>
+    <div id="roles"></div>
+    <div id="beats"></div>
+    <div id="hud-n"></div>
+    <div id="prog"></div>
+  </div>
+</div>
+
+<div id="ov" class="ovl"><div class="top"><b>ภาพรวมทุกฉาก</b><small>คลิกเพื่อไป · Esc เพื่อปิด</small></div><div id="ov-list"></div></div>
+<div id="help" class="ovl"><div class="box"><h4>ปุ่มลัด</h4><table>
+<tr><td>→ · Space · PgDn · คลิก</td><td>จังหวะถัดไป</td></tr>
+<tr><td>← · PgUp</td><td>ย้อนหนึ่งจังหวะ</td></tr>
+<tr><td>↓ / ↑</td><td>ข้ามทั้งฉาก ไปถัดไป / ก่อนหน้า</td></tr>
+<tr><td>Home / End</td><td>ฉากแรก / ฉากสุดท้าย</td></tr>
+<tr><td>O · Esc</td><td>ภาพรวมทุกฉาก</td></tr>
+<tr><td>ตัวเลข + Enter</td><td>ไปฉากนั้น</td></tr>
+<tr><td>F</td><td>เต็มจอ</td></tr>
+<tr><td>B</td><td>พักจอ (ขาว)</td></tr>
+<tr><td>P</td><td>พิมพ์ / บันทึก PDF</td></tr>
+<tr><td>?</td><td>เปิด/ปิดหน้านี้</td></tr>
+</table></div></div>
+<div id="blank"></div>
+<div id="toast">กด <kbd>→</kbd> เพื่อไปต่อ · <kbd>O</kbd> ภาพรวม · <kbd>?</kbd> ปุ่มลัด</div>
+
+<script>window.DECK={"tracker": [["p1", "1", "Intro"], ["p2", "2", "Setup"], ["p3", "3", "Data"], ["p4", "4", "Ops"], ["p5", "5", "Flow"], ["p6", "6", "Input"], ["p7", "7", "Func"]]}</script>
+<script>
+(()=>{
+const stage=document.getElementById('stage');
+const bg=document.getElementById('bg');
+const scenes=[...stage.querySelectorAll('.scene')];
+const $=id=>document.getElementById(id);
+const hudCh=$('hud-ch'),beatsEl=$('beats'),hudN=$('hud-n'),prog=$('prog'),roles=$('roles');
+const ICON_FILE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>';
+const ICON_DIR='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>';
+const ICON_CHK='<svg viewBox="0 0 24 24"><path pathLength="1" d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+/* tracker: window.DECK = {tracker:[['ba','BA','requirements'],...]} ; scenes use data-role="<key>" or "done" */
+const TR=((window.DECK||{}).tracker)||[];
+roles.innerHTML=TR.map((t,k)=>(k?'<div class="ln"></div>':'')+`<div class="r" data-r="${t[0]}"><i></i><b>${t[1]}</b><small>${t[2]||''}</small></div>`).join('');
+const seg=(window.Intl&&Intl.Segmenter)?new Intl.Segmenter('th',{granularity:'grapheme'}):null;
+
+/* background presets: orb x,y,scale · ring x,y,scale · dot x,y,scale */
+const P={
+  hero:[1560,430,1.0, 1560,430,1.28, 1090,170,1],
+  tr:[1790,70,.52, 1790,70,.76, 1540,200,.6],
+  br:[1810,1010,.58, 1810,1010,.84, 1500,1010,.55],
+  bl:[70,1050,.5, 70,1050,.74, 390,1010,.55],
+  tl:[90,40,.36, 90,40,.56, 330,90,.45],
+  r:[1720,560,.82, 1720,560,1.04, 1230,250,.7],
+  center:[960,640,.62, 960,640,.84, 960,300,0],
+  low:[960,1560,1.25, 960,1560,1.45, 960,880,.6],
+  flood:[960,540,2.6, 960,540,3.3, 960,540,0]
+};
+const CYCLE=['tr','br','bl','tr','low','br','tl'];
+
+
+/* ---------- tiny syntax highlighter: <pre class="code" data-lang="py|sh|yaml|docker|js|txt"> and .shell .cmd ---------- */
+const LANG={
+  py:[[/#.*$/,'c'],[/(f|r|b)?("""[\s\S]*?"""|'[^'\n]*'|"[^"\n]*")/,'s'],[/\b(def|return|if|elif|else|for|while|in|not|and|or|import|from|as|class|True|False|None|try|except|with|lambda|break|continue|pass|is|del|global|yield|raise)\b/,'k'],[/\b(print|input|int|float|str|bool|len|range|list|dict|set|tuple|type|round|sum|min|max|sorted|enumerate|zip|open)\b(?=\()/,'b'],[/\b[A-Za-z_]\w*(?=\()/,'f'],[/\b\d+(\.\d+)?\b/,'n']],
+  sh:[[/#.*$/,'c'],[/("[^"\n]*"|'[^'\n]*')/,'s'],[/(^|\s)(--?[\w-]+)(=\S+)?/,'flag'],[/\b(docker|kubectl|compose|helm|curl|cd|ls|cat|grep|sudo|echo|git|python3?|pip)\b/,'k'],[/\b\d+(\.\d+)*\b/,'n']],
+  yaml:[[/#.*$/,'c'],[/^(\s*-?\s*)([\w.\-\/]+)(?=:)/,'key'],[/("[^"\n]*"|'[^'\n]*')/,'s'],[/\b(true|false|null)\b/,'k'],[/\b\d+(\.\d+)?[a-zA-Z]*\b/,'n']],
+  docker:[[/#.*$/,'c'],[/^(\s*)(FROM|RUN|COPY|ADD|WORKDIR|ENV|EXPOSE|CMD|ENTRYPOINT|ARG|USER|VOLUME|LABEL|HEALTHCHECK)\b/,'kw2'],[/("[^"\n]*"|'[^'\n]*')/,'s'],[/\b\d+(\.\d+)*\b/,'n']],
+  js:[[/\/\/.*$/,'c'],[/("[^"\n]*"|'[^'\n]*'|`[^`]*`)/,'s'],[/\b(const|let|var|function|return|if|else|for|while|new|true|false|null|await|async|import|from|export)\b/,'k'],[/\b[A-Za-z_]\w*(?=\()/,'f'],[/\b\d+(\.\d+)?\b/,'n']]
+};
+function hlText(text,rules){
+  // tokenize one line at a time
+  return text.split('\n').map(line=>{
+    let out='',rest=line,guard=0;
+    while(rest.length&&guard++<400){
+      let best=null;
+      rules.forEach(([re,cls])=>{const m=new RegExp(re.source,re.flags.replace('g','')+'m').exec(rest);if(m&&(best===null||m.index<best.m.index))best={m,cls}});
+      if(!best){out+=esc(rest);break}
+      const {m,cls}=best; let pre=rest.slice(0,m.index), tok=m[0], lead='';
+      // rules with a leading group (flags, yaml keys, docker instr): keep group1 unstyled
+      if((cls==='flag'||cls==='key'||cls==='kw2')&&m[1]!==undefined&&m[2]!==undefined){lead=m[1];tok=m[2];const tail=m[0].slice(m[1].length+m[2].length);out+=esc(pre)+esc(lead)+`<span class="tk-${cls}">${esc(tok)}</span>`+esc(tail);rest=rest.slice(m.index+m[0].length);continue}
+      if(!tok.length){out+=esc(rest[0]);rest=rest.slice(1);continue}
+      out+=esc(pre)+`<span class="tk-${cls}">${esc(tok)}</span>`; rest=rest.slice(m.index+tok.length);
+    }
+    return out;
+  }).join('\n');
+}
+function esc(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function highlight(el,lang){
+  const rules=LANG[lang]; if(!rules)return;
+  const walk=n=>{[...n.childNodes].forEach(c=>{
+    if(c.nodeType===3){ if(!c.textContent.trim())return; const w=document.createElement('span'); w.innerHTML=hlText(c.textContent,rules); c.replaceWith(...w.childNodes); }
+    else if(c.nodeType===1&&!/^tk-/.test(c.className)) walk(c);
+  })};
+  walk(el);
+}
+// drop whitespace-only text nodes between block lines (.l / .cmd / .out)
+stage.querySelectorAll('pre.code,.shell .sbody').forEach(p=>{ if(p.querySelector(':scope>.l,:scope>.cmd,:scope>.out')) [...p.childNodes].forEach(n=>{ if(n.nodeType===3&&!n.textContent.trim()) n.remove(); }); });
+stage.querySelectorAll('pre.code[data-lang]').forEach(p=>highlight(p,p.dataset.lang));
+stage.querySelectorAll('.shell .cmd').forEach(c=>highlight(c,'sh'));
+stage.querySelectorAll('.shell').forEach(w=>{ if(!w.querySelector('.sbar')) w.insertAdjacentHTML('afterbegin',`<div class="sbar"><i></i><i></i><i></i><span>${w.dataset.label||'TERMINAL'}</span></div>`); });
+
+/* ---------- init ---------- */
+let chapter='';
+scenes.forEach((sc,i)=>{
+  if(sc.dataset.chapter) chapter=sc.dataset.chapter;
+  sc._ch=chapter;
+  sc.querySelectorAll('.file').forEach(f=>{ if(!f.querySelector('svg')) f.insertAdjacentHTML('afterbegin', f.classList.contains('dir')?ICON_DIR:ICON_FILE); });
+  sc.querySelectorAll('.chk').forEach(c=>{ if(!c.innerHTML.trim()) c.innerHTML=ICON_CHK; });
+  sc.querySelectorAll('.win').forEach(w=>{
+    if(!w.querySelector('.wbar')){ const isCode=!!w.querySelector('pre.code'); w.insertAdjacentHTML('afterbegin',`<div class="wbar"><i></i><i></i><i></i><span>${w.dataset.label||(isCode?'code':'CLAUDE COWORK')}</span><span style="flex:1"></span>${isCode?'':'<span class="send">↑</span>'}</div>`);}
+  });
+  sc.querySelectorAll('.type').forEach(prepType);
+  sc._els=[...sc.querySelectorAll('.a,[data-s],.mask')];
+  sc._els.forEach(el=>{el._s=+(el.dataset.s||0)});
+  sc._max=Math.max(0,...sc._els.map(e=>e._s));
+  sc._bg=sc.dataset.bg||(sc.classList.contains('divider')?'flood':CYCLE[i%CYCLE.length]);
+});
+
+function prepType(el){
+  const walk=node=>{
+    [...node.childNodes].forEach(n=>{
+      if(n.nodeType===3){
+        const frag=document.createDocumentFragment();
+        const parts=seg?[...seg.segment(n.textContent)].map(x=>x.segment):[...n.textContent];
+        parts.forEach(ch=>{const s=document.createElement('span');s.className='ch';s.textContent=ch;frag.appendChild(s)});
+        n.replaceWith(frag);
+      } else if(n.nodeType===1) walk(n);
+    });
+  };
+  walk(el);
+  el._chars=[...el.querySelectorAll('.ch')];
+}
+
+/* ---------- typing & counters ---------- */
+function typeStart(el,delay,instant){
+  typeStop(el);
+  const chars=el._chars, win=el.closest('.win');
+  if(instant){chars.forEach(c=>c.classList.add('v'));markCur(el,chars.length);win&&win.classList.add('sent');return}
+  chars.forEach(c=>c.classList.remove('v','cur'));win&&win.classList.remove('sent');
+  const per=Math.max(12,Math.min(38,2000/chars.length));
+  const t0=performance.now()+delay*1000+120;
+  el._typing=true;
+  const tick=now=>{
+    const n=Math.max(0,Math.min(chars.length,Math.floor((now-t0)/per)));
+    for(let k=0;k<n;k++) chars[k].classList.add('v');
+    markCur(el,n);
+    if(n<chars.length){el._raf=requestAnimationFrame(tick)} else {el._typing=false;win&&win.classList.add('sent')}
+  };
+  el._raf=requestAnimationFrame(tick);
+}
+function markCur(el,n){ el._chars.forEach(c=>c.classList.remove('cur')); const c=el._chars[Math.max(0,n-1)]; if(c&&n>0)c.classList.add('cur'); }
+function typeStop(el){ cancelAnimationFrame(el._raf); el._typing=false; }
+function typeReset(el){ typeStop(el); el._chars.forEach(c=>c.classList.remove('v','cur')); const w=el.closest('.win'); w&&w.classList.remove('sent'); }
+function typeFinish(el){ typeStart(el,0,true); }
+
+function countStart(el,delay,instant){
+  cancelAnimationFrame(el._raf);
+  const to=+el.dataset.to, from=+(el.dataset.from||0), suf=el.dataset.suffix||'', dur=+(el.dataset.dur||1.6)*1000;
+  if(instant){el.textContent=to+suf;return}
+  const t0=performance.now()+delay*1000;
+  const tick=now=>{const p=Math.max(0,Math.min(1,(now-t0)/dur)),e=1-Math.pow(1-p,3);el.textContent=Math.round(from+(to-from)*e)+suf;if(p<1)el._raf=requestAnimationFrame(tick)};
+  el._raf=requestAnimationFrame(tick);
+}
+
+/* ---------- step rendering ---------- */
+function setStep(sc,s,{animate=true,entering=false}={}){
+  const groups={};
+  sc._els.forEach(el=>{
+    const want=el._s<=s, has=el.classList.contains('on');
+    if(want&&!has){
+      const gi=groups[el._s]=(groups[el._s]||0); groups[el._s]++;
+      const d=animate?((entering?.3:0)+gi*.075+(+el.dataset.d||0)):0;
+      el.style.setProperty('--delay',d.toFixed(3)+'s');
+      el.classList.add('on');
+      if(el._chars) typeStart(el,d,!animate);
+      if(el.dataset.to!==undefined) countStart(el,d,!animate);
+    } else if(!want&&has){
+      el.style.setProperty('--delay','0s');
+      el.classList.remove('on');
+      if(el._chars) typeReset(el);
+      if(el.dataset.to!==undefined){cancelAnimationFrame(el._raf);el.textContent=(el.dataset.from||0)+(el.dataset.suffix||'')}
+    }
+  });
+  sc.dataset.step=s;
+}
+function resetScene(sc){
+  sc.classList.add('snap');
+  sc._els.forEach(el=>{el.classList.remove('on');if(el._chars)typeReset(el);if(el.dataset.to!==undefined){cancelAnimationFrame(el._raf);el.textContent=(el.dataset.from||0)+(el.dataset.suffix||'')}});
+  sc.dataset.step=-1; void sc.offsetWidth; sc.classList.remove('snap');
+}
+
+/* ---------- navigation ---------- */
+let cur=-1, step=0;
+function go(i,s,dir){
+  i=Math.max(0,Math.min(scenes.length-1,i));
+  const nx=scenes[i];
+  if(i!==cur){
+    const pv=scenes[cur];
+    if(pv){
+      pv.style.setProperty('--dir',dir);
+      pv.classList.remove('active'); pv.classList.add('leaving');
+      clearTimeout(pv._t);
+      pv._t=setTimeout(()=>{pv.classList.remove('leaving'); if(!pv.classList.contains('active')) resetScene(pv)},700);
+    }
+    clearTimeout(nx._t); nx.classList.remove('leaving');
+    resetScene(nx);
+    nx.style.setProperty('--dir',dir);
+    nx.classList.add('snap','enter','active'); void nx.offsetWidth; nx.classList.remove('snap','enter');
+    cur=i; step=s;
+    setStep(nx,s,{animate:true,entering:!!pv||true});
+    applyScene(nx,i);
+  } else { step=s; setStep(nx,s,{animate:true}); }
+  hud();
+}
+function busyType(){ const sc=scenes[cur]; return sc._els.filter(e=>e._chars&&e._typing); }
+function next(){
+  const t=busyType(); if(t.length){t.forEach(typeFinish);return}
+  const sc=scenes[cur];
+  if(step<sc._max){step++;setStep(sc,step);hud()}
+  else if(cur<scenes.length-1) go(cur+1,0,1);
+}
+function prev(){
+  const sc=scenes[cur];
+  if(step>0){step--;setStep(sc,step,{animate:false});hud()}
+  else if(cur>0) go(cur-1,scenes[cur-1]._max,-1);
+}
+
+function applyScene(sc,i){
+  const p=P[sc._bg]||P.tr, v=['ox','oy','os','rx','ry','rs','dx','dy','ds'];
+  v.forEach((k,j)=>bg.style.setProperty('--'+k, j%3===2?p[j]:p[j]+'px'));
+  bg.style.setProperty('--gx',(-(i*26)%520)+'px');
+  const dark=sc.classList.contains('divider');
+  bg.classList.toggle('flood',dark); stage.classList.toggle('dark',dark);
+  // chapter label
+  const txt=sc._ch;
+  if(hudCh._txt!==txt){
+    const old=hudCh.querySelector('span:not(.out)');
+    const n=document.createElement('span'); n.textContent=txt; n.className='in'; hudCh.appendChild(n);
+    if(old){old.classList.add('out');setTimeout(()=>old.remove(),700)}
+    requestAnimationFrame(()=>requestAnimationFrame(()=>n.classList.remove('in')));
+    hudCh._txt=txt;
+  }
+  // role tracker
+  const r=sc.dataset.role, order=TR.map(t=>t[0]);
+  roles.classList.toggle('show',!!r);
+  if(r){
+    const ix=r==='done'?order.length:order.indexOf(r);
+    roles.querySelectorAll('.r').forEach((el,k)=>{el.classList.toggle('done',k<ix);el.classList.toggle('cur',k===ix)});
+    roles.querySelectorAll('.ln').forEach((el,k)=>el.classList.toggle('done',k<ix));
+  }
+}
+function hud(){
+  const sc=scenes[cur];
+  hudN.textContent=String(cur+1).padStart(2,'0')+' / '+scenes.length;
+  prog.style.width=((cur+ (sc._max?step/sc._max:1)*.999)/scenes.length*100)+'%';
+  let h='';for(let k=1;k<=sc._max;k++)h+=`<i class="${k<=step?'on':''}${k===step?' now':''}"></i>`;
+  beatsEl.innerHTML=h;
+  try{history.replaceState(null,'','#'+(cur+1)+(step?'.'+step:''))}catch(e){}
+  if(ov.classList.contains('show')) buildOv();
+}
+
+/* ---------- scaling ---------- */
+function fit(){stage.style.setProperty('--k',Math.min(innerWidth/1920,innerHeight/1080))}
+addEventListener('resize',fit);fit();
+
+/* ---------- overlays ---------- */
+const ov=$('ov'),help=$('help'),blank=$('blank');
+function titleOf(sc){return sc.dataset.title||(sc.querySelector('.title,h1')||{}).textContent||''}
+function buildOv(){
+  let html='',ch=null;
+  scenes.forEach((sc,i)=>{
+    if(sc._ch!==ch){ if(ch!==null)html+='</div>'; ch=sc._ch; html+=`<h4>${ch}</h4><div class="grid">`; }
+    html+=`<button data-i="${i}" class="${i===cur?'cur':''}"><span>${String(i+1).padStart(2,'0')}</span>${titleOf(sc).replace(/\s+/g,' ').trim()}</button>`;
+  });
+  $('ov-list').innerHTML=html+'</div>';
+}
+$('ov-list').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const i=+b.dataset.i;ov.classList.remove('show');go(i,0,i>=cur?1:-1)});
+function toggle(el,force){const on=force!==undefined?force:!el.classList.contains('show');el.classList.toggle('show',on);if(el===ov&&on){buildOv();const c=ov.querySelector('.cur');c&&c.scrollIntoView({block:'center'})}}
+
+/* ---------- input ---------- */
+let num='';
+addEventListener('keydown',e=>{
+  if(e.metaKey||e.ctrlKey||e.altKey)return;
+  const k=e.key;
+  if(ov.classList.contains('show')||help.classList.contains('show')){ if(k==='Escape'||k==='o'||k==='O'||k==='?'){toggle(ov,false);toggle(help,false);e.preventDefault()} return; }
+  if(/^[0-9]$/.test(k)){num+=k;return}
+  if(k==='Enter'&&num){const n=+num;num='';go(n-1,0,n-1>=cur?1:-1);e.preventDefault();return}
+  num='';
+  switch(k){
+    case 'ArrowRight':case ' ':case 'PageDown':case 'Enter':e.preventDefault();next();break;
+    case 'ArrowLeft':case 'PageUp':case 'Backspace':e.preventDefault();prev();break;
+    case 'ArrowDown':e.preventDefault();if(cur<scenes.length-1)go(cur+1,0,1);break;
+    case 'ArrowUp':e.preventDefault();if(cur>0)go(cur-1,scenes[cur-1]._max,-1);break;
+    case 'Home':go(0,0,-1);break;
+    case 'End':go(scenes.length-1,0,1);break;
+    case 'o':case 'O':case 'Escape':toggle(ov);break;
+    case '?':case '/':toggle(help);break;
+    case 'f':case 'F':document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();break;
+    case 'b':case 'B':blank.classList.toggle('show');break;
+    case 'p':case 'P':window.print();break;
+  }
+});
+stage.addEventListener('click',e=>{ if(getSelection().toString())return; const r=stage.getBoundingClientRect(); (e.clientX-r.left)<r.width*.2?prev():next(); });
+blank.addEventListener('click',()=>blank.classList.remove('show'));
+let tx=null;
+addEventListener('touchstart',e=>{tx=e.touches[0].clientX},{passive:true});
+addEventListener('touchend',e=>{if(tx===null)return;const dx=e.changedTouches[0].clientX-tx;if(Math.abs(dx)>50)(dx<0?next:prev)();tx=null});
+
+/* print: show everything fully built */
+addEventListener('beforeprint',()=>scenes.forEach(sc=>{sc.classList.add('snap');setStep(sc,sc._max,{animate:false})}));
+addEventListener('afterprint',()=>scenes.forEach((sc,i)=>{sc.classList.remove('snap');if(i!==cur)resetScene(sc);else setStep(sc,step,{animate:false})}));
+
+/* ---------- start ---------- */
+const m=location.hash.match(/^#(\d+)(?:\.(\d+))?/);
+const si=m?Math.min(scenes.length,+m[1])-1:0, ss=m&&m[2]?Math.min(+m[2],scenes[si]._max):0;
+go(si,0,1); if(ss){step=ss;setStep(scenes[si],ss,{animate:false});hud()}
+const toast=$('toast');setTimeout(()=>toast.classList.add('show'),900);setTimeout(()=>toast.classList.remove('show'),5200);
+window.__deck={go,next,prev,scenes,get cur(){return cur},get step(){return step}};
+})();
+</script>
+</body>
+</html>

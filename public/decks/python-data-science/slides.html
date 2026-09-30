@@ -1,0 +1,2292 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Science with Python · คาบที่ 2 · Motion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#191919;--ink2:#37352f;--muted:#787774;--faint:#b9b8b4;--line:#e6e6e3;--soft:#f6f6f4;--bg:#fff;
+  --blue:#2383e2;--blue-d:#0b6bcb;--blue-bg:#e3effb;--blue-bg2:#f1f7fd;--blue-line:#bcd8f4;
+  --orange:#d9730d;--orange-bg:#fbecdd;--green:#0f7b6c;--green-bg:#ddedea;--red:#e03e3e;--red-bg:#fbe4e4;--purple:#6940a5;--purple-bg:#eae4f2;
+  --ease:cubic-bezier(.22,1,.36,1);--ease-io:cubic-bezier(.76,0,.24,1);--spring:cubic-bezier(.34,1.56,.64,1);
+  --sans:'IBM Plex Sans Thai','Sukhumvit Set','Thonburi',sans-serif;--mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#efefec}
+body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased;cursor:default}
+#stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;margin:-540px 0 0 -960px;transform:scale(var(--k,1));background:#fff;overflow:hidden;box-shadow:0 10px 60px rgba(0,0,0,.06)}
+h1,h2,h3,p{margin:0}
+
+/* ---------- background layer ---------- */
+#bg{position:absolute;inset:0;pointer-events:none}
+#bg .grid{position:absolute;top:0;bottom:0;left:-480px;right:-480px;background-image:radial-gradient(#dcdcd8 1.5px,transparent 1.7px);background-size:40px 40px;opacity:.5;transform:translateX(var(--gx,0px));transition:transform 1.4s var(--ease-io),opacity .8s}
+#bg .orb,#bg .ring,#bg .dot{position:absolute;left:0;top:0;border-radius:50%;will-change:transform}
+#bg .orb{width:1000px;height:1000px;margin:-500px 0 0 -500px;background:var(--blue-bg2);transform:translate(var(--ox),var(--oy)) scale(var(--os));transition:transform 1.25s var(--ease-io),background-color .9s var(--ease-io)}
+#bg .ring{width:1000px;height:1000px;margin:-500px 0 0 -500px;border:2px solid #d7e7f8;transform:translate(var(--rx),var(--ry)) scale(var(--rs));transition:transform 1.45s var(--ease-io),border-color .9s,opacity .6s}
+#bg .dot{width:36px;height:36px;margin:-18px 0 0 -18px;background:var(--blue);transform:translate(var(--dx),var(--dy)) scale(var(--ds));transition:transform 1.1s var(--spring)}
+#bg.flood .orb{background:var(--blue)}
+#bg.flood .ring{border-color:rgba(255,255,255,.25)}
+#bg.flood .grid{opacity:0}
+
+/* ---------- scenes ---------- */
+.scene{position:absolute;inset:0;padding:132px 150px 118px;display:flex;flex-direction:column;visibility:hidden}
+.scene.active,.scene.leaving{visibility:visible}
+.scene.active{transition:transform 1s var(--ease)}
+.scene.leaving{opacity:0;transform:translateX(calc(var(--dir,1) * -90px));filter:blur(5px);transition:opacity .5s var(--ease),transform .65s var(--ease),filter .5s}
+.scene[data-t=zoom].leaving{transform:scale(1.07)}
+.scene[data-t=zoom].enter{transform:scale(.93)}
+.scene.enter{transform:translateX(calc(var(--dir,1) * 50px))}
+.scene.snap,.scene.snap *{transition:none!important}
+
+/* animated element base */
+.a,[data-s]{opacity:0;transform:var(--from,translateY(38px));transition:opacity .6s var(--ease) var(--delay,0s),transform .95s var(--ease) var(--delay,0s),clip-path 1s var(--ease) var(--delay,0s),filter .6s var(--ease) var(--delay,0s)}
+.on{opacity:1;transform:none}
+.fx-left{--from:translateX(-70px)}
+.fx-right{--from:translateX(70px)}
+.fx-down{--from:translateY(-40px)}
+.fx-fade{--from:none}
+.fx-zoom{--from:scale(1.12);filter:blur(6px)}
+.fx-zoom.on{filter:none}
+.fx-pop{--from:scale(.55);transition:opacity .4s var(--ease) var(--delay,0s),transform .75s var(--spring) var(--delay,0s)}
+.fx-grow{--from:scaleX(0);transform-origin:left center;transition:opacity .3s var(--ease) var(--delay,0s),transform .7s var(--ease-io) var(--delay,0s)}
+.fx-growy{--from:scaleY(0);transform-origin:center bottom;transition:opacity .3s var(--ease) var(--delay,0s),transform .9s var(--ease) var(--delay,0s)}
+.fx-wipe{opacity:1;transform:none;clip-path:inset(0 100% 0 0)}
+.fx-wipe.on{clip-path:inset(0 0 0 0)}
+.st{opacity:1;transform:none}
+.mask{display:block;overflow:hidden;padding:.14em 0 .1em;margin:-.14em 0 -.1em;opacity:1;transform:none}
+.mask>span{display:block;transform:translateY(110%);transition:transform 1.1s var(--ease) var(--delay,0s)}
+.mask.on>span{transform:none}
+svg .draw{opacity:1;transform:none;stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset 1.1s var(--ease-io) var(--delay,0s)}
+svg .draw.on{stroke-dashoffset:0}
+
+/* ---------- typography ---------- */
+.eyebrow{font-family:var(--mono);font-size:21px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:22px}
+.title{font-size:70px;font-weight:600;line-height:1.22;letter-spacing:-.015em;margin-bottom:18px}
+.lead{font-size:34px;line-height:1.5;color:var(--muted);font-weight:300}
+.t{font-size:32px;line-height:1.55;color:var(--ink2)}
+.s{font-size:26px;line-height:1.5;color:var(--muted)}
+.mono{font-family:var(--mono)}
+b,strong{font-weight:600;color:var(--ink)}
+.blue{color:var(--blue)}.green{color:var(--green)}.orange{color:var(--orange)}.red{color:var(--red)}.purple{color:var(--purple)}.muted{color:var(--muted)}
+.mt{margin-top:28px}.mt2{margin-top:48px}.mb{margin-bottom:28px}
+.grow{flex:1;min-height:0}
+.center-x{text-align:center;align-items:center}
+
+/* ---------- layout ---------- */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:40px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:32px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:28px}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center}
+.col{display:flex;flex-direction:column}
+.row{display:flex;align-items:center;gap:20px}
+.body{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center}
+
+/* ---------- components ---------- */
+.card{background:#fff;border:2px solid var(--line);border-radius:24px;padding:36px 40px}
+.card h3{font-size:38px;font-weight:600;line-height:1.3;margin-bottom:10px}
+.card .k{font-family:var(--mono);font-size:20px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;display:block}
+.card.blue{border-color:var(--blue-line);background:var(--blue-bg2)}
+.card.soft{background:var(--soft);border-color:transparent}
+.card.dash{border-style:dashed}
+.card .t+.t{margin-top:8px}
+
+.callout{margin-top:auto;display:flex;gap:22px;align-items:center;padding:24px 34px;border-radius:18px;background:var(--soft);font-size:30px;line-height:1.5;color:var(--ink2)}
+.callout .ico{font-size:38px;flex:none;line-height:1}
+.callout.blue{background:var(--blue-bg);color:#0b5ea8}
+.callout.orange{background:var(--orange-bg);color:#9b4a00}
+.callout.green{background:var(--green-bg);color:#0b665a}
+.callout.red{background:var(--red-bg);color:#a82929}
+.callout b{color:inherit}
+
+.chip{display:inline-flex;align-items:center;gap:12px;padding:16px 32px;border-radius:999px;border:2px solid var(--line);font-size:34px;font-weight:500;background:#fff;white-space:nowrap}
+.chip.blue{background:var(--blue);border-color:var(--blue);color:#fff}
+.chip.sm{font-size:24px;padding:8px 20px}
+.tag{display:inline-block;font-family:var(--mono);font-size:20px;font-weight:500;padding:5px 14px;border-radius:8px;background:var(--soft);color:var(--muted);letter-spacing:.04em;white-space:nowrap}
+.tag.blue{background:var(--blue-bg);color:var(--blue-d)}.tag.green{background:var(--green-bg);color:var(--green)}.tag.red{background:var(--red-bg);color:var(--red)}.tag.orange{background:var(--orange-bg);color:var(--orange)}.tag.purple{background:var(--purple-bg);color:var(--purple)}
+
+.nrow{display:grid;grid-template-columns:120px 1fr;align-items:baseline;padding:22px 0;border-bottom:2px solid var(--line)}
+.nrow .n{font-family:var(--mono);font-size:30px;font-weight:500;color:var(--blue)}
+.nrow b{font-size:36px;margin-right:14px}
+.nrow .t{font-size:32px}
+.nlist{display:flex;flex-direction:column}
+
+.kv{display:grid;grid-template-columns:300px 1fr;align-items:baseline;padding:20px 0;border-bottom:2px solid var(--line)}
+.kv>b{font-size:34px}.kv>span{font-size:32px;color:var(--ink2)}
+
+/* check rows */
+.tick{display:grid;grid-template-columns:80px 1fr;align-items:center;padding:22px 0;border-bottom:2px solid var(--line)}
+.chk{width:48px;height:48px;border-radius:12px;border:3px solid var(--faint);display:grid;place-items:center;transition:background-color .35s var(--ease) calc(var(--delay,0s) + .45s),border-color .35s calc(var(--delay,0s) + .45s)}
+.chk svg{width:30px;height:30px}
+.chk path{fill:none;stroke:#fff;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset .45s var(--ease) calc(var(--delay,0s) + .6s)}
+.tick.on .chk{background:var(--green);border-color:var(--green)}
+.tick.on .chk path{stroke-dashoffset:0}
+.tick .t{font-size:34px}
+.tick.q .chk{border-radius:50%}
+
+/* window (Cowork prompt) */
+.win{background:#fff;border:2px solid var(--line);border-radius:24px;box-shadow:0 34px 80px -40px rgba(18,52,96,.35);overflow:hidden;display:flex;flex-direction:column}
+.win .wbar{display:flex;align-items:center;gap:10px;padding:16px 26px;border-bottom:2px solid var(--line);background:var(--soft);font-family:var(--mono);font-size:19px;color:var(--muted);letter-spacing:.06em}
+.win .wbar i{width:14px;height:14px;border-radius:50%;background:#dededa;display:block}
+.win .wbar i:nth-child(1){background:#f3b1ab}.win .wbar i:nth-child(2){background:#f5d38f}.win .wbar i:nth-child(3){background:#a8d9b4}
+.win .wbar span{margin-left:14px}
+.win .wbody{padding:30px 38px;font-size:32px;line-height:1.62;white-space:pre-wrap;color:var(--ink)}
+.win .wfoot{display:flex;justify-content:flex-end;align-items:center;gap:14px;padding:0 26px 22px;font-family:var(--mono);font-size:18px;color:var(--faint)}
+.win .send{width:52px;height:52px;border-radius:50%;background:var(--line);display:grid;place-items:center;color:#fff;font-size:26px;transition:background-color .4s}
+.win.sent .send{background:var(--blue)}
+.fill{color:var(--blue);background:var(--blue-bg);border-radius:8px;padding:0 .2em}
+.ch{visibility:hidden}
+.ch.v{visibility:visible}
+.ch.cur{position:relative}
+.ch.cur::after{content:"";position:absolute;right:-5px;top:.18em;bottom:.12em;width:3px;border-radius:2px;background:var(--blue);animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+
+/* file chip */
+.file{display:inline-flex;align-items:center;gap:14px;padding:14px 24px 14px 18px;border-radius:14px;border:2px solid var(--line);font-family:var(--mono);font-size:26px;background:#fff;white-space:nowrap;position:relative}
+.file svg{width:30px;height:30px;flex:none}
+.file.ghost{border-style:dashed;color:var(--faint);background:transparent}
+.file.new{border-color:var(--green);color:var(--ink)}
+.file.new::after{content:"";position:absolute;inset:-2px;border-radius:14px;border:3px solid var(--green);opacity:0}
+.file.new.on::after{animation:ping 1.2s var(--ease) calc(var(--delay,0s) + .3s) 2}
+.file .nb{font-family:var(--sans);font-size:18px;font-weight:600;color:#fff;background:var(--green);border-radius:999px;padding:2px 12px;margin-left:4px}
+@keyframes ping{0%{opacity:.9;transform:scale(1)}100%{opacity:0;transform:scale(1.25)}}
+
+/* flow */
+.flow{display:flex;align-items:center;flex-wrap:nowrap}
+.node{padding:18px 30px;border:2px solid var(--line);border-radius:18px;font-size:32px;font-weight:500;background:#fff;white-space:nowrap}
+.node.blue{border-color:var(--blue);background:var(--blue);color:#fff}
+.node.lb{border-color:var(--blue-line);background:var(--blue-bg2);color:var(--blue-d)}
+.arr{width:64px;height:3px;background:var(--faint);position:relative;margin:0 6px;flex:none}
+.arr::after{content:"";position:absolute;right:-2px;top:50%;width:14px;height:14px;border-top:3px solid var(--faint);border-right:3px solid var(--faint);transform:translateY(-50%) rotate(45deg)}
+.arr.blue{background:var(--blue)}.arr.blue::after{border-color:var(--blue)}
+
+/* role badge */
+.role{display:flex;flex-direction:column;align-items:flex-start;gap:18px}
+.role .rb{width:150px;height:150px;border-radius:50%;background:var(--blue);color:#fff;display:grid;place-items:center;font-family:var(--mono);font-size:46px;font-weight:600;box-shadow:0 0 0 14px var(--blue-bg)}
+.role .rn{font-family:var(--mono);font-size:22px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+
+/* divider scenes */
+.scene.divider{justify-content:center;color:#fff;padding-left:170px}
+.divider .num{font-family:var(--mono);font-size:30px;font-weight:500;letter-spacing:.2em;color:rgba(255,255,255,.7);margin-bottom:34px}
+.divider h1{font-size:128px;font-weight:600;line-height:1.08;letter-spacing:-.025em}
+.divider .lead{color:rgba(255,255,255,.78);margin-top:34px;font-size:38px}
+.divider .bignum{position:absolute;right:130px;bottom:40px;font-family:var(--mono);font-size:420px;font-weight:600;line-height:1;color:rgba(255,255,255,.12);letter-spacing:-.04em}
+
+/* ---------- HUD ---------- */
+#hud{position:absolute;inset:0;pointer-events:none;z-index:5}
+#hud-ch{position:absolute;left:150px;top:54px;height:30px;overflow:hidden;font-family:var(--mono);font-size:20px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);transition:color .6s}
+#hud-ch span{display:block;height:30px;line-height:30px;transition:transform .7s var(--ease),opacity .5s}
+#hud-ch span.out{transform:translateY(-100%);opacity:0}
+#hud-ch span.in{transform:translateY(100%);opacity:0}
+#prog{position:absolute;left:0;bottom:0;height:6px;background:var(--blue);width:0;transition:width .9s var(--ease),background-color .6s}
+#beats{position:absolute;left:150px;bottom:46px;display:flex;gap:10px}
+#beats i{width:11px;height:11px;border-radius:50%;background:#e1e1dd;transition:background-color .35s,transform .35s var(--spring)}
+#beats i.on{background:var(--blue)}
+#beats i.now{transform:scale(1.35)}
+#hud-n{position:absolute;right:150px;bottom:40px;font-family:var(--mono);font-size:20px;color:var(--faint);letter-spacing:.08em;transition:color .6s}
+#stage.dark #hud-ch,#stage.dark #hud-n{color:rgba(255,255,255,.7)}
+#stage.dark #beats i{background:rgba(255,255,255,.3)}
+#stage.dark #beats i.on{background:#fff}
+#stage.dark #prog{background:#fff}
+#roles{position:absolute;right:150px;top:40px;display:flex;align-items:flex-start;opacity:0;transform:translateY(-14px);transition:opacity .6s,transform .6s var(--ease)}
+#roles.show{opacity:1;transform:none}
+#roles .r{display:flex;flex-direction:column;align-items:center;gap:8px;width:118px}
+#roles .r i{width:30px;height:30px;border-radius:50%;border:3px solid #d9d9d5;background:#fff;display:grid;place-items:center;font-style:normal;font-size:16px;color:#fff;font-weight:700;transition:all .5s var(--ease)}
+#roles .r b{font-family:var(--mono);font-size:17px;font-weight:600;color:var(--faint);letter-spacing:.08em;transition:color .5s}
+#roles .r small{font-family:var(--mono);font-size:13px;color:var(--faint);transition:color .5s}
+#roles .ln{width:26px;height:3px;background:#e1e1dd;margin-top:14px;transition:background-color .5s}
+#roles .r.cur i{border-color:var(--blue);background:var(--blue);box-shadow:0 0 0 7px var(--blue-bg)}
+#roles .r.cur b{color:var(--blue)}#roles .r.cur small{color:var(--ink2)}
+#roles .r.done i{border-color:var(--green);background:var(--green)}
+#roles .r.done i::after{content:"✓"}
+#roles .r.done b{color:var(--ink2)}
+#roles .ln.done{background:var(--green)}
+
+/* ---------- overlays (not scaled) ---------- */
+.ovl{position:fixed;inset:0;z-index:20;display:none;background:rgba(250,250,249,.97);backdrop-filter:blur(6px);overflow:auto;padding:44px 56px 60px;font-family:var(--sans)}
+.ovl.show{display:block;animation:ovIn .35s var(--ease)}
+@keyframes ovIn{from{opacity:0;transform:scale(1.02)}}
+#ov h4{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:26px 0 10px;font-weight:500}
+#ov .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+#ov button{all:unset;cursor:pointer;background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:14px;line-height:1.4;color:var(--ink2);display:flex;gap:10px;transition:border-color .2s,transform .2s}
+#ov button:hover{border-color:var(--blue);transform:translateY(-2px)}
+#ov button.cur{border-color:var(--blue);background:var(--blue-bg2)}
+#ov button span{font-family:var(--mono);font-size:12px;color:var(--muted);padding-top:2px;flex:none;width:24px}
+#ov .top{display:flex;justify-content:space-between;align-items:baseline}
+#ov .top b{font-size:22px}#ov .top small{color:var(--muted);font-size:13px}
+#help .box{max-width:560px;margin:8vh auto;background:#fff;border:1px solid var(--line);border-radius:16px;padding:30px 36px;box-shadow:0 20px 60px rgba(0,0,0,.08)}
+#help h4{margin:0 0 16px;font-size:20px}
+#help table{width:100%;border-collapse:collapse;font-size:15px}
+#help td{padding:8px 0;border-bottom:1px solid var(--line);color:var(--ink2)}
+#help td:first-child{font-family:var(--mono);font-size:13px;color:var(--muted);width:44%}
+#blank{position:fixed;inset:0;background:#fff;z-index:15;opacity:0;pointer-events:none;transition:opacity .5s}
+#blank.show{opacity:1;pointer-events:auto}
+#toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,10px);z-index:12;background:rgba(25,25,25,.88);color:#fff;font-size:14px;padding:10px 18px;border-radius:999px;opacity:0;transition:opacity .5s,transform .5s var(--ease);pointer-events:none;font-family:var(--sans)}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#toast kbd{font-family:var(--mono);font-size:12px;background:rgba(255,255,255,.18);border-radius:5px;padding:1px 7px;margin:0 2px}
+
+@media (prefers-reduced-motion:reduce){
+  .a,[data-s],.mask>span,#bg *{transition-duration:.01s!important;animation-duration:.01s!important}
+}
+@media print{
+  @page{size:1920px 1080px;margin:0}
+  html,body{overflow:visible;height:auto;background:#fff}
+  #stage{position:static;margin:0;transform:none;width:1920px;height:auto;overflow:visible;box-shadow:none}
+  #bg,#hud,.ovl,#blank,#toast{display:none!important}
+  .scene{position:relative;width:1920px;height:1080px;visibility:visible!important;opacity:1!important;transform:none!important;filter:none!important;break-after:page;page-break-after:always;overflow:hidden}
+  .scene.divider{background:var(--blue)}
+  .scene *{transition:none!important;animation:none!important}
+  html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+
+/* ===== component library ===== */
+/* ---- from p2-open.html ---- */
+/* scene-specific: opening + AI 101 */
+.hero-t{font-size:150px;font-weight:600;line-height:1.04;letter-spacing:-.03em}
+.core{position:absolute;left:150px;bottom:140px;font-size:46px;line-height:1.35;font-weight:300;color:var(--ink2)}
+.core b{font-weight:600}
+.core svg{display:block;width:760px;height:26px;margin-top:6px}
+.core path{fill:none;stroke:var(--blue);stroke-width:6;stroke-linecap:round}
+.verbs{display:grid;grid-template-columns:repeat(4,1fr);gap:28px}
+.verb{border:2px solid var(--line);border-radius:28px;padding:44px 40px;background:#fff;min-height:300px;display:flex;flex-direction:column;justify-content:space-between}
+.verb .v{font-size:88px;font-weight:600;letter-spacing:-.02em;line-height:1.1}
+.verb .t{color:var(--muted)}
+.verb .ix{font-family:var(--mono);font-size:20px;color:var(--faint)}
+.verb.hot{background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:0 30px 70px -30px rgba(35,131,226,.7)}
+.verb.hot .t,.verb.hot .ix{color:rgba(255,255,255,.8)}
+.imgbox{border-radius:24px;overflow:hidden;background:#fff;border:2px solid var(--line)}
+.imgbox img{display:block;width:100%;height:auto}
+.ba{display:flex;flex-direction:column;gap:14px;padding:30px 0;border-bottom:2px solid var(--line)}
+.ba .t{font-size:38px;line-height:1.45}
+/* rings */
+.rings-wrap{display:grid;grid-template-columns:600px 1fr;gap:70px;align-items:center}
+.rings{position:relative;width:560px;height:560px;margin-left:10px}
+.rg{position:absolute;border-radius:50%;border:2px solid var(--line);display:flex;justify-content:center;background:#fff}
+.rg>span{font-family:var(--mono);font-size:19px;font-weight:500;letter-spacing:.08em;color:var(--muted);margin-top:18px}
+.r1{inset:0;background:var(--soft)}
+.r2{inset:58px}
+.r3{inset:116px;background:var(--blue-bg2);border-color:var(--blue-line)}.r3>span{color:var(--blue-d)}
+.r4{inset:182px;background:var(--blue);border-color:var(--blue);align-items:center}.r4>span{color:#fff;margin:0;font-size:24px}
+.orbitA{position:absolute;inset:92px;border-radius:50%;border:3px dashed var(--orange);animation:spin 26s linear infinite}
+.orbitA::before{content:"";position:absolute;left:50%;top:-11px;width:20px;height:20px;margin-left:-10px;border-radius:50%;background:var(--orange)}
+.lblA{position:absolute;right:-70px;top:250px}
+.lblM{position:absolute;left:50%;top:352px;margin-left:-72px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.defs{display:flex;flex-direction:column}
+.def{display:grid;grid-template-columns:380px 1fr;align-items:baseline;padding:16px 0;border-bottom:2px solid var(--line)}
+.def b{font-size:30px}.def span{font-size:28px;color:var(--ink2);line-height:1.45}
+.quote-card{align-self:center;font-size:52px;font-weight:500;padding:34px 60px;border-radius:24px;background:var(--ink);color:#fff;letter-spacing:-.01em}
+.links{display:block;width:100%;height:80px}
+.links path{fill:none;stroke:var(--faint);stroke-width:2.5}
+.wcard h3{font-size:34px}
+.pills{display:flex;gap:12px;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:10px;padding:10px 20px;border-radius:999px;background:var(--green-bg);color:var(--green);font-size:25px;font-weight:500}
+.klbl{font-family:var(--mono);font-size:22px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
+.klbl.blue{color:var(--blue)}
+.four{display:grid;grid-template-columns:repeat(4,1fr);gap:40px}
+.four .bn{font-family:var(--mono);font-size:120px;font-weight:500;color:var(--blue);line-height:1;letter-spacing:-.04em}
+.four b{display:block;font-size:44px;margin:26px 0 12px}
+.four .it{border-top:3px solid var(--ink);padding-top:30px}
+.kit{display:grid;grid-template-columns:1fr 400px 1fr;gap:56px;align-items:center}
+.kcol{display:flex;flex-direction:column;gap:22px}
+.kt{display:flex;align-items:center;gap:22px;padding:20px 28px;border:2px solid var(--line);border-radius:20px;background:#fff}
+.kt .e{font-size:44px;width:56px;text-align:center}
+.kt b{font-size:32px;display:block;line-height:1.3}.kt small{font-size:24px;color:var(--muted)}
+.inL{--from:translateX(240px) scale(.8)}.inR{--from:translateX(-240px) scale(.8)}
+.kcenter{width:400px;height:400px;border-radius:50%;background:var(--blue);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;box-shadow:0 0 0 26px var(--blue-bg),0 0 0 52px var(--blue-bg2)}
+.kcenter .face{font-size:110px;line-height:1.1}
+.kcenter b{color:#fff;font-size:40px}.kcenter small{font-size:26px;opacity:.8}
+
+/* ---- from p3-anatomy.html ---- */
+/* anatomy */
+.mrow{display:grid;grid-template-columns:360px 1fr 380px;gap:40px;align-items:center;padding:24px 0;border-bottom:2px solid var(--line)}
+.mrow b{font-size:34px}.mrow .t{font-size:30px}
+.meter{height:16px;border-radius:99px;background:var(--soft);overflow:hidden;position:relative}
+.meter i{position:absolute;left:0;top:0;bottom:0;width:var(--w);border-radius:99px;background:var(--blue);transform:scaleX(0);transform-origin:left;transition:transform 1.1s var(--ease-io) calc(var(--delay,0s) + .25s)}
+.mrow.on .meter i{transform:scaleX(1)}
+.meter-l{display:flex;justify-content:space-between;font-family:var(--mono);font-size:17px;color:var(--faint);margin-top:8px}
+.ticket-wrap{display:flex;justify-content:center}
+.ticket{width:560px;background:#fff;border:2px solid var(--line);border-radius:22px;padding:30px 34px;box-shadow:0 30px 70px -36px rgba(0,0,0,.35);transform:rotate(-3deg)}
+.drop{--from:translateY(-420px) rotate(8deg);transition:opacity .3s var(--ease) var(--delay,0s),transform 1s var(--spring) var(--delay,0s)}
+.ticket .id{font-family:var(--mono);font-size:20px;color:var(--blue);font-weight:600}
+.ticket h3{font-size:36px;margin:10px 0 18px}
+.ticket .meta{display:flex;gap:10px}
+.qs{display:flex;flex-direction:column;gap:16px}
+.q{display:flex;align-items:center;gap:18px;font-size:32px;color:var(--ink2)}
+.q .qm{width:48px;height:48px;border-radius:50%;background:var(--orange-bg);color:var(--orange);display:grid;place-items:center;font-weight:700;font-size:26px;flex:none}
+.res{border-radius:18px;padding:22px 28px;font-size:29px;line-height:1.55;margin-top:22px;white-space:pre-line}
+.res.bad{background:var(--red-bg);color:#8f2222}
+.res.good{background:var(--green-bg);color:#0b5c51}
+.res .v{display:block;font-weight:600;margin-top:6px}
+.layer{display:grid;grid-template-columns:320px 1fr;align-items:center;gap:30px;padding:26px 36px;border-radius:20px;border:2px solid var(--line);background:#fff;margin-bottom:18px}
+.layer b{font-size:36px}.layer .t{font-size:31px}
+.layer .ix{font-family:var(--mono);font-size:18px;color:var(--faint);display:block;margin-bottom:4px;letter-spacing:.1em}
+.stack4 .layer:nth-child(1){border-left:10px solid var(--blue)}
+.stack4 .layer:nth-child(2){border-left:10px solid var(--purple)}
+.stack4 .layer:nth-child(3){border-left:10px solid var(--red)}
+.stack4 .layer:nth-child(4){border-left:10px solid var(--orange)}
+.sticky{width:250px;padding:20px 22px;background:#fdf6d8;border-radius:6px;font-size:24px;line-height:1.45;color:#6b5a14;box-shadow:0 12px 26px -16px rgba(0,0,0,.35)}
+.mess{position:relative;height:330px}
+.toolg{display:grid;grid-template-columns:repeat(3,1fr);gap:26px}
+.tool{border:2px solid var(--line);border-radius:22px;padding:30px 34px;background:#fff}
+.tool code{font-family:var(--mono);font-size:22px;color:var(--blue-d);background:var(--blue-bg);padding:4px 12px;border-radius:8px}
+.tool b{display:block;font-size:38px;margin:18px 0 6px}.tool .t{font-size:28px;color:var(--muted)}
+.diag{position:relative;width:1620px;height:420px}
+.diag svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.diag .wire{fill:none;stroke:var(--faint);stroke-width:3}
+.diag .pk{fill:var(--blue)}
+.dn{position:absolute;display:flex;align-items:center;justify-content:center;border-radius:20px;border:2px solid var(--line);background:#fff;font-size:32px;font-weight:600}
+.hub{position:absolute;left:730px;top:130px;width:160px;height:160px;border-radius:50%;background:var(--blue);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--mono);font-weight:600;font-size:32px;box-shadow:0 0 0 18px var(--blue-bg)}
+.hub small{font-size:30px;line-height:1}
+.pingring{position:absolute;inset:-18px;border-radius:50%;border:3px solid var(--blue);animation:pr 2.4s var(--ease) infinite;opacity:0}
+@keyframes pr{0%{transform:scale(.9);opacity:.6}100%{transform:scale(1.5);opacity:0}}
+.bounce{animation:bnc 1.6s var(--ease-io) infinite alternate}
+@keyframes bnc{from{transform:translateX(-120px)}to{transform:translateX(120px)}}
+.lane{display:flex;align-items:center;justify-content:space-between;padding:30px 40px;border-radius:22px;background:var(--soft);position:relative;overflow:hidden}
+.lane .node{font-size:28px}
+.sent-hl{font-size:48px;line-height:1.7;font-weight:500;color:var(--ink)}
+.hl{border-radius:10px;padding:2px 6px;-webkit-box-decoration-break:clone;box-decoration-break:clone;background-repeat:no-repeat;background-size:0% 100%;transition:background-size .8s var(--ease-io) var(--delay,0s),color .4s;position:relative}
+.hl.on{background-size:100% 100%}
+.hl.hm{background-image:linear-gradient(var(--purple-bg),var(--purple-bg))}
+.hl.hk{background-image:linear-gradient(var(--orange-bg),var(--orange-bg))}
+.hl.hc{background-image:linear-gradient(var(--blue-bg),var(--blue-bg))}
+.hl .pop{position:absolute;left:50%;top:-34px;transform:translateX(-50%) scale(.6);opacity:0;font-family:var(--mono);font-size:18px;font-weight:600;white-space:nowrap;background:var(--green);color:#fff;padding:3px 12px;border-radius:99px;transition:all .6s var(--spring) .2s;line-height:1.4}
+.hl.ht.on .pop{opacity:1;transform:translateX(-50%) scale(1)}
+.map4 .card{padding:28px 32px}
+.map4 .card h3{font-size:34px;margin-bottom:4px}
+.map4 .card .s{font-size:24px}
+.map4 .card.m{border-color:#d5c7ea}.map4 .card.m h3{color:var(--purple)}
+.map4 .card.k{border-color:#f1cfa9}.map4 .card.k h3{color:var(--orange)}
+.map4 .card.c{border-color:var(--blue-line)}.map4 .card.c h3{color:var(--blue)}
+.map4 .card.tl{border-color:#b5dbd4}.map4 .card.tl h3{color:var(--green)}
+
+/* ---- from p4-prompt.html ---- */
+.eqlabel{font-family:var(--mono);font-size:26px;letter-spacing:.14em;color:var(--muted);text-align:center;margin-bottom:26px}
+.eq{display:flex;align-items:flex-start;justify-content:center}
+.term{display:flex;flex-direction:column;align-items:center;gap:8px;padding:0 8px}
+.term b{font-size:52px;font-weight:600;line-height:1.2;transition:font-size 1.1s var(--ease-io),color .8s}
+.term small{font-size:24px;color:var(--muted);white-space:nowrap}
+.plus{font-size:52px;color:var(--faint);font-weight:300;padding:0 8px;line-height:1.2}
+.xp{max-width:0;opacity:0;overflow:hidden;transform:none;transition:max-width 1.1s var(--ease-io) var(--delay,0s),opacity .6s var(--ease) calc(var(--delay,0s) + .25s)}
+.xp.on{max-width:460px;opacity:1}
+.xp>div{display:flex;align-items:flex-start;white-space:nowrap}
+.shrink b{font-size:190px;color:var(--blue);letter-spacing:-.03em}
+.shrink.on b{font-size:52px;color:var(--ink);letter-spacing:0}
+.shrink small{transition:font-size 1.1s var(--ease-io)}
+.frow{display:grid;grid-template-columns:300px 1fr;gap:40px;align-items:center;padding:36px 0;border-bottom:2px solid var(--line)}
+.frow .klbl{margin:0}
+.frow .s{margin-top:14px}
+.loopbox{position:relative;width:540px;height:540px;flex:none}
+.loopbox svg{position:absolute;inset:0}
+.loopbox .orb2{position:absolute;inset:60px;border-radius:50%;animation:spin 7s linear infinite}
+.loopbox .orb2::before{content:"";position:absolute;left:50%;top:-12px;width:24px;height:24px;margin-left:-12px;border-radius:50%;background:var(--blue);box-shadow:0 0 0 8px var(--blue-bg)}
+.lp{position:absolute;transform:translate(-50%,-50%)}
+.lp .node{font-size:30px;padding:14px 26px}
+.lp .node.lb{font-weight:600}
+.resp{display:flex;flex-direction:column;gap:12px;margin-top:6px}
+.resp li{font-size:30px;color:var(--ink2);list-style:none;padding-left:34px;position:relative;line-height:1.45}
+.resp li::before{content:"";position:absolute;left:4px;top:.55em;width:14px;height:14px;border-radius:50%;background:var(--blue)}
+.resp.h li::before{background:var(--ink)}
+ul.resp{margin:0;padding:0}
+.bc{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.bc .chip{font-size:28px;padding:12px 26px}
+.bc .sep{font-size:28px;color:var(--faint)}
+.bigico{width:96px;height:96px;border-radius:26px;display:grid;place-items:center;font-size:52px;background:var(--blue-bg);margin-bottom:24px}
+.slash{font-family:var(--mono);font-size:70px;font-weight:600;color:var(--blue);line-height:1;margin-bottom:22px}
+.tile4{display:grid;grid-template-columns:repeat(4,1fr);gap:26px}
+.tile4 .tool b{font-size:34px}
+
+/* ---- from p5-build.html ---- */
+.pipe{display:flex;align-items:center;margin-top:60px}
+.pipe .pn{padding:16px 30px;border-radius:999px;border:2px solid rgba(255,255,255,.55);font-family:var(--mono);font-size:28px;font-weight:600;color:#fff}
+.pipe .pa{width:60px;height:3px;background:rgba(255,255,255,.55);margin:0 4px}
+.prole{display:grid;grid-template-columns:1fr 440px;gap:70px;align-items:center}
+.side{display:flex;flex-direction:column;gap:40px}
+.out .klbl{margin-bottom:12px}
+.tree{display:flex;flex-direction:column;gap:14px}
+.tree .file{align-self:flex-start}
+.tree .indent{padding-left:44px;display:flex;flex-direction:column;gap:14px}
+.qtag{display:inline-flex;align-items:center;gap:12px;font-size:30px;padding:14px 26px;border-radius:16px;background:var(--orange-bg);color:#9b4a00;font-weight:500}
+.app{background:#fff;border:2px solid var(--line);border-radius:26px;box-shadow:0 40px 90px -40px rgba(18,52,96,.4);overflow:hidden}
+.app .top{display:flex;justify-content:space-between;align-items:center;padding:30px 38px;border-bottom:2px solid var(--line)}
+.app h4{font-size:38px;margin:0;font-weight:600}
+.app .cnt{font-size:23px;color:var(--muted);position:relative;display:block;height:34px}
+.swap{position:relative;display:inline-block}
+.swap>span{transition:opacity .45s var(--ease) calc(var(--delay,0s) + .5s)}
+.swap>span:last-child{position:absolute;left:0;top:0;opacity:0;white-space:nowrap}
+.swap.on>span:first-child{opacity:0}.swap.on>span:last-child{opacity:1}
+.app .btn{background:var(--blue);color:#fff;padding:14px 26px;border-radius:14px;font-size:25px;font-weight:600}
+.trow{display:grid;grid-template-columns:50px 1fr 70px 120px;gap:18px;align-items:center;padding:22px 38px;border-bottom:2px solid var(--line);font-size:29px}
+.trow:last-child{border:0}
+.cb{width:34px;height:34px;border-radius:9px;border:3px solid var(--faint);display:grid;place-items:center;color:#fff;font-size:20px;font-weight:700;transition:all .4s var(--ease) calc(var(--delay,0s) + .2s)}
+.cb.done{background:var(--green);border-color:var(--green)}
+.flip.on .cb{background:var(--green);border-color:var(--green)}
+.cb::after{content:"✓";opacity:0;transition:opacity .3s calc(var(--delay,0s) + .35s)}
+.cb.done::after,.flip.on .cb::after{opacity:1}
+.nm{transition:color .4s calc(var(--delay,0s) + .3s)}
+.flip.on .nm,.nm.done{color:var(--faint);text-decoration:line-through}
+.trow .tag{text-align:center}
+.cburst{position:relative}
+.burst{position:absolute;left:58px;top:50%;width:0;height:0}
+.burst i{position:absolute;width:14px;height:14px;margin:-7px;border-radius:50%;background:var(--blue);opacity:0}
+.burst i:nth-child(3n){background:var(--orange)}.burst i:nth-child(4n){background:var(--green)}
+.cburst.on .burst i{animation:bst 1.2s var(--ease) calc(var(--delay,0s) + .25s) both}
+@keyframes bst{0%{opacity:1;transform:translate(0,0) scale(.3)}100%{opacity:0;transform:translate(var(--x),var(--y)) scale(1)}}
+.bug{font-size:120px;line-height:1;animation:wig 2.4s ease-in-out infinite}
+@keyframes wig{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg) translateY(-8px)}}
+
+/* ---- from p6-wrap.html ---- */
+.track{display:flex;align-items:flex-start}
+.stn{width:280px;flex:none;display:flex;flex-direction:column;align-items:center;text-align:center;gap:22px}
+.stn .c{width:110px;height:110px;border-radius:50%;background:var(--blue);color:#fff;display:grid;place-items:center;font-family:var(--mono);font-weight:600;font-size:28px;box-shadow:0 0 0 12px var(--blue-bg)}
+.stn .t{font-size:28px;line-height:1.45}
+.seg{flex:1;height:4px;background:var(--blue);margin-top:53px}
+.team{display:grid;grid-template-columns:repeat(4,1fr);gap:24px}
+.team .card{padding:28px 30px}
+.team .card b{font-size:30px;display:block;margin-bottom:8px}
+.team .card .s{font-size:25px}
+.team .msg{background:var(--ink);border-color:var(--ink);color:#fff;display:flex;flex-direction:column;justify-content:center}
+.team .msg p{font-size:30px;line-height:1.35;color:rgba(255,255,255,.7)}
+.team .msg p b{color:#fff}
+.loop5{display:grid;grid-template-columns:repeat(5,1fr);gap:0}
+.l5{position:relative;padding:0 26px;border-left:3px solid var(--line)}
+.l5:first-child{border-left-color:var(--ink)}
+.l5 .n{font-family:var(--mono);font-size:22px;color:var(--muted)}
+.l5 b{display:block;font-family:var(--mono);font-size:50px;font-weight:600;letter-spacing:-.01em;margin:14px 0 18px;color:var(--ink)}
+.l5 .t{font-size:30px}
+.l5.last b{color:var(--blue)}
+.l5 .ar{position:absolute;right:-18px;top:62px;font-size:30px;color:var(--faint)}
+.close-big{font-size:112px;font-weight:600;line-height:1.1;letter-spacing:-.03em}
+.close-big .muted{font-weight:300}
+.stairs{display:grid;grid-template-columns:repeat(3,1fr);gap:40px;align-items:end;height:460px}
+.stair{display:flex;flex-direction:column;justify-content:flex-end}
+.stair .lbl{margin-bottom:18px}
+.stair .lbl b{display:block;font-size:34px}.stair .lbl span{font-size:28px;color:var(--muted)}
+.stair .blk{border-radius:20px 20px 0 0;background:var(--blue-bg);border:2px solid var(--blue-line);border-bottom:0}
+.stair:nth-child(2) .blk{background:#cfe3f8}
+.stair:nth-child(3) .blk{background:var(--blue);border-color:var(--blue)}
+.docs{position:relative;height:300px;display:flex;align-items:flex-end;justify-content:center}
+.pg{position:absolute;width:190px;height:240px;border-radius:12px;background:#fff;border:2px solid var(--line);box-shadow:0 8px 20px -14px rgba(0,0,0,.3)}
+.pg::before{content:"";position:absolute;left:24px;right:24px;top:30px;height:90px;background:repeating-linear-gradient(var(--line) 0 5px,transparent 5px 22px)}
+.meterbig{height:22px;border-radius:99px;background:var(--soft);overflow:hidden;margin-top:26px}
+.meterbig i{display:block;height:100%;width:var(--w);border-radius:99px;background:var(--blue);transform:scaleX(0);transform-origin:left;transition:transform 1.4s var(--ease-io) calc(var(--delay,0s) + .3s)}
+.on>.meterbig i,.on .meterbig i{transform:scaleX(1)}
+.fl{display:flex;flex-direction:column;gap:14px}
+.fl .file{align-self:flex-start;transition:all .5s var(--ease) var(--delay,0s)}
+.fl .file.st.on{border-color:var(--blue);background:var(--blue-bg2);color:var(--blue-d)}
+.fl.no .file.st.on{opacity:.4;text-decoration:line-through;border-style:dashed}
+.retry{display:flex;align-items:baseline;gap:18px;font-family:var(--mono)}
+.retry .big{font-size:120px;font-weight:600;color:var(--red);line-height:1}
+.retry span{font-size:30px;color:var(--muted)}
+.cash{font-size:40px;letter-spacing:4px;height:56px;overflow:hidden;white-space:nowrap}
+.cash span{display:inline-block;opacity:0;transform:translateY(20px);transition:all .4s var(--spring)}
+.cash.on span{opacity:1;transform:none}
+.form .fr{display:grid;grid-template-columns:300px 1fr;align-items:end;padding:22px 0}
+.form .fr b{font-family:var(--mono);font-size:32px;font-weight:500}
+.form .fr .ln2{height:3px;background:var(--ink);opacity:.8}
+
+/* ===== code & terminal components (kit v2) ===== */
+.win pre.code,.codebox pre.code{margin:0;padding:28px 38px;font-family:var(--mono);font-size:28px;line-height:1.62;white-space:pre;color:var(--ink);tab-size:4;overflow:hidden}
+pre.code .l{display:block;border-radius:6px;margin:0 -12px;padding:0 12px;transition:background-color .5s var(--ease)}
+pre.code .l.hot,pre.code .l.st.on.mark{background:var(--blue-bg)}
+pre.code .l.bad.on{background:var(--red-bg)}
+pre.code .l.good.on{background:var(--green-bg)}
+.tk-k{color:#8a3ffc;font-weight:500}.tk-s{color:#0f7b6c}.tk-c{color:#9b9a97;font-style:italic}.tk-n{color:#d9730d}.tk-f{color:#0b6bcb}.tk-b{color:#c2410c}.tk-p{color:#b4b4b0}.tk-key{color:#0b6bcb;font-weight:500}.tk-flag{color:#8a3ffc}.tk-kw2{color:#e03e3e;font-weight:600}
+.shell{background:#1c1c1e;border-radius:22px;box-shadow:0 34px 80px -40px rgba(0,0,0,.55);overflow:hidden;display:flex;flex-direction:column}
+.shell .sbar{display:flex;align-items:center;gap:10px;padding:16px 24px;background:#2a2a2d;font-family:var(--mono);font-size:18px;color:#8e8e93;letter-spacing:.06em}
+.shell .sbar i{width:14px;height:14px;border-radius:50%;display:block}
+.shell .sbar i:nth-child(1){background:#ff5f57}.shell .sbar i:nth-child(2){background:#febc2e}.shell .sbar i:nth-child(3){background:#28c840}
+.shell .sbar span{margin-left:14px}
+.shell .sbody{padding:26px 34px;font-family:var(--mono);font-size:26px;line-height:1.6;color:#e5e5e7;white-space:pre}
+.shell .cmd{display:block;color:#fff}
+.shell .cmd::before{content:"$ ";color:#30d158;font-weight:600}
+.shell .out{display:block;color:#a1a1a6}
+.shell .out.err{color:#ff6961}.shell .out.ok{color:#30d158}.shell .out.hl{color:#ffd60a}
+.shell .ch.cur::after{background:#30d158}
+.shell .tk-flag{color:#bf9bff}.shell .tk-s{color:#7ee2b8}.shell .tk-c{color:#8e8e93}.shell .tk-n{color:#ffb86b}.shell .tk-k{color:#bf9bff}
+.kbd{display:inline-block;font-family:var(--mono);font-size:.8em;padding:2px 12px;border-radius:8px;border:2px solid var(--line);border-bottom-width:4px;background:#fff}
+.anno{position:absolute;display:flex;align-items:center;gap:12px;font-size:24px;font-weight:500;color:var(--blue-d);background:var(--blue-bg);padding:8px 18px;border-radius:12px;white-space:nowrap}
+.anno.orange{color:#9b4a00;background:var(--orange-bg)}.anno.green{color:var(--green);background:var(--green-bg)}.anno.red{color:#a82929;background:var(--red-bg)}
+.tbl{width:100%;border-collapse:collapse;font-size:30px}
+.tbl th{font-family:var(--mono);font-size:20px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-align:left;padding:0 20px 14px;border-bottom:2px solid var(--ink)}
+.tbl td{padding:18px 20px;border-bottom:2px solid var(--line);color:var(--ink2);vertical-align:top}
+.tbl td code,.t code,.s code,p code,li code,.card code{font-family:var(--mono);font-size:.86em;background:var(--soft);border:1.5px solid var(--line);border-radius:8px;padding:1px 10px;color:var(--ink)}
+.tbl tr.on td{} 
+
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="bg"><div class="grid"></div><div class="orb"></div><div class="ring"></div><div class="dot"></div></div>
+<style>
+/* ===== คาบที่ 2 · Data Science with Python (prefix ds-) ===== */
+.win pre.code,.shell .sbody,.ds-mono{font-family:'IBM Plex Mono','IBM Plex Sans Thai',monospace}
+.ds-th{font-family:var(--sans)!important;letter-spacing:.03em!important;text-transform:none!important}
+.ds-f{display:none}
+@keyframes dsIn{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
+@keyframes dsFlash{0%,100%{box-shadow:inset 0 0 0 0 transparent}50%{box-shadow:inset 0 0 0 4px var(--red)}}
+.f1.on:last-of-type~* .x1,.f1.on~.f2:not(.on)~* .x1{background:var(--blue-bg)!important;border-color:var(--blue-line)!important}
+.f1.on:last-of-type~* .xd1,.f1.on~.f2:not(.on)~* .xd1{opacity:.14!important}
+.f1.on~* .dim1{opacity:.14!important}
+.f1.on~* .out1{opacity:0!important}
+.f1.on~* .bad1{background:var(--red-bg)!important;color:var(--red)!important;animation:dsFlash .8s ease-in-out 3}
+.f2.on:last-of-type~* .x2,.f2.on~.f3:not(.on)~* .x2{background:var(--blue-bg)!important;border-color:var(--blue-line)!important}
+.f2.on:last-of-type~* .xd2,.f2.on~.f3:not(.on)~* .xd2{opacity:.14!important}
+.f2.on~* .dim2{opacity:.14!important}
+.f2.on~* .out2{opacity:0!important}
+.f2.on~* .bad2{background:var(--red-bg)!important;color:var(--red)!important;animation:dsFlash .8s ease-in-out 3}
+.f3.on:last-of-type~* .x3,.f3.on~.f4:not(.on)~* .x3{background:var(--blue-bg)!important;border-color:var(--blue-line)!important}
+.f3.on:last-of-type~* .xd3,.f3.on~.f4:not(.on)~* .xd3{opacity:.14!important}
+.f3.on~* .dim3{opacity:.14!important}
+.f3.on~* .out3{opacity:0!important}
+.f3.on~* .bad3{background:var(--red-bg)!important;color:var(--red)!important;animation:dsFlash .8s ease-in-out 3}
+.f4.on:last-of-type~* .x4,.f4.on~.f5:not(.on)~* .x4{background:var(--blue-bg)!important;border-color:var(--blue-line)!important}
+.f4.on:last-of-type~* .xd4,.f4.on~.f5:not(.on)~* .xd4{opacity:.14!important}
+.f4.on~* .dim4{opacity:.14!important}
+.f4.on~* .out4{opacity:0!important}
+.f4.on~* .bad4{background:var(--red-bg)!important;color:var(--red)!important;animation:dsFlash .8s ease-in-out 3}
+.f5.on:last-of-type~* .x5,.f5.on~.f6:not(.on)~* .x5{background:var(--blue-bg)!important;border-color:var(--blue-line)!important}
+.f5.on:last-of-type~* .xd5,.f5.on~.f6:not(.on)~* .xd5{opacity:.14!important}
+.f5.on~* .dim5{opacity:.14!important}
+.f5.on~* .out5{opacity:0!important}
+.f5.on~* .bad5{background:var(--red-bg)!important;color:var(--red)!important;animation:dsFlash .8s ease-in-out 3}
+.f6.on:last-of-type~* .x6,.f6.on~.f7:not(.on)~* .x6{background:var(--blue-bg)!important;border-color:var(--blue-line)!important}
+.f6.on:last-of-type~* .xd6,.f6.on~.f7:not(.on)~* .xd6{opacity:.14!important}
+.f6.on~* .dim6{opacity:.14!important}
+.f6.on~* .out6{opacity:0!important}
+.f6.on~* .bad6{background:var(--red-bg)!important;color:var(--red)!important;animation:dsFlash .8s ease-in-out 3}
+.f7.on:last-of-type~* .x7,.f7.on~.f8:not(.on)~* .x7{background:var(--blue-bg)!important;border-color:var(--blue-line)!important}
+.f7.on:last-of-type~* .xd7,.f7.on~.f8:not(.on)~* .xd7{opacity:.14!important}
+.f7.on~* .dim7{opacity:.14!important}
+.f7.on~* .out7{opacity:0!important}
+.f7.on~* .bad7{background:var(--red-bg)!important;color:var(--red)!important;animation:dsFlash .8s ease-in-out 3}
+.f1.on~* .bl1{background:var(--blue-bg)!important;color:var(--blue-d)!important}
+.f1.on~* .ok1{background:var(--green-bg)!important;color:var(--green)!important;animation:none}
+.f1.on~* .hide1{display:none!important}
+.show1{display:none}.f1.on~* .show1{display:inline-block;animation:dsIn .7s var(--spring) both}
+.f1.on~* .hv1{height:var(--h1)!important}
+.f1.on~* .tp1{top:var(--y1)!important}
+.f1.on~* .mv1{top:var(--y1)!important;left:var(--x1)!important}
+.f2.on~* .bl2{background:var(--blue-bg)!important;color:var(--blue-d)!important}
+.f2.on~* .ok2{background:var(--green-bg)!important;color:var(--green)!important;animation:none}
+.f2.on~* .hide2{display:none!important}
+.show2{display:none}.f2.on~* .show2{display:inline-block;animation:dsIn .7s var(--spring) both}
+.f2.on~* .hv2{height:var(--h2)!important}
+.f2.on~* .tp2{top:var(--y2)!important}
+.f2.on~* .mv2{top:var(--y2)!important;left:var(--x2)!important}
+.f3.on~* .bl3{background:var(--blue-bg)!important;color:var(--blue-d)!important}
+.f3.on~* .ok3{background:var(--green-bg)!important;color:var(--green)!important;animation:none}
+.f3.on~* .hide3{display:none!important}
+.show3{display:none}.f3.on~* .show3{display:inline-block;animation:dsIn .7s var(--spring) both}
+.f3.on~* .hv3{height:var(--h3)!important}
+.f3.on~* .tp3{top:var(--y3)!important}
+.f3.on~* .mv3{top:var(--y3)!important;left:var(--x3)!important}
+.f4.on~* .bl4{background:var(--blue-bg)!important;color:var(--blue-d)!important}
+.f4.on~* .ok4{background:var(--green-bg)!important;color:var(--green)!important;animation:none}
+.f4.on~* .hide4{display:none!important}
+.show4{display:none}.f4.on~* .show4{display:inline-block;animation:dsIn .7s var(--spring) both}
+.f4.on~* .hv4{height:var(--h4)!important}
+.f4.on~* .tp4{top:var(--y4)!important}
+.f4.on~* .mv4{top:var(--y4)!important;left:var(--x4)!important}
+.f5.on~* .bl5{background:var(--blue-bg)!important;color:var(--blue-d)!important}
+.f5.on~* .ok5{background:var(--green-bg)!important;color:var(--green)!important;animation:none}
+.f5.on~* .hide5{display:none!important}
+.show5{display:none}.f5.on~* .show5{display:inline-block;animation:dsIn .7s var(--spring) both}
+.f5.on~* .hv5{height:var(--h5)!important}
+.f5.on~* .tp5{top:var(--y5)!important}
+.f5.on~* .mv5{top:var(--y5)!important;left:var(--x5)!important}
+.f6.on~* .bl6{background:var(--blue-bg)!important;color:var(--blue-d)!important}
+.f6.on~* .ok6{background:var(--green-bg)!important;color:var(--green)!important;animation:none}
+.f6.on~* .hide6{display:none!important}
+.show6{display:none}.f6.on~* .show6{display:inline-block;animation:dsIn .7s var(--spring) both}
+.f6.on~* .hv6{height:var(--h6)!important}
+.f6.on~* .tp6{top:var(--y6)!important}
+.f6.on~* .mv6{top:var(--y6)!important;left:var(--x6)!important}
+.f7.on~* .bl7{background:var(--blue-bg)!important;color:var(--blue-d)!important}
+.f7.on~* .ok7{background:var(--green-bg)!important;color:var(--green)!important;animation:none}
+.f7.on~* .hide7{display:none!important}
+.show7{display:none}.f7.on~* .show7{display:inline-block;animation:dsIn .7s var(--spring) both}
+.f7.on~* .hv7{height:var(--h7)!important}
+.f7.on~* .tp7{top:var(--y7)!important}
+.f7.on~* .mv7{top:var(--y7)!important;left:var(--x7)!important}
+pre.code .l{transition:background-color .5s var(--ease),opacity .6s var(--ease) var(--delay,0s),transform .95s var(--ease) var(--delay,0s)}
+pre.code.c22{font-size:22px;line-height:1.55;padding:22px 32px}
+pre.code.c24{font-size:24px;line-height:1.55;padding:24px 34px}
+pre.code.c26{font-size:26px;line-height:1.55;padding:26px 36px}
+pre.code .fill{padding:0 .15em}
+.ds-bl .a2{color:var(--green);background:var(--green-bg);border-radius:8px;padding:0 .15em}
+.hl .pop{font-family:var(--sans);font-size:22px;top:-40px}
+
+/* DataFrame table */
+.ds-box{background:#fff;border:2px solid var(--line);border-radius:22px;padding:20px 26px 14px;box-shadow:0 30px 70px -40px rgba(18,52,96,.3)}
+.ds-out{font-family:var(--mono);font-size:19px;letter-spacing:.12em;color:var(--muted);margin-bottom:10px;display:flex;gap:14px;align-items:center}
+.ds-out b{color:var(--blue);font-weight:600}
+.ds-df{border-collapse:collapse;font-family:'IBM Plex Mono','IBM Plex Sans Thai',monospace;font-size:27px;color:var(--ink2)}
+.ds-df th{font-family:var(--sans);font-weight:600;font-size:26px;color:var(--ink);text-align:right;padding:6px 16px 10px;border-bottom:2px solid var(--ink);white-space:nowrap;transition:background-color .5s,color .5s,opacity .5s}
+.ds-df td{text-align:right;padding:8px 16px;border-bottom:1.5px solid var(--line);white-space:nowrap;transition:background-color .5s var(--ease),color .5s,opacity .6s var(--ease),box-shadow .3s}
+.ds-df .ix{color:var(--faint);text-align:left;font-weight:500}
+.ds-df .lf{text-align:left}
+.ds-df .nan{color:var(--red);font-weight:600}
+.ds-df.big{font-size:34px}.ds-df.big th{font-size:32px}.ds-df.big td,.ds-df.big th{padding:12px 26px}
+.ds-df.sm{font-size:25px}.ds-df.sm th{font-size:24px}.ds-df.sm td{padding:7px 14px}.ds-df.sm th{padding:4px 14px 8px}
+.ds-df .m{font-weight:600}.ds-df .m.T{color:var(--green)}.ds-df .m.F{color:var(--red)}
+.ds-df.ds-tight td{padding:5px 14px}
+.ds-df th.mh{font-family:var(--mono);color:var(--blue-d);font-size:23px}
+
+/* hero */
+.ds-herobars{position:absolute;right:230px;top:250px;width:420px;height:380px;display:flex;align-items:flex-end;gap:22px}
+.ds-herobars i{flex:1;height:var(--h);border-radius:12px 12px 0 0;background:var(--blue-line)}
+.ds-herobars i.b{background:var(--blue)}
+.ds-herobars svg{position:absolute;inset:-40px 0 0 0;width:100%;height:calc(100% + 40px);overflow:visible}
+.ds-herobars path{fill:none;stroke:var(--ink);stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+.ds-herobars circle{fill:var(--ink)}
+
+/* recap */
+.ds-rec{display:grid;grid-template-columns:1fr 150px 1fr;gap:26px;align-items:center}
+.ds-rec .chips{display:flex;flex-wrap:wrap;gap:14px}
+.ds-rec .big-arr{height:6px;background:var(--blue);position:relative;border-radius:3px}
+.ds-rec .big-arr::after{content:"";position:absolute;right:-4px;top:50%;width:26px;height:26px;border-top:6px solid var(--blue);border-right:6px solid var(--blue);transform:translateY(-50%) rotate(45deg)}
+.ds-rec .qs2{display:flex;flex-direction:column;gap:16px;align-items:flex-start}
+
+/* agenda */
+.ds-ag{display:grid;grid-template-columns:1fr 1fr;grid-auto-flow:column;grid-template-rows:repeat(4,auto);column-gap:70px}
+.ds-ag .it{display:grid;grid-template-columns:70px 1fr auto;align-items:center;padding:17px 0;border-bottom:2px solid var(--line)}
+.ds-ag .n{font-family:var(--mono);font-size:28px;font-weight:500;color:var(--blue)}
+.ds-ag .t{font-size:32px;color:var(--ink)}
+.ds-time{display:flex;height:88px;border-radius:16px;overflow:hidden;gap:4px}
+.ds-time>div{flex:var(--m);display:flex;flex-direction:column;justify-content:center;padding:0 16px;background:var(--blue-bg);color:var(--blue-d);white-space:nowrap}
+.ds-time>div b{font-family:var(--mono);font-size:22px;color:inherit;font-weight:600}
+.ds-time>div span{font-size:24px}
+.ds-time>div.h{background:var(--blue);color:#fff}
+.ds-time>div.br{background:repeating-linear-gradient(135deg,var(--soft) 0 10px,#ececea 10px 20px);color:var(--muted);align-items:center;padding:0}
+
+/* wall */
+.ds-wallwrap{position:relative;margin-top:6px}
+.ds-wall{display:grid;grid-template-columns:repeat(10,1fr);font-family:var(--mono);font-size:19px;line-height:1.36;color:#a9a8a4;column-gap:10px}
+.ds-wall span{white-space:nowrap;overflow:hidden}
+.ds-wall .n{color:#e59a9a}
+.ds-wall{transition:opacity .8s var(--ease),filter .8s var(--ease)!important}
+.ds-qwrap{position:absolute;left:0;right:0;top:170px;text-align:center}
+.ds-qwrap .qtag{font-size:46px;padding:22px 44px;box-shadow:0 30px 60px -30px rgba(0,0,0,.35);background:#fff;border:3px solid var(--orange);color:var(--orange)}
+.ds-over{position:absolute;left:260px;right:260px;top:0}
+.ds-hb{display:grid;grid-template-columns:190px 1fr 110px;align-items:center;gap:20px;height:52px}
+.ds-hb .lb{font-size:28px;font-weight:500;color:var(--ink)}
+.ds-hb .tr{height:32px}
+.ds-hb .br{display:block;height:100%;width:var(--w);background:var(--blue-line);border-radius:0 9px 9px 0}
+.ds-hb .br.b{background:var(--blue)}
+.ds-hb .v{font-family:var(--mono);font-size:26px;color:var(--ink2)}
+.ds-cap{font-family:var(--sans);font-size:26px;color:var(--muted);margin-bottom:14px}
+
+/* pipeline */
+.ds-pipe{display:flex;align-items:flex-start}
+.ds-st{width:220px;flex:none;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center}
+.ds-st .c{width:124px;height:124px;border-radius:50%;display:grid;place-items:center;font-size:54px;background:var(--blue);box-shadow:0 0 0 12px var(--blue-bg);margin-bottom:10px}
+.ds-st.o .c{background:#fff;border:3px dashed var(--blue);box-shadow:none}
+.ds-st b{font-size:32px;line-height:1.25}
+.ds-st .s{font-size:26px;line-height:1.35}
+.ds-seg{flex:1;height:5px;background:var(--blue);margin-top:60px;border-radius:3px}
+.ds-st .tag{font-size:22px;margin-top:6px}
+
+/* examples */
+.ds-ex .card{display:flex;flex-direction:column;gap:10px;padding:38px 40px}
+.ds-ex .bigico{margin-bottom:10px}
+.ds-ex .io{display:grid;grid-template-columns:128px 1fr;align-items:baseline;gap:10px;padding:12px 0;border-top:2px solid var(--line)}
+.ds-ex .io .k{margin:0}
+.ds-ex .io .t{font-size:30px}
+
+/* library tiles */
+.tool.ds-hot{border-color:var(--blue);background:var(--blue-bg2);box-shadow:0 30px 70px -40px rgba(35,131,226,.6)}
+.tool .s{display:block;margin-top:8px}
+.ds-alias{display:grid;grid-template-columns:repeat(3,1fr);gap:28px}
+.ds-alias .card{display:flex;align-items:center;gap:26px;padding:26px 34px}
+.ds-alias code{font-family:var(--mono);font-size:54px;font-weight:600;color:var(--blue);background:none;border:0;padding:0}
+.ds-alias .t{font-size:28px}
+
+/* anatomy cards */
+.ds-defc{display:flex;flex-direction:column;gap:20px}
+.ds-defc .card{padding:24px 32px;transition:background-color .5s,border-color .5s}
+.ds-defc .card>b{font-size:36px;display:block}
+.ds-defc .card .t{font-size:28px}
+
+/* commands table */
+.ds-tb th{font-family:var(--sans);text-transform:none;letter-spacing:.02em;font-size:25px}
+.ds-tb td{padding:16px 20px;font-size:30px}
+.ds-tb td code{font-size:26px;white-space:nowrap}
+
+/* shape */
+.ds-shape{font-family:var(--mono);font-size:118px;font-weight:600;color:var(--blue);letter-spacing:-.03em;line-height:1.1}
+.ds-sub{display:flex;gap:18px;margin-top:18px}
+.ds-sub span{font-size:30px;padding:10px 22px;border-radius:14px;background:var(--blue-bg);color:var(--blue-d);font-weight:500}
+.ds-pills{display:flex;gap:16px;flex-wrap:wrap;margin-top:18px}
+.ds-pill{display:inline-flex;align-items:center;gap:10px;font-size:27px;padding:10px 22px;border-radius:14px;font-weight:500}
+.ds-pill.b{background:var(--blue-bg);color:var(--blue-d)}.ds-pill.o{background:var(--orange-bg);color:#9b4a00}.ds-pill.g{background:var(--green-bg);color:var(--green)}.ds-pill.r{background:var(--red-bg);color:#a82929}
+.ds-pill code{font-family:var(--mono);font-size:25px}
+
+/* why list */
+.ds-why{display:flex;flex-direction:column;gap:12px}
+.ds-why .w{padding:20px 26px;border-radius:18px;border:2px solid var(--line);background:#fff;font-size:29px;line-height:1.45;color:var(--ink2)}
+.ds-why .w.o{background:var(--orange-bg);border-color:transparent;color:#9b4a00}
+.ds-why .dn{text-align:center;color:var(--faint);font-size:28px;line-height:1}
+
+/* timer */
+.ds-timer{display:flex;align-items:center;gap:28px}
+.ds-timer svg{width:150px;height:150px;flex:none}
+.ds-timer circle{fill:none;stroke-width:14}
+.ds-timer .bgc{stroke:var(--soft)}
+.ds-timer .fg{stroke:var(--orange);stroke-linecap:round}
+.ds-timer b{font-family:var(--mono);font-size:64px;color:var(--orange);display:block;line-height:1}
+.ds-timer span{font-size:28px;color:var(--muted)}
+.ds-ans .kv{grid-template-columns:48px 1fr!important;gap:14px!important;padding:12px 0}
+.ds-ans .kv>b{font-family:var(--mono);font-size:30px;color:var(--blue)}
+.ds-ans .kv>span{font-size:28px}
+
+/* sort rows */
+.ds-sort{position:relative}
+.ds-sort .hd,.ds-sort .rw{display:grid;grid-template-columns:70px 190px 1fr;align-items:center;gap:14px;height:62px;padding:0 20px}
+.ds-sort .hd{position:relative;border-bottom:2px solid var(--ink);font-weight:600;font-size:26px;height:50px}
+.ds-sort .rows{position:relative;height:434px}
+.ds-sort .rw{position:absolute;left:0;right:0;top:var(--y0);border-bottom:1.5px solid var(--line);font-family:'IBM Plex Mono','IBM Plex Sans Thai',monospace;font-size:27px;transition:top 1.1s var(--ease-io)}
+.ds-sort .rw .ix{color:var(--faint)}
+.ds-sort .rw .pb{display:flex;align-items:center;gap:14px}
+.ds-sort .rw .pb i{display:block;height:22px;width:var(--w);background:var(--blue-line);border-radius:0 7px 7px 0}
+.ds-sort .rw.top i{background:var(--blue)}
+
+/* two-condition tiles */
+.ds-tiles{display:grid;grid-template-columns:repeat(7,1fr);gap:16px}
+.ds-tile{border:2px solid var(--line);border-radius:20px;padding:22px 12px 20px;text-align:center;background:#fff;display:flex;flex-direction:column;align-items:center;gap:10px;transition:opacity .6s var(--ease),background-color .5s,border-color .5s,color .5s}
+.ds-tile b{font-size:30px;white-space:nowrap}
+.ds-tile .p{font-family:var(--mono);font-size:40px;font-weight:600;color:var(--ink)}
+.ds-tt{display:inline-block;font-size:24px;padding:4px 16px;border-radius:999px;font-weight:500}
+.ds-tt.h{background:var(--orange-bg);color:#9b4a00}.ds-tt.c{background:var(--blue-bg);color:var(--blue-d)}
+.ds-result{display:flex;align-items:center;gap:26px;font-size:34px;color:var(--ink2)}
+.ds-result .big{font-family:var(--mono);font-size:74px;font-weight:600;color:var(--green);line-height:1}
+
+/* groupby pattern + animation */
+.ds-pat{font-family:'IBM Plex Mono','IBM Plex Sans Thai',monospace;white-space:nowrap}
+.ds-pat .tp{font-size:28px;color:var(--muted);margin-bottom:22px}
+.ds-pat .cc{font-size:40px;color:var(--ink);font-weight:500}
+.ds-gb{position:relative;height:400px}
+.ds-gb .pc{position:absolute;left:var(--x0);top:var(--y0);width:430px;height:40px;display:flex;align-items:center;gap:14px;padding:0 18px;border-radius:10px;background:#fff;border:2px solid var(--line);border-left:8px solid var(--orange);font-family:'IBM Plex Mono','IBM Plex Sans Thai',monospace;font-size:24px;transition:top 1s var(--ease-io),left 1s var(--ease-io),opacity .7s var(--ease) .35s}
+.ds-gb .pc.c{border-left-color:var(--blue)}
+.ds-gb .pc span:first-child{color:var(--faint);width:24px}
+.ds-gb .pc span.p{margin-left:auto;font-weight:600}
+.ds-gb .gh{position:absolute;top:0;font-size:30px;font-weight:600}
+.ds-gb .res{position:absolute;top:66px;width:430px;padding:22px 26px;border-radius:18px;font-size:30px;text-align:center}
+.ds-gb .res.h{background:var(--orange-bg);color:#9b4a00}.ds-gb .res.c{background:var(--blue-bg);color:var(--blue-d)}
+.ds-gb .res code{font-family:var(--mono);font-weight:600}
+
+/* horizontal output bars (groupby demo) */
+.ds-hbs{position:relative;height:340px}
+.ds-hbs .lst{position:absolute;inset:0}
+.ds-hbs .ds-hb{height:48px;grid-template-columns:170px 560px 90px}
+.ds-hbs .ds-hb .lb{font-size:27px}
+.ds-hbs .lst>div{transition:opacity .5s var(--ease) var(--delay,0s),transform .95s var(--ease) var(--delay,0s)}
+
+/* clean */
+.ds-stat{display:grid;grid-template-columns:auto 1fr;gap:50px;align-items:center}
+.ds-stat .n{font-family:var(--mono);font-size:100px;font-weight:600;color:var(--orange);line-height:1;letter-spacing:-.03em}
+.ds-stat .t{font-size:32px}
+.ds-rng{position:relative;height:24px;border-radius:99px;background:var(--soft);margin-top:18px;overflow:hidden}
+.ds-rng i{position:absolute;left:0;top:0;bottom:0;width:80%;border-radius:99px;background:linear-gradient(90deg,var(--orange-bg) 0 75%,var(--orange) 75% 100%);transform:scaleX(0);transform-origin:left;transition:transform 1.4s var(--ease-io) calc(var(--delay,0s) + .3s)}
+.on>.ds-rng i,.on .ds-rng i{transform:scaleX(1)}
+.ds-prob .card{padding:30px 34px;display:flex;flex-direction:column;gap:10px}
+.ds-prob h3{font-size:34px;margin:0}
+.ds-prob .s{margin-bottom:6px}
+.ds-prob .lb{font-size:24px;color:var(--muted);font-weight:500;margin-top:6px}
+.ds-prob code{align-self:flex-start;font-size:24px!important;white-space:nowrap}
+.ds-chips2{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.ds-res2{border-radius:16px;padding:16px 24px;font-size:27px;line-height:1.45;margin-top:14px}
+.ds-res2.bad{background:var(--red-bg);color:#8f2222}.ds-res2.good{background:var(--green-bg);color:#0b5c51}
+.ds-res2 code{font-family:var(--mono);font-size:25px}
+
+/* vertical bar chart */
+.ds-vc{position:relative;display:flex;align-items:flex-end;gap:26px;height:var(--ch,380px);border-bottom:3px solid var(--ink);padding:0 16px}
+.ds-vc .bw{flex:1;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;position:relative}
+.ds-vc .bw>*{flex-shrink:0}
+.ds-vc .bar{width:100%;height:var(--h);background:var(--blue-line);border-radius:10px 10px 0 0;transition:opacity .3s var(--ease) var(--delay,0s),transform .9s var(--ease) var(--delay,0s),height 1.2s var(--ease-io),background-color .6s}
+.ds-vc .v{font-family:var(--mono);font-size:25px;color:var(--ink2);margin-bottom:8px;white-space:nowrap}
+.ds-vc .x{position:absolute;top:calc(100% + 12px);font-size:26px;font-weight:500;white-space:nowrap}
+.ds-vc .ref{position:absolute;left:0;right:0;bottom:var(--b);border-top:3px dashed var(--orange);opacity:.8}
+.ds-vc .ref span{position:absolute;right:0;top:-40px;font-family:var(--mono);font-size:22px;color:var(--orange)}
+.ds-vc .crown{font-size:40px;line-height:1;margin-bottom:4px}
+.ds-vc .nn{position:absolute;top:calc(100% + 56px)}
+
+/* chart-type icons */
+.ds-types .card{padding:30px 32px;display:flex;flex-direction:column;gap:12px}
+.ds-types svg{width:100%;height:130px;margin-bottom:6px}
+.ds-types h3{font-size:36px;margin:0}
+.ds-types .t{font-size:28px;line-height:1.4}
+.ds-types .ex{font-size:26px;color:#9b4a00;background:var(--orange-bg);padding:6px 16px;border-radius:12px;align-self:flex-start}
+.ds-types code{align-self:flex-start;font-size:24px!important}
+.ds-ico rect,.ds-ico circle.dt{transform-box:fill-box}
+.ds-ico rect{fill:var(--blue-line)}.ds-ico rect.b{fill:var(--blue)}
+.ds-ico circle.dt{fill:var(--blue);transform-origin:center}
+.ds-ico .ax{stroke:var(--faint);stroke-width:3}
+.ds-ico path.ln{fill:none;stroke:var(--blue);stroke-width:6;stroke-linecap:round;stroke-linejoin:round}
+.ds-ico path.pie{fill:none;stroke-width:30}
+
+/* figure panel (matplotlib-like) */
+.ds-fig{background:#fff;border:2px solid var(--line);border-radius:22px;box-shadow:0 30px 70px -40px rgba(18,52,96,.35);padding:22px 30px 20px;position:relative}
+.ds-fig .ft{text-align:center;height:44px;font-size:30px;font-weight:600}
+.ds-fig .yl{position:absolute;left:4px;top:50%;width:40px;display:flex;justify-content:center}
+.ds-fig .yl span span{display:inline-block;writing-mode:vertical-rl;transform:rotate(180deg);font-size:26px;color:var(--ink2)}
+.ds-fig .plot{margin-left:34px}
+.ds-fig .ds-vc{gap:20px}
+
+/* attributes mock */
+.ds-attr{display:flex;flex-direction:column}
+.ds-attr .ar{display:grid;grid-template-columns:430px 1fr;align-items:center;gap:22px;padding:13px 16px;border-bottom:2px solid var(--line);border-radius:10px;transition:background-color .5s,opacity .6s var(--ease) var(--delay,0s),transform .95s var(--ease) var(--delay,0s)}
+.ds-attr code{font-family:'IBM Plex Mono','IBM Plex Sans Thai',monospace;font-size:24px;color:var(--ink)}
+.ds-attr span{font-size:27px;color:var(--ink2)}
+.ds-mock{display:flex;justify-content:center;align-items:center;height:560px}
+.ds-fb{position:relative;width:540px;height:430px;background:#fff;border:2px solid var(--line);border-radius:14px;box-shadow:0 30px 70px -40px rgba(18,52,96,.35);overflow:hidden;transition:width 1s var(--ease-io),height 1s var(--ease-io)}
+.ds-fb .ft{position:absolute;left:0;right:0;top:14px;text-align:center;font-size:28px;font-weight:600;height:40px}
+.ds-fb .pa{position:absolute;left:70px;right:22px;top:66px;bottom:52px;border-left:2px solid var(--ink);border-bottom:2px solid var(--ink);display:flex;align-items:flex-end;gap:12px;padding:0 10px;transition:bottom 1s var(--ease-io)}
+.ds-fb .pa i{flex:1;height:var(--h);background:#b9b8b4;transition:background-color .7s}
+.ds-fb .xt{position:absolute;left:0;right:0;top:100%;display:flex;gap:12px;padding:6px 10px 0}
+.ds-fb .xt span{flex:1;position:relative;height:30px}
+.ds-fb .xt em{position:absolute;right:50%;top:0;font-style:normal;font-size:21px;white-space:nowrap;transform-origin:right top;transform:translateX(50%);transition:transform .9s var(--ease-io)}
+.ds-fb .yl{position:absolute;left:12px;top:66px;bottom:52px;display:flex;align-items:center;transition:bottom 1s var(--ease-io)}
+.ds-fb .yl span span{display:inline-block;writing-mode:vertical-rl;transform:rotate(180deg);font-size:24px}
+.ds-fb .xl{position:absolute;left:70px;right:22px;bottom:6px;text-align:center;font-size:24px}
+.f1.on~* .ds-fb{width:700px;height:380px}
+.f2.on~* .ds-fb .pa i{background:#4682b4}
+.f5.on~* .ds-fb .xt em{transform:translateX(12px) rotate(-45deg)}
+.f6.on~* .ds-fb .pa,.f6.on~* .ds-fb .yl{bottom:130px}
+.ds-fb .tl{position:absolute;right:14px;bottom:10px}
+
+/* match cards */
+.ds-mt{display:grid;grid-template-columns:1fr 1fr;gap:26px}
+.ds-mt .card{display:grid;grid-template-columns:60px 1fr 210px;align-items:center;gap:18px;padding:28px 30px}
+.ds-mt .n{font-family:var(--mono);font-size:30px;color:var(--blue);font-weight:500}
+.ds-mt .t{font-size:31px;color:var(--ink)}
+.ds-mt .slot{height:76px;border-radius:18px;border:3px dashed var(--faint);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:600;color:var(--faint)}
+.ds-mt .slot .show1,.ds-mt .slot .show2,.ds-mt .slot .show3,.ds-mt .slot .show4{color:var(--green)}
+.ds-mt .rs{grid-column:2/4;font-size:26px;color:var(--muted);margin-top:-6px}
+.ds-opts{display:flex;gap:16px;align-items:center}
+
+/* mini project */
+.ds-q3 .nrow{grid-template-columns:110px 1fr auto;align-items:center}
+.ds-q3 .nrow .t{font-size:36px;color:var(--ink)}
+.ds-cmp .card{padding:30px 36px}
+.ds-cmp .k{margin-bottom:10px}
+.ds-cmp h3{font-size:34px;margin-bottom:6px}
+.ds-cmp .ds-hb{grid-template-columns:150px 1fr 100px;height:44px}
+.ds-cmp .ds-hb .lb{font-size:27px}
+.ds-cmp .ln2{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
+.ds-cmp .sec{margin-top:18px}
+.ds-cmp .sec .s{margin-bottom:4px}
+.ds-strat .card{display:flex;flex-direction:column;gap:14px;padding:34px 36px}
+.ds-strat .e{font-size:54px}
+.ds-strat .t{font-size:30px}
+.ds-strat .qtag{font-size:27px;align-self:flex-start;line-height:1.4}
+
+/* summary */
+.ds-sum .tick{padding:15px 0;grid-template-columns:76px 1fr}
+.ds-sum .tick .t{display:grid;grid-template-columns:620px 1fr;align-items:center;font-size:31px}
+.ds-sum code{font-family:var(--mono);font-size:27px!important;justify-self:start}
+</style>
+
+<!-- ========================================================= 00 · OPENING -->
+
+<!-- S01 -->
+<section class="scene" data-bg="hero" data-chapter="00 · เปิดคาบ" data-title="Data Science with Python">
+  <div class="ds-herobars">
+    <i class="a fx-growy" style="--h:34%"></i><i class="a fx-growy" style="--h:52%"></i><i class="a fx-growy" style="--h:44%"></i><i class="a fx-growy" style="--h:70%"></i><i class="a fx-growy" style="--h:62%"></i><i class="a fx-growy b" style="--h:92%"></i>
+    <svg viewBox="0 0 420 420" preserveAspectRatio="none"><path class="draw a" data-d=".9" pathLength="1" d="M28 300 L100 230 L172 262 L246 150 L318 176 L392 40"/></svg>
+  </div>
+  <div class="body" style="justify-content:flex-start;padding-top:40px">
+    <div class="eyebrow a ds-th">Python Class · คาบที่ 2 · 3 ชั่วโมง</div>
+    <h1 class="hero-t"><span class="mask a"><span>Data Science</span></span><span class="mask a"><span>with Python</span></span></h1>
+    <p class="lead a mt" style="font-size:44px">จาก Python พื้นฐาน สู่การวิเคราะห์ข้อมูลจริง</p>
+    <div class="row a mt"><span class="chip blue sm">🐼 Pandas</span><span class="chip sm">📈 Matplotlib</span><span class="chip sm">🟢 Google Colab</span></div>
+  </div>
+  <div class="core" data-s="1">ต่อจาก Python 101 —<br><b>วันนี้เราใช้ Python ทำงานกับข้อมูลจริง</b>
+    <svg viewBox="0 0 760 26"><path class="draw" data-s="1" data-d=".5" pathLength="1" d="M4 16 C180 4 420 4 756 14"/></svg>
+  </div>
+</section>
+
+<!-- S02 -->
+<section class="scene" data-bg="tr" data-title="คาบที่แล้ว → วันนี้">
+  <h2 class="title a">คาบที่แล้วเขียนโค้ดเป็นแล้ว วันนี้เอาโค้ดไปถามข้อมูล</h2>
+  <p class="lead a">Data Science ฟังดูยาก แต่จริง ๆ คือ “เอาข้อมูลมาหาคำตอบ”</p>
+  <div class="body">
+    <div class="ds-rec">
+      <div class="card soft fx-left" data-s="1"><span class="k">Python 101 · คาบที่แล้ว</span>
+        <div class="chips mt"><span class="chip">ตัวแปร</span><span class="chip">if-else</span><span class="chip">loop</span><span class="chip">function</span></div></div>
+      <div class="big-arr fx-grow" data-s="2"></div>
+      <div class="card blue fx-right" data-s="2" data-d=".3"><span class="k" style="color:var(--blue)">Data Science · วันนี้</span>
+        <div class="qs2 mt"><span class="qtag">☕ เมนูไหนขายดีสุด?</span><span class="qtag">📅 วันไหนลูกค้าเยอะสุด?</span></div></div>
+    </div>
+  </div>
+  <div class="callout blue" data-s="3"><span class="ico">💡</span><span>ไม่ต้องเดา — <b>ข้อมูลบอกเราได้</b> · เปิด Google Colab เตรียมไว้ได้เลย</span></div>
+</section>
+
+<!-- S03 -->
+<section class="scene" data-bg="br" data-title="สิ่งที่จะเรียนวันนี้">
+  <h2 class="title a">สิ่งที่จะเรียนวันนี้</h2>
+  <p class="lead a">7 หัวข้อ — ส่วนใหญ่เป็น Hands-on ลงมือบน Colab เอง</p>
+  <div class="body" style="gap:44px">
+    <div class="ds-ag">
+      <div class="it" data-s="1"><span class="n">01</span><span class="t">Data Science คืออะไร?</span><span class="tag blue">Concept</span></div>
+      <div class="it" data-s="1"><span class="n">02</span><span class="t">Library &amp; Pandas</span><span class="tag">Tools</span></div>
+      <div class="it" data-s="1"><span class="n">03</span><span class="t">อ่าน CSV + สำรวจข้อมูล</span><span class="tag green">Hands-on</span></div>
+      <div class="it" data-s="1"><span class="n">04</span><span class="t">Filter + GroupBy</span><span class="tag green">Hands-on</span></div>
+      <div class="it" data-s="1"><span class="n">05</span><span class="t">Data Cleaning</span><span class="tag green">Hands-on</span></div>
+      <div class="it" data-s="1"><span class="n">06</span><span class="t">Visualization</span><span class="tag purple">Visual</span></div>
+      <div class="it" data-s="1"><span class="n">07</span><span class="t">Mini Project: วิเคราะห์ร้านกาแฟ ☕</span><span class="tag orange">Project</span></div>
+    </div>
+    <div class="ds-time fx-wipe" data-s="2">
+      <div style="--m:30"><b>P1–2</b><span>~30 นาที</span></div>
+      <div class="h" style="--m:45"><b>P3–4</b><span>~45 นาที</span></div>
+      <div class="br" style="--m:10"><span>พัก</span></div>
+      <div class="h" style="--m:20"><b>P5</b><span>~20 นาที</span></div>
+      <div class="h" style="--m:45"><b>P6</b><span>~45 นาที</span></div>
+      <div class="br" style="--m:10"><span>พัก</span></div>
+      <div class="h" style="--m:30"><b>P7 ☕</b><span>~30 นาที</span></div>
+    </div>
+  </div>
+  <div class="callout" data-s="3"><span class="ico">🧭</span><span>เห็น <b>🟢 Colab Demo</b> = ดูผู้สอนรันสด · เห็น <b>✏️ Interactive</b> = ถึงตาเราลองเอง (มี 3 จุด)</span></div>
+</section>
+
+<!-- S03b · prep (from teaching script "ก่อนเริ่มสอน") -->
+<section class="scene" data-bg="tl" data-title="เตรียม Colab + dataset">
+  <style>
+    .ds-prep .nrow{padding:11px 0;grid-template-columns:64px 1fr}
+    .ds-prep .nrow .t{font-size:29px;line-height:1.4}
+  </style>
+  <div class="eyebrow a ds-th">🟢 ก่อนเริ่มสอน · เตรียมตัว</div>
+  <h2 class="title a">เตรียม Colab + ไฟล์ร้านกาแฟให้พร้อม</h2>
+  <div class="grow" style="display:grid;grid-template-columns:600px 1fr;gap:44px;align-items:center">
+    <div class="col" style="gap:18px">
+      <div class="nlist ds-prep">
+        <div class="nrow" data-s="1"><span class="n">01</span><span class="t"><b>สร้าง Notebook</b> “DataScience_Demo”</span></div>
+        <div class="nrow" data-s="1"><span class="n">02</span><span class="t"><b>ซูม browser 125–150%</b><br>ให้คนหลังห้องเห็นชัด</span></div>
+        <div class="nrow" data-s="2" style="border:0"><span class="n">03</span><span class="t"><b>รันโค้ดสร้าง dataset</b><br>ก่อนเริ่มสอน</span></div>
+      </div>
+      <div class="ds-res2 good" data-s="3">✅ สร้าง dataset เสร็จแล้ว! <b class="mono">(200, 5)</b></div>
+      <div class="row" data-s="3" data-d=".3" style="gap:18px"><span class="file new">coffee_shop.csv<span class="nb">NEW</span></span><span class="s" style="white-space:nowrap">200 แถว · 5 คอลัมน์</span></div>
+      <div class="ds-res2" data-s="4" style="background:var(--orange-bg);color:#9b4a00">🧹 ช่องว่างที่แอบใส่ไว้ = <b>โจทย์ของ Part 5</b></div>
+    </div>
+    <div class="win fx-right" data-s="2" data-label="สร้าง coffee_shop.csv"><pre class="code" data-lang="py" style="font-size:19px;line-height:1.45;padding:18px 26px"><span class="l">import pandas as pd</span>
+<span class="l">import numpy as np</span>
+<span class="l">np.random.seed(42)</span>
+<span class="l">n = 200</span>
+<span class="l">menus = ["Latte", "Mocha", "Espresso", "Matcha",</span>
+<span class="l">         "Americano", "Thai Tea", "Cocoa"]</span>
+<span class="l"># prices · types · days → dict ราคา / ร้อน-เย็น / จันทร์–อาทิตย์</span>
+<span class="l">menus_list = np.random.choice(menus, n)</span>
+<span class="l">data = {"วันที่": …, "เมนู": menus_list, "ประเภท": …, "ราคา": …,</span>
+<span class="l">        "จำนวน": np.random.randint(1, 8, n).astype(float)}</span>
+<span class="l">df = pd.DataFrame(data)</span>
+<span class="l st mark" data-s="4"># ใส่ข้อมูลหาย (NaN) สัก 5% เพื่อฝึก Data Cleaning ทีหลัง</span>
+<span class="l st mark" data-s="4">mask = np.random.random(n) &lt; 0.05</span>
+<span class="l st mark" data-s="4">df.loc[mask, "จำนวน"] = np.nan</span>
+<span class="l">df.to_csv("coffee_shop.csv", index=False)</span>
+<span class="l">print("✅ สร้าง dataset เสร็จแล้ว!", df.shape)</span></pre></div>
+  </div>
+</section>
+
+<!-- ========================================================= 01 · DATA SCIENCE คืออะไร -->
+
+<!-- S04 -->
+<section class="scene divider" data-chapter="01 · Data Science คืออะไร" data-title="Part 1 · Data Science คืออะไร?">
+  <div class="num a">PART 01 · CONCEPT</div>
+  <h1><span class="mask a"><span>Data Science</span></span><span class="mask a"><span>คืออะไร?</span></span></h1>
+  <p class="lead a">ทำไมข้อมูลถึงสำคัญ — ก่อนลงมือทำ ต้องเข้าใจก่อนว่าเราทำอะไรอยู่</p>
+  <div class="bignum a fx-zoom">01</div>
+</section>
+
+<!-- S05 -->
+<section class="scene" data-bg="center" data-title="แค่ดูตัวเลข ตอบได้ไหม?">
+  <i class="ds-f st f2" data-s="2"></i>
+  <h2 class="title a">แค่ดูตัวเลข ตอบได้ไหมว่าเมนูไหนขายดีสุด?</h2>
+  <div class="grow ds-wallwrap">
+    <div class="ds-wall a fx-fade dim2"><span>Cocoa 6.0</span><span>Matcha 1.0</span><span>Americano 5.0</span><span class="n">Cocoa NaN</span><span>Espresso 4.0</span><span>Americano 4.0</span><span>Americano 4.0</span><span>Cocoa 4.0</span><span>Mocha 4.0</span><span>Espresso 6.0</span><span class="n">Cocoa NaN</span><span>Espresso 3.0</span><span>Espresso 2.0</span><span>Americano 7.0</span><span>Matcha 4.0</span><span>Espresso 1.0</span><span>Thai Tea 7.0</span><span>Americano 6.0</span><span>Mocha 1.0</span><span>Matcha 1.0</span><span>Thai Tea 1.0</span><span>Thai Tea 3.0</span><span>Mocha 6.0</span><span>Matcha 1.0</span><span>Americano 4.0</span><span>Latte 5.0</span><span>Matcha 1.0</span><span>Mocha 3.0</span><span>Thai Tea 7.0</span><span>Americano 6.0</span><span>Matcha 3.0</span><span>Latte 1.0</span><span>Latte 6.0</span><span>Espresso 5.0</span><span>Espresso 1.0</span><span>Cocoa 3.0</span><span>Mocha 2.0</span><span>Matcha 4.0</span><span>Matcha 7.0</span><span>Cocoa 3.0</span><span>Thai Tea 6.0</span><span>Thai Tea 1.0</span><span>Cocoa 4.0</span><span>Thai Tea 1.0</span><span>Espresso 6.0</span><span>Matcha 1.0</span><span>Cocoa 2.0</span><span>Matcha 4.0</span><span>Latte 4.0</span><span>Espresso 6.0</span><span>Americano 7.0</span><span class="n">Espresso NaN</span><span>Cocoa 3.0</span><span>Americano 1.0</span><span>Latte 5.0</span><span>Cocoa 1.0</span><span class="n">Mocha NaN</span><span class="n">Matcha NaN</span><span>Latte 1.0</span><span>Matcha 2.0</span><span>Thai Tea 2.0</span><span>Mocha 4.0</span><span>Mocha 6.0</span><span>Latte 7.0</span><span>Mocha 5.0</span><span>Americano 1.0</span><span>Mocha 1.0</span><span>Matcha 3.0</span><span>Matcha 6.0</span><span>Cocoa 2.0</span><span>Matcha 5.0</span><span>Cocoa 4.0</span><span>Matcha 2.0</span><span>Americano 6.0</span><span>Cocoa 7.0</span><span>Espresso 4.0</span><span>Thai Tea 7.0</span><span>Latte 3.0</span><span class="n">Matcha NaN</span><span>Mocha 1.0</span><span>Matcha 7.0</span><span>Mocha 6.0</span><span>Thai Tea 5.0</span><span>Thai Tea 4.0</span><span>Thai Tea 2.0</span><span>Mocha 6.0</span><span>Matcha 6.0</span><span>Thai Tea 3.0</span><span>Americano 7.0</span><span>Cocoa 1.0</span><span>Mocha 1.0</span><span>Mocha 4.0</span><span>Matcha 3.0</span><span>Mocha 6.0</span><span>Mocha 5.0</span><span>Thai Tea 3.0</span><span>Matcha 4.0</span><span>Thai Tea 4.0</span><span class="n">Cocoa NaN</span><span>Cocoa 4.0</span><span class="n">Thai Tea NaN</span><span class="n">Cocoa NaN</span><span>Matcha 3.0</span><span>Latte 7.0</span><span>Thai Tea 3.0</span><span>Americano 4.0</span><span>Americano 7.0</span><span>Mocha 4.0</span><span>Cocoa 1.0</span><span>Americano 1.0</span><span>Mocha 7.0</span><span>Latte 2.0</span><span>Matcha 1.0</span><span class="n">Matcha NaN</span><span>Matcha 4.0</span><span>Americano 1.0</span><span>Latte 1.0</span><span>Americano 2.0</span><span>Cocoa 7.0</span><span>Americano 7.0</span><span>Latte 6.0</span><span>Latte 2.0</span><span class="n">Cocoa NaN</span><span>Latte 7.0</span><span>Latte 4.0</span><span>Matcha 2.0</span><span>Cocoa 1.0</span><span>Espresso 4.0</span><span>Espresso 4.0</span><span>Latte 1.0</span><span>Espresso 2.0</span><span>Espresso 1.0</span><span>Latte 6.0</span><span>Espresso 4.0</span><span>Americano 5.0</span><span>Mocha 5.0</span><span>Cocoa 3.0</span><span class="n">Mocha NaN</span><span>Latte 1.0</span><span>Matcha 1.0</span><span>Cocoa 3.0</span><span>Latte 3.0</span><span>Matcha 3.0</span><span class="n">Mocha NaN</span><span>Latte 6.0</span><span>Cocoa 1.0</span><span>Cocoa 4.0</span><span>Thai Tea 3.0</span><span>Americano 1.0</span><span>Espresso 4.0</span><span>Matcha 6.0</span><span>Thai Tea 4.0</span><span>Espresso 6.0</span><span>Espresso 3.0</span><span>Latte 6.0</span><span>Espresso 1.0</span><span>Americano 3.0</span><span>Cocoa 1.0</span><span>Thai Tea 5.0</span><span>Espresso 2.0</span><span>Latte 6.0</span><span>Americano 2.0</span><span>Mocha 2.0</span><span>Cocoa 6.0</span><span>Cocoa 3.0</span><span>Thai Tea 5.0</span><span>Cocoa 1.0</span><span>Espresso 4.0</span><span>Latte 1.0</span><span>Cocoa 4.0</span><span>Cocoa 1.0</span><span>Mocha 6.0</span><span>Mocha 5.0</span><span class="n">Matcha NaN</span><span>Americano 7.0</span><span>Espresso 3.0</span><span>Cocoa 1.0</span><span>Cocoa 1.0</span><span>Latte 4.0</span><span>Matcha 3.0</span><span>Americano 3.0</span><span>Matcha 6.0</span><span>Thai Tea 7.0</span><span>Americano 6.0</span><span>Cocoa 6.0</span><span>Cocoa 6.0</span><span>Americano 6.0</span><span>Cocoa 6.0</span><span>Espresso 5.0</span><span>Americano 3.0</span><span>Matcha 6.0</span><span>Americano 3.0</span><span>Cocoa 3.0</span><span>Espresso 2.0</span><span>Espresso 5.0</span><span>Thai Tea 6.0</span><span>Matcha 1.0</span><span>Mocha 4.0</span><span>Mocha 7.0</span><span>Americano 1.0</span></div>
+    <div class="ds-qwrap"><span class="qtag fx-pop" data-s="1">? coffee_shop.csv · 200 แถว</span></div>
+    <div class="ds-over">
+      <div class="ds-box fx-zoom" data-s="2" style="padding:26px 40px 22px">
+        <p class="ds-cap">ยอดขายรวม (แก้ว) ต่อเมนู · จาก 200 แถวเดียวกัน</p>
+        <div class="ds-hb" data-s="2" data-d=".3"><span class="lb">Americano</span><span class="tr"><i class="br b fx-grow" data-s="2" data-d=".35" style="--w:600px"></i></span><span class="v">120</span></div>
+        <div class="ds-hb" data-s="2" data-d=".4"><span class="lb">Cocoa</span><span class="tr"><i class="br fx-grow" data-s="2" data-d=".45" style="--w:515px"></i></span><span class="v">103</span></div>
+        <div class="ds-hb" data-s="2" data-d=".5"><span class="lb">Matcha</span><span class="tr"><i class="br fx-grow" data-s="2" data-d=".55" style="--w:505px"></i></span><span class="v">101</span></div>
+        <div class="ds-hb" data-s="2" data-d=".6"><span class="lb">Mocha</span><span class="tr"><i class="br fx-grow" data-s="2" data-d=".65" style="--w:505px"></i></span><span class="v">101</span></div>
+        <div class="ds-hb" data-s="2" data-d=".7"><span class="lb">Latte</span><span class="tr"><i class="br fx-grow" data-s="2" data-d=".75" style="--w:475px"></i></span><span class="v">95</span></div>
+        <div class="ds-hb" data-s="2" data-d=".8"><span class="lb">Thai Tea</span><span class="tr"><i class="br fx-grow" data-s="2" data-d=".85" style="--w:445px"></i></span><span class="v">89</span></div>
+        <div class="ds-hb" data-s="2" data-d=".9"><span class="lb">Espresso</span><span class="tr"><i class="br fx-grow" data-s="2" data-d=".95" style="--w:440px"></i></span><span class="v">88</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="callout blue" data-s="3"><span class="ico">📊</span><span>ทำเป็นกราฟ <b>แค่มองก็รู้คำตอบ</b> ไม่ต้องอ่านตัวเลขทีละแถว — นี่คือพลังของ Data Science</span></div>
+</section>
+
+<!-- S06 -->
+<section class="scene" data-bg="low" data-title="Data Science คืออะไร? (pipeline)">
+  <h2 class="title a">Data Science คืออะไร?</h2>
+  <p class="lead a">นำ<b>ข้อมูล</b>มาวิเคราะห์ → หา <b>insight</b> → <b>ตัดสินใจ</b>ได้ดีขึ้น</p>
+  <div class="body">
+    <div class="ds-pipe">
+      <div class="ds-st o fx-pop" data-s="1"><div class="c">❓</div><b>ตั้งคำถาม</b><span class="s">เมนูไหนขายดี?</span></div>
+      <div class="ds-seg fx-grow" data-s="2"></div>
+      <div class="ds-st fx-pop" data-s="2" data-d=".2"><div class="c">📥</div><b>เก็บข้อมูล</b><span class="s">ยอดขาย · CSV</span><span><span class="tag blue fx-pop" data-s="4">Part 3</span></span></div>
+      <div class="ds-seg fx-grow" data-s="2" data-d=".45"></div>
+      <div class="ds-st fx-pop" data-s="2" data-d=".65"><div class="c">🧹</div><b>ทำความสะอาด</b><span class="s">ช่องว่าง · ค่าผิด</span><span><span class="tag blue fx-pop" data-s="4" data-d=".1">Part 5</span></span></div>
+      <div class="ds-seg fx-grow" data-s="2" data-d=".9"></div>
+      <div class="ds-st fx-pop" data-s="2" data-d="1.1"><div class="c">🔍</div><b>วิเคราะห์</b><span class="s">filter · groupby</span><span><span class="tag blue fx-pop" data-s="4" data-d=".2">Part 4</span></span></div>
+      <div class="ds-seg fx-grow" data-s="2" data-d="1.35"></div>
+      <div class="ds-st fx-pop" data-s="2" data-d="1.55"><div class="c">📊</div><b>สื่อสารผล</b><span class="s">กราฟ · รายงาน</span><span><span class="tag blue fx-pop" data-s="4" data-d=".3">Part 6</span></span></div>
+      <div class="ds-seg fx-grow" data-s="3"></div>
+      <div class="ds-st o fx-pop" data-s="3" data-d=".2"><div class="c">✅</div><b>ตัดสินใจ</b><span class="s">ปรับเมนู · ทำโปร</span><span><span class="tag orange fx-pop" data-s="4" data-d=".4">Part 7 ☕</span></span></div>
+    </div>
+  </div>
+  <div class="callout blue" data-s="4" data-d=".6"><span class="ico">🏢</span><span>4 ขั้นกลางคือกระบวนการที่ทุกบริษัทใหญ่ทำ — วันนี้เราเดินครบทั้งเส้นกับ<b>ข้อมูลร้านกาแฟ</b></span></div>
+</section>
+
+<!-- S07 -->
+<section class="scene" data-bg="tr" data-title="ตัวอย่างที่เจอทุกวัน">
+  <h2 class="title a">ตัวอย่างที่เจอทุกวัน</h2>
+  <p class="lead a">เบื้องหลังแอปที่เราใช้ ก็คือ Data Science</p>
+  <div class="body">
+    <div class="g3 ds-ex">
+      <div class="card fx-pop" data-s="1"><div class="bigico">🎬</div><h3>Netflix</h3>
+        <div class="io"><span class="k">DATA</span><span class="t">ประวัติที่เคยดู</span></div>
+        <div class="io"><span class="k" style="color:var(--blue)">RESULT</span><span class="t"><b>แนะนำหนัง</b>ที่น่าจะชอบ</span></div></div>
+      <div class="card fx-pop" data-s="2"><div class="bigico">🛒</div><h3>Shopee</h3>
+        <div class="io"><span class="k">DATA</span><span class="t">ประวัติการซื้อ</span></div>
+        <div class="io"><span class="k" style="color:var(--blue)">RESULT</span><span class="t"><b>แนะนำสินค้า</b>ที่ใช่</span></div></div>
+      <div class="card fx-pop" data-s="3"><div class="bigico">🏪</div><h3>7-Eleven</h3>
+        <div class="io"><span class="k">DATA</span><span class="t">location · คนแถวนั้นชอบซื้ออะไร</span></div>
+        <div class="io"><span class="k" style="color:var(--blue)">RESULT</span><span class="t"><b>เลือกสินค้า</b>เข้าร้าน</span></div></div>
+    </div>
+  </div>
+  <div class="callout blue" data-s="4"><span class="ico">🔍</span><span>ทั้งหมดนี้คือ Data Science — <b>เอาข้อมูลมาช่วยตัดสินใจ</b> แทนการเดา</span></div>
+</section>
+
+<!-- ========================================================= 02 · LIBRARY & PANDAS -->
+
+<!-- S08 -->
+<section class="scene divider" data-chapter="02 · Library &amp; Pandas" data-title="Part 2 · Library &amp; Pandas">
+  <div class="num a">PART 02 · TOOLS</div>
+  <h1><span class="mask a"><span>Library</span></span><span class="mask a"><span>&amp; Pandas</span></span></h1>
+  <p class="lead a">เครื่องมือสำเร็จรูปสำหรับ Data Science — จะทำอาหาร ก็ต้องมีมีดกับกระทะ</p>
+  <div class="bignum a fx-zoom">02</div>
+</section>
+
+<!-- S09 -->
+<section class="scene" data-bg="bl" data-title="Library คืออะไร?">
+  <h2 class="title a">Library คืออะไร?</h2>
+  <p class="lead a">กล่องเครื่องมือสำเร็จรูป — ไม่ต้องเขียนเอง แค่ <span class="mono blue">import</span> แล้วใช้</p>
+  <div class="body" style="gap:40px">
+    <div class="flow">
+      <span class="node fx-pop" data-s="1">คาบที่แล้ว: เขียนเองทุกอย่าง</span><span class="arr blue fx-grow" data-s="1" data-d=".3"></span>
+      <span class="node blue fx-pop" data-s="1" data-d=".55">วันนี้: ใช้ Library ช่วย → เร็วขึ้นมาก</span>
+    </div>
+    <div class="tile4">
+      <div class="tool ds-hot fx-pop" data-s="2"><code>pd</code><b>Pandas</b><span class="t">จัดการข้อมูลตาราง</span><span class="s">เหมือน Excel แต่เขียนโค้ดสั่ง</span></div>
+      <div class="tool fx-pop" data-s="2"><code>np</code><b>NumPy</b><span class="t">คำนวณตัวเลขเร็ว</span><span class="s">เป็นฐานของ Pandas</span></div>
+      <div class="tool fx-pop" data-s="2"><code>plt</code><b>Matplotlib</b><span class="t">สร้างกราฟพื้นฐาน</span><span class="s">ปรับแต่งได้ละเอียด</span></div>
+      <div class="tool fx-pop" data-s="2"><code>sns</code><b>Seaborn</b><span class="t">สร้างกราฟสวย</span><span class="s">สีสวยพร้อมใช้ ตั้งค่าน้อย</span></div>
+    </div>
+  </div>
+  <div class="callout blue" data-s="3"><span class="ico">📱</span><span>เหมือนแอปในมือถือ — เราไม่ต้องสร้าง LINE เอง <b>แค่โหลดมาแล้วใช้ได้เลย</b></span></div>
+</section>
+
+<!-- S10 -->
+<section class="scene" data-bg="tr" data-title="COLAB · import">
+  <div class="eyebrow a">🟢 COLAB DEMO · IMPORT</div>
+  <h2 class="title a">3 บรรทัด ใช้ได้ทั้งคาบ</h2>
+  <div class="body" style="gap:40px">
+    <div class="win a" data-label="Untitled.ipynb · cell 1"><pre class="code" data-lang="py" style="font-size:30px"><span class="l"># เอา Library เข้ามาใช้ — ทำแค่นี้แล้วใช้ได้ทั้งคาบเลย</span>
+<span class="l" data-s="1">import pandas as pd               # pd คือชื่อย่อ ใช้สั้นขึ้น</span>
+<span class="l" data-s="2">import matplotlib.pyplot as plt  # plt คือชื่อย่อ</span>
+<span class="l" data-s="3">import seaborn as sns</span></pre></div>
+    <div class="ds-alias">
+      <div class="card fx-pop" data-s="1" data-d=".35"><code>pd</code><span class="t">= pandas<br><span class="s">ตารางข้อมูล</span></span></div>
+      <div class="card fx-pop" data-s="2" data-d=".35"><code>plt</code><span class="t">= matplotlib.pyplot<br><span class="s">วาดกราฟ</span></span></div>
+      <div class="card fx-pop" data-s="3" data-d=".35"><code>sns</code><span class="t">= seaborn<br><span class="s">กราฟสวยพร้อมใช้</span></span></div>
+    </div>
+  </div>
+  <div class="callout green" data-s="4"><span class="ico">✅</span><span>แค่ 3 บรรทัด <b>Library 3 ตัวพร้อมใช้งานแล้ว</b> — ต่อไปเรียกผ่านชื่อย่อได้เลย</span></div>
+</section>
+
+<!-- S11 -->
+<section class="scene" data-bg="br" data-title="COLAB · DataFrame แรก">
+  <i class="ds-f st f1" data-s="1"></i><i class="ds-f st f2" data-s="2"></i><i class="ds-f st f3" data-s="3"></i>
+  <div class="eyebrow a">🟢 COLAB DEMO · DATAFRAME</div>
+  <h2 class="title a">DataFrame — ตารางข้อมูลของ Pandas</h2>
+  <div class="grow" style="display:grid;grid-template-columns:1fr 560px;gap:50px;align-items:center">
+    <div class="win a" data-label="cell 2"><pre class="code c24" data-lang="py"><span class="l">import pandas as pd</span>
+<span class="l"> </span>
+<span class="l x1"># สร้างข้อมูลในรูปแบบ Dictionary (คีย์คือชื่อคอลัมน์)</span>
+<span class="l x1">data = {</span>
+<span class="l x1">    "ชื่อ":    ["ไอซ์", "มิ้น", "บีม", "แพร"],</span>
+<span class="l x1">    "คะแนน":  [85, 92, 78, 95],</span>
+<span class="l x1">    "สาขา":   ["CS", "IT", "CS", "DS"]</span>
+<span class="l x1">}</span>
+<span class="l"> </span>
+<span class="l x2"># แปลง Dictionary → DataFrame</span>
+<span class="l x2">df = pd.DataFrame(data)</span>
+<span class="l x3">df   # พิมพ์แค่ชื่อตัวแปร จะแสดงตารางสวยๆ ออกมาเลย</span></pre></div>
+    <div class="ds-box fx-right" data-s="3">
+      <div class="ds-out"><b>OUT</b> df</div>
+      <table class="ds-df big">
+        <tr><th class="ix"></th><th class="lf">ชื่อ</th><th>คะแนน</th><th class="lf">สาขา</th></tr>
+        <tr class="fx-left" data-s="3" data-d=".3"><td class="ix">0</td><td class="lf">ไอซ์</td><td>85</td><td class="lf">CS</td></tr>
+        <tr class="fx-left" data-s="3" data-d=".4"><td class="ix">1</td><td class="lf">มิ้น</td><td>92</td><td class="lf">IT</td></tr>
+        <tr class="fx-left" data-s="3" data-d=".5"><td class="ix">2</td><td class="lf">บีม</td><td>78</td><td class="lf">CS</td></tr>
+        <tr class="fx-left" data-s="3" data-d=".6"><td class="ix">3</td><td class="lf">แพร</td><td>95</td><td class="lf">DS</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="callout blue" data-s="4"><span class="ico">🐼</span><span>DataFrame = ตารางที่มี <b>rows (แถว)</b> และ <b>columns (คอลัมน์)</b> — เหมือน Excel 1 sheet แต่สั่งด้วยโค้ด</span></div>
+</section>
+
+<!-- S12 -->
+<section class="scene" data-bg="r" data-title="Index · Column · Row">
+  <i class="ds-f st f1" data-s="1"></i><i class="ds-f st f2" data-s="2"></i><i class="ds-f st f3" data-s="3"></i><i class="ds-f st f4" data-s="4"></i><i class="ds-f st f5" data-s="5"></i>
+  <h2 class="title a">อ่านตารางให้เป็น: Index · Column · Row</h2>
+  <div class="grow" style="display:grid;grid-template-columns:1fr 560px;gap:70px;align-items:center">
+    <div class="col" style="gap:30px;align-items:flex-start">
+      <div class="ds-box a fx-zoom">
+        <table class="ds-df big">
+          <tr><th class="ix x1"></th><th class="lf x2">ชื่อ</th><th class="x2">คะแนน</th><th class="lf x2">สาขา</th></tr>
+          <tr><td class="ix x1">0</td><td class="lf">ไอซ์</td><td>85</td><td class="lf">CS</td></tr>
+          <tr><td class="ix x1 x3">1</td><td class="lf x3">มิ้น</td><td class="x3">92</td><td class="lf x3">IT</td></tr>
+          <tr><td class="ix x1">2</td><td class="lf">บีม</td><td>78</td><td class="lf">CS</td></tr>
+          <tr><td class="ix x1 ok5">3</td><td class="lf ok5">แพร</td><td class="ok5">95</td><td class="lf ok5">DS</td></tr>
+        </table>
+      </div>
+      <div class="row"><span class="qtag fx-pop" data-s="4">? ใครคะแนนสูงสุด</span><span class="ds-pill g fx-pop" data-s="5">✓ แพร · 95</span></div>
+    </div>
+    <div class="ds-defc">
+      <div class="card x1 fx-right" data-s="1"><span class="k">INDEX</span><b>เลขแถว</b><span class="t">เริ่มจาก <b>0</b> ไม่ใช่ 1 (0-based)</span></div>
+      <div class="card x2 fx-right" data-s="2"><span class="k">COLUMN</span><b>ชื่อ / คะแนน / สาขา</b><span class="t">หัวตาราง แนวตั้ง</span></div>
+      <div class="card x3 fx-right" data-s="3"><span class="k">ROW</span><b>ข้อมูล 1 คน</b><span class="t">หนึ่งแถว แนวนอน</span></div>
+    </div>
+  </div>
+  <div class="callout orange" data-s="6"><span class="ico">🤔</span><span>แค่ 4 คนดูด้วยตาได้ แต่ถ้ามี <b>10,000 คน</b>ล่ะ? — ต้องให้โค้ดช่วย ซึ่งเราจะเรียนกันต่อจากนี้</span></div>
+</section>
+
+<!-- ========================================================= 03 · CSV + EXPLORE -->
+
+<!-- S13 -->
+<section class="scene divider" data-chapter="03 · อ่าน CSV + สำรวจข้อมูล" data-title="Part 3 · อ่าน CSV + สำรวจข้อมูล">
+  <div class="num a">PART 03 · HANDS-ON</div>
+  <h1><span class="mask a"><span>อ่าน CSV</span></span><span class="mask a"><span>+ สำรวจข้อมูล</span></span></h1>
+  <p class="lead a">โหลดข้อมูลจริง แล้วดูว่ามีอะไรข้างใน</p>
+  <div class="bignum a fx-zoom">03</div>
+</section>
+
+<!-- S14 -->
+<section class="scene" data-bg="tl" data-role="load" data-title="5 คำสั่งสำรวจข้อมูล">
+  <h2 class="title a">ได้ไฟล์มาใหม่ ทำอะไรเป็นอย่างแรก?</h2>
+  <p class="lead a">เหมือนเปิดกล่องสินค้าแล้วตรวจของก่อน — Data Scientist ทำ 5 อย่างนี้เสมอ</p>
+  <div class="body">
+    <table class="tbl ds-tb">
+      <tr class="a"><th>คำสั่ง</th><th>ทำอะไร</th><th>เปรียบได้กับ</th></tr>
+      <tr data-s="1"><td><code>pd.read_csv("file.csv")</code></td><td>โหลดไฟล์ CSV → ได้ DataFrame</td><td>เปิดไฟล์ Excel</td></tr>
+      <tr data-s="2"><td><code>df.head()</code></td><td>ดู 5 แถวแรก (ใส่ตัวเลขเปลี่ยนได้)</td><td>เปิดหน้าแรกของสมุด</td></tr>
+      <tr data-s="3"><td><code>df.shape</code></td><td>จำนวนแถว × จำนวนคอลัมน์</td><td>ดูว่าตารางใหญ่แค่ไหน</td></tr>
+      <tr data-s="4"><td><code>df.describe()</code></td><td>สรุปสถิติ: เฉลี่ย สูงสุด ต่ำสุด</td><td>ดูภาพรวมของตัวเลข</td></tr>
+      <tr data-s="5"><td><code>df.info()</code></td><td>ชนิดข้อมูล + missing values</td><td>ตรวจความสมบูรณ์</td></tr>
+    </table>
+  </div>
+  <div class="callout green" data-s="6"><span class="ico">🟢</span><span>สลับไป Colab — ลองทีละคำสั่งกับ <b>ข้อมูลยอดขายร้านกาแฟ</b> ที่เตรียมไว้</span></div>
+</section>
+
+<!-- S15 -->
+<section class="scene" data-bg="br" data-role="load" data-title="COLAB · read_csv + head">
+  <i class="ds-f st f3" data-s="3"></i>
+  <div class="eyebrow a">🟢 COLAB DEMO · READ_CSV</div>
+  <h2 class="title a">โหลดไฟล์ร้านกาแฟ แล้วดู 5 แถวแรก</h2>
+  <div class="grow" style="display:grid;grid-template-columns:690px 1fr;gap:44px;align-items:center">
+    <div class="col" style="gap:24px">
+      <div class="win a" data-label="coffee_shop.csv · ไฟล์ text"><div class="wbody ds-mono" style="font-size:24px;line-height:1.5;padding:20px 32px">วันที่,เมนู,จำนวน,ประเภท,ราคา
+จันทร์,Cocoa,6.0,เย็น,70
+อังคาร,Matcha,1.0,เย็น,90
+พุธ,Americano,5.0,ร้อน,55
+พฤหัส,Cocoa<span class="bad3" style="border-radius:6px">,,</span>เย็น,70</div></div>
+      <div class="win a" data-label="cell 3"><pre class="code c24" data-lang="py"><span class="l"># โหลดไฟล์ CSV เข้ามาเป็น DataFrame</span>
+<span class="l" data-s="1">df = pd.read_csv("coffee_shop.csv")</span>
+<span class="l"> </span>
+<span class="l" data-s="2"># ดู 5 แถวแรก — แค่นี้แหละครับ ง่ายมาก</span>
+<span class="l" data-s="2">df.head()</span></pre></div>
+    </div>
+    <div class="col" style="gap:22px;align-items:flex-start">
+      <div class="ds-box fx-right" data-s="2" data-d=".2">
+        <div class="ds-out"><b>OUT</b> df.head()</div>
+        <table class="ds-df sm">
+          <tr><th class="ix"></th><th class="lf">วันที่</th><th class="lf">เมนู</th><th>จำนวน</th><th class="lf">ประเภท</th><th>ราคา</th></tr>
+          <tr class="fx-left" data-s="2" data-d=".4"><td class="ix">0</td><td class="lf">จันทร์</td><td class="lf">Cocoa</td><td>6.0</td><td class="lf">เย็น</td><td>70</td></tr>
+          <tr class="fx-left" data-s="2" data-d=".5"><td class="ix">1</td><td class="lf">อังคาร</td><td class="lf">Matcha</td><td>1.0</td><td class="lf">เย็น</td><td>90</td></tr>
+          <tr class="fx-left" data-s="2" data-d=".6"><td class="ix">2</td><td class="lf">พุธ</td><td class="lf">Americano</td><td>5.0</td><td class="lf">ร้อน</td><td>55</td></tr>
+          <tr class="fx-left" data-s="2" data-d=".7"><td class="ix">3</td><td class="lf">พฤหัส</td><td class="lf">Cocoa</td><td class="nan bad3">NaN</td><td class="lf">เย็น</td><td>70</td></tr>
+          <tr class="fx-left" data-s="2" data-d=".8"><td class="ix">4</td><td class="lf">ศุกร์</td><td class="lf">Espresso</td><td>4.0</td><td class="lf">ร้อน</td><td>60</td></tr>
+        </table>
+      </div>
+      <span class="qtag fx-pop" data-s="3">? เห็นอะไรแปลก ๆ ไหม — ช่องว่างใน CSV กลายเป็น NaN</span>
+    </div>
+  </div>
+</section>
+
+<!-- S16 -->
+<section class="scene" data-bg="tr" data-role="explore" data-title="shape + describe">
+  <i class="ds-f st f3" data-s="3"></i><i class="ds-f st f4" data-s="4"></i>
+  <h2 class="title a">ใหญ่แค่ไหน? แล้วตัวเลขหน้าตาเป็นยังไง?</h2>
+  <div class="grow" style="display:grid;grid-template-columns:600px 1fr;gap:56px;align-items:center">
+    <div class="col" style="gap:30px">
+      <div class="win a" data-label="cell 4"><pre class="code c24" data-lang="py"><span class="l"># ข้อมูลมีกี่แถว กี่คอลัมน์?</span>
+<span class="l">print(df.shape)</span></pre></div>
+      <div data-s="1"><div class="ds-shape">(<span data-to="200" data-s="1" data-dur="1.3">0</span>, <span data-to="5" data-s="1" data-dur="1.3">0</span>)</div>
+        <div class="ds-sub"><span>200 แถว</span><span>×</span><span>5 คอลัมน์</span></div></div>
+    </div>
+    <div class="col" style="gap:20px">
+      <div class="win a" data-label="cell 5"><pre class="code c24" data-lang="py"><span class="l">df.describe()   # ค่าเฉลี่ย ต่ำสุด สูงสุด</span></pre></div>
+      <div class="ds-box fx-right" data-s="2" style="align-self:flex-start">
+        <div class="ds-out"><b>OUT</b> df.describe() · ตัด 25% / 75% ออกให้อ่านง่าย</div>
+        <table class="ds-df sm" style="font-size:26px">
+          <tr><th class="ix"></th><th>จำนวน</th><th>ราคา</th></tr>
+          <tr><td class="ix">count</td><td class="bad4">186.000000</td><td>200.000000</td></tr>
+          <tr><td class="ix">mean</td><td>3.747312</td><td class="bl3">71.975000</td></tr>
+          <tr><td class="ix">std</td><td>2.041626</td><td>12.112304</td></tr>
+          <tr><td class="ix">min</td><td>1.000000</td><td>55.000000</td></tr>
+          <tr><td class="ix">50%</td><td>4.000000</td><td>70.000000</td></tr>
+          <tr><td class="ix">max</td><td>7.000000</td><td>90.000000</td></tr>
+        </table>
+      </div>
+      <div class="ds-pills" style="margin-top:0"><span class="ds-pill b fx-pop" data-s="3">ราคาเฉลี่ย ≈ 72 บาท</span><span class="ds-pill o fx-pop" data-s="4">? จำนวนนับได้แค่ 186 ไม่ใช่ 200</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- S17 -->
+<section class="scene" data-bg="bl" data-role="explore" data-title="df.info()">
+  <i class="ds-f st f2" data-s="2"></i>
+  <h2 class="title a">df.info() — ชนิดข้อมูล + ช่องที่หายไป</h2>
+  <div class="grow" style="display:grid;grid-template-columns:1fr 520px;gap:56px;align-items:center">
+    <div class="col" style="gap:22px">
+      <div class="win a" data-label="cell 6"><pre class="code c24" data-lang="py"><span class="l"># ดูว่าแต่ละคอลัมน์เป็นข้อมูลประเภทไหน มีข้อมูลหายไหม</span>
+<span class="l">df.info()</span></pre></div>
+      <div class="ds-box" data-s="1">
+        <div class="ds-out" style="letter-spacing:.02em;font-size:22px">RangeIndex: 200 entries, 0 to 199</div>
+        <table class="ds-df sm" style="width:100%">
+          <tr><th class="ix">#</th><th class="lf">Column</th><th>Non-Null Count</th><th class="lf">Dtype</th></tr>
+          <tr class="fx-left" data-s="1" data-d=".2"><td class="ix">0</td><td class="lf">วันที่</td><td>200 non-null</td><td class="lf">object</td></tr>
+          <tr class="fx-left" data-s="1" data-d=".3"><td class="ix">1</td><td class="lf">เมนู</td><td>200 non-null</td><td class="lf">object</td></tr>
+          <tr class="fx-left" data-s="1" data-d=".4"><td class="ix bad2">2</td><td class="lf bad2">จำนวน</td><td class="bad2">186 non-null</td><td class="lf bad2">float64</td></tr>
+          <tr class="fx-left" data-s="1" data-d=".5"><td class="ix">3</td><td class="lf">ประเภท</td><td>200 non-null</td><td class="lf">object</td></tr>
+          <tr class="fx-left" data-s="1" data-d=".6"><td class="ix">4</td><td class="lf">ราคา</td><td>200 non-null</td><td class="lf">int64</td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="ds-why">
+      <div class="w fx-right" data-s="3">“จำนวน” คือจำนวนแก้ว ควรเป็นเลขนับ <span class="mono">int</span></div>
+      <div class="dn fx-fade" data-s="3" data-d=".3">↓</div>
+      <div class="w fx-right" data-s="3" data-d=".45">แต่ Pandas ให้เป็น <b class="mono">float64</b></div>
+      <div class="dn fx-fade" data-s="3" data-d=".75">↓</div>
+      <div class="w o fx-right" data-s="3" data-d=".9">เพราะมี <b>NaN ซ่อนอยู่ 14 ช่อง</b> (200 − 186)</div>
+    </div>
+  </div>
+  <div class="callout orange" data-s="4"><span class="ico">🧹</span><span>จำไว้ก่อน — <b>Part 5</b> เราจะกลับมาจัดการช่องว่างพวกนี้</span></div>
+</section>
+
+<!-- S18 -->
+<section class="scene" data-bg="tr" data-role="explore" data-title="✏️ Interactive 1 · Data Detective">
+  <i class="ds-f st f2" data-s="2"></i>
+  <div class="eyebrow a ds-th">✏️ INTERACTIVE 1 · ลองเองคนละคน</div>
+  <h2 class="title a">Data Detective: หาคำตอบจากข้อมูลเอง</h2>
+  <div class="grow" style="display:grid;grid-template-columns:1fr 620px;gap:48px;align-items:center">
+    <div class="win a" data-label="✏️ exercise"><pre class="code" data-lang="py" style="font-size:26px;line-height:1.5"><span class="l"># ลองตอบคำถามเหล่านี้โดยเขียนโค้ด:</span>
+<span class="l"> </span>
+<span class="l"># 1. ข้อมูลมีทั้งหมดกี่แถว กี่คอลัมน์?</span>
+<span class="l">print(df.<span class="ds-bl"><span class="fill hide2">_____</span><span class="a2 show2">shape</span></span>)</span>
+<span class="l"> </span>
+<span class="l"># 2. ราคาเฉลี่ยของเมนูทั้งหมดคือเท่าไหร่?</span>
+<span class="l">print(df.<span class="ds-bl"><span class="fill hide2">_____</span><span class="a2 show2">describe</span></span>())</span>
+<span class="l"> </span>
+<span class="l"># 3. ดู 10 แถวแรก (ไม่ใช่ 5 แถว)</span>
+<span class="l">print(df.head(<span class="ds-bl"><span class="fill hide2">_____</span><span class="a2 show2">10</span></span>))</span></pre></div>
+    <div class="col" style="gap:26px">
+      <div class="ds-timer fx-pop" data-s="1"><svg viewBox="0 0 150 150"><circle class="bgc" cx="75" cy="75" r="62"/><g transform="rotate(-90 75 75)"><circle class="fg draw" data-s="1" data-d=".2" pathLength="1" cx="75" cy="75" r="62"/></g></svg><div><b>3:00</b><span>นาที · เดินดูว่าใครติดตรงไหน</span></div></div>
+      <div class="card ds-ans" data-s="3"><span class="k">ผลที่ได้</span>
+        <div class="kv"><b>1</b><span><span class="mono">(200, 5)</span> → 200 แถว × 5 คอลัมน์</span></div>
+        <div class="kv"><b>2</b><span>ดูแถว <span class="mono">mean</span> → 71.975 · <span class="mono">max</span> → 90</span></div>
+        <div class="kv" style="border:0"><b>3</b><span><span class="mono">head(10)</span> → 10 แถวแรก</span></div></div>
+    </div>
+  </div>
+  <div class="callout blue" data-s="4"><span class="ico">🕵️</span><span>นี่คือสิ่งที่ Data Analyst ทำ<b>เป็นอย่างแรกทุกครั้ง</b>ที่ได้ข้อมูลใหม่มา</span></div>
+</section>
+
+<!-- ========================================================= 04 · FILTER + GROUPBY -->
+
+<!-- S19 -->
+<section class="scene divider" data-chapter="04 · Filter + GroupBy" data-title="Part 4 · Filter + GroupBy">
+  <div class="num a">PART 04 · HANDS-ON</div>
+  <h1><span class="mask a"><span>Filter</span></span><span class="mask a"><span>+ GroupBy</span></span></h1>
+  <p class="lead a">เลือกเฉพาะข้อมูลที่ต้องการ — 2 ท่าที่สำคัญที่สุดของการวิเคราะห์</p>
+  <div class="bignum a fx-zoom">04</div>
+</section>
+
+<!-- S20 -->
+<section class="scene" data-bg="tl" data-role="filter" data-title="เลือกคอลัมน์">
+  <i class="ds-f st f1" data-s="1"></i><i class="ds-f st f2" data-s="2"></i>
+  <h2 class="title a">เลือกคอลัมน์: หยิบเฉพาะที่อยากดู</h2>
+  <div class="grow" style="display:grid;grid-template-columns:1fr 760px;gap:50px;align-items:center">
+    <div class="win a" data-label="cell 7"><pre class="code c26" data-lang="py"><span class="l"># อยากดูแค่คอลัมน์ "เมนู"</span>
+<span class="l x1">print(df["เมนู"].head())</span>
+<span class="l"> </span>
+<span class="l" data-s="2"># เลือกหลายคอลัมน์ → วงเล็บเหลี่ยม 2 ชั้น</span>
+<span class="l x2" data-s="2">df[["เมนู", "ราคา"]]</span></pre></div>
+    <div class="ds-box a fx-right">
+      <div class="ds-out"><b>OUT</b> 5 แถวแรก</div>
+      <table class="ds-df sm">
+        <tr><th class="ix"></th><th class="lf dim1">วันที่</th><th class="lf bl1">เมนู</th><th class="dim1">จำนวน</th><th class="lf dim1">ประเภท</th><th class="xd1 bl2">ราคา</th></tr>
+        <tr><td class="ix">0</td><td class="lf dim1">จันทร์</td><td class="lf bl1">Cocoa</td><td class="dim1">6.0</td><td class="lf dim1">เย็น</td><td class="xd1 bl2">70</td></tr>
+        <tr><td class="ix">1</td><td class="lf dim1">อังคาร</td><td class="lf bl1">Matcha</td><td class="dim1">1.0</td><td class="lf dim1">เย็น</td><td class="xd1 bl2">90</td></tr>
+        <tr><td class="ix">2</td><td class="lf dim1">พุธ</td><td class="lf bl1">Americano</td><td class="dim1">5.0</td><td class="lf dim1">ร้อน</td><td class="xd1 bl2">55</td></tr>
+        <tr><td class="ix">3</td><td class="lf dim1">พฤหัส</td><td class="lf bl1">Cocoa</td><td class="dim1">NaN</td><td class="lf dim1">เย็น</td><td class="xd1 bl2">70</td></tr>
+        <tr><td class="ix">4</td><td class="lf dim1">ศุกร์</td><td class="lf bl1">Espresso</td><td class="dim1">4.0</td><td class="lf dim1">ร้อน</td><td class="xd1 bl2">60</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="callout blue" data-s="3"><span class="ico">🧺</span><span><span class="mono">df["col"]</span> ชั้นเดียว → ได้ 1 คอลัมน์ · <span class="mono">df[["a", "b"]]</span> สองชั้น → ได้หลายคอลัมน์</span></div>
+</section>
+
+<!-- S21 -->
+<section class="scene" data-bg="br" data-role="filter" data-title="Filter ราคา &gt; 70">
+  <i class="ds-f st f2" data-s="2"></i>
+  <div class="eyebrow a ds-th">FILTER · เหมือนปุ่มกรองใน Shopee</div>
+  <h2 class="title a">Filter: เก็บเฉพาะแถวที่ตรงเงื่อนไข</h2>
+  <div class="grow" style="display:grid;grid-template-columns:1fr 640px;gap:50px;align-items:center">
+    <div class="col" style="gap:22px">
+      <div class="win a" data-label="cell 8"><pre class="code c24" data-lang="py"><span class="l"># อยากได้เฉพาะเมนูที่ราคาเกิน 70 บาท</span>
+<span class="l">expensive = df[<span class="hl hc st" data-s="1">df["ราคา"] &gt; 70</span>]</span>
+<span class="l"> </span>
+<span class="l" data-s="3">print("ทั้งหมด:", len(df), "แถว")</span>
+<span class="l" data-s="3">print("ราคาเกิน 70:", len(expensive), "แถว")</span>
+<span class="l" data-s="3">expensive.head()</span></pre></div>
+      <div class="shell" data-s="3" data-d=".3" data-label="output"><div class="sbody"><span class="out">ทั้งหมด: 200 แถว</span><span class="out ok">ราคาเกิน 70: <span data-to="85" data-s="3" data-d=".5">0</span> แถว</span></div></div>
+    </div>
+    <div class="col" style="gap:14px;align-items:flex-start">
+      <div class="ds-box a fx-right">
+        <div class="ds-out"><b>df</b> ตัวอย่าง 7 แถว</div>
+        <table class="ds-df sm">
+          <tr><th class="ix"></th><th class="lf">เมนู</th><th>ราคา</th><th class="mh">ราคา &gt; 70</th></tr>
+          <tr><td class="ix dim2">0</td><td class="lf dim2">Cocoa</td><td class="dim2">70</td><td class="m F dim2"><span class="fx-pop" data-s="1" data-d=".3">False</span></td></tr>
+          <tr><td class="ix ok2">1</td><td class="lf ok2">Matcha</td><td class="ok2">90</td><td class="m T ok2"><span class="fx-pop" data-s="1" data-d=".4">True</span></td></tr>
+          <tr><td class="ix dim2">2</td><td class="lf dim2">Americano</td><td class="dim2">55</td><td class="m F dim2"><span class="fx-pop" data-s="1" data-d=".5">False</span></td></tr>
+          <tr><td class="ix dim2">4</td><td class="lf dim2">Espresso</td><td class="dim2">60</td><td class="m F dim2"><span class="fx-pop" data-s="1" data-d=".6">False</span></td></tr>
+          <tr><td class="ix ok2">8</td><td class="lf ok2">Mocha</td><td class="ok2">85</td><td class="m T ok2"><span class="fx-pop" data-s="1" data-d=".7">True</span></td></tr>
+          <tr><td class="ix dim2">9</td><td class="lf dim2">Espresso</td><td class="dim2">60</td><td class="m F dim2"><span class="fx-pop" data-s="1" data-d=".8">False</span></td></tr>
+          <tr><td class="ix ok2">14</td><td class="lf ok2">Matcha</td><td class="ok2">90</td><td class="m T ok2"><span class="fx-pop" data-s="1" data-d=".9">True</span></td></tr>
+        </table>
+      </div>
+      <p class="s" data-s="2" data-d=".4">แถว 0: 70 ไม่ “เกิน” 70 → False · อยากรวม 70 ด้วยใช้ <span class="mono">&gt;=</span></p>
+    </div>
+  </div>
+  <div class="callout orange" data-s="4"><span class="ico">🔎</span><span>ลอง <span class="mono">df[df["ราคา"] &gt; 100]</span> กับไฟล์นี้ → ได้ <b>0 แถว</b> เพราะแพงสุดแค่ 90 บาท</span></div>
+</section>
+
+<!-- S22 -->
+<section class="scene" data-bg="tr" data-role="filter" data-title="Sort">
+  <i class="ds-f st f1" data-s="1"></i><i class="ds-f st f2" data-s="2"></i>
+  <h2 class="title a">Sort: เรียงจากแพงไปถูก</h2>
+  <div class="grow" style="display:grid;grid-template-columns:800px 1fr;gap:50px;align-items:center">
+    <div class="col" style="gap:30px">
+      <div class="win a" data-label="cell 9"><pre class="code" data-lang="py" style="font-size:23px;line-height:1.55;padding:24px 30px"><span class="l"># เรียงจากราคาแพงสุดไปถูกสุด</span>
+<span class="l">df_sorted = df.sort_values("ราคา", ascending=<span class="ds-bl"><span class="hide2">False</span><span class="a2 show2">True</span></span>)</span>
+<span class="l">df_sorted.head()</span></pre></div>
+      <div class="nlist">
+        <div class="nrow" data-s="1"><span class="n">False</span><span class="t">เรียงจาก<b>มาก → น้อย</b> (แพงสุดขึ้นก่อน)</span></div>
+        <div class="nrow" data-s="2" style="border:0"><span class="n">True</span><span class="t">เรียงจาก<b>น้อย → มาก</b> (ถูกสุดขึ้นก่อน)</span></div>
+      </div>
+    </div>
+    <div class="ds-sort a fx-right">
+      <div class="hd"><span></span><span>เมนู</span><span>ราคา</span></div>
+      <div class="rows">
+        <div class="rw tp1 tp2" style="--y0:0px;--y1:186px;--y2:186px"><span class="ix">0</span><span>Cocoa</span><span class="pb"><i style="--w:171px"></i>70</span></div>
+        <div class="rw top tp1 tp2" style="--y0:62px;--y1:0px;--y2:372px"><span class="ix">1</span><span>Matcha</span><span class="pb"><i style="--w:220px"></i>90</span></div>
+        <div class="rw tp1 tp2" style="--y0:124px;--y1:372px;--y2:0px"><span class="ix">2</span><span>Americano</span><span class="pb"><i style="--w:134px"></i>55</span></div>
+        <div class="rw tp1 tp2" style="--y0:186px;--y1:310px;--y2:62px"><span class="ix">4</span><span>Espresso</span><span class="pb"><i style="--w:147px"></i>60</span></div>
+        <div class="rw tp1 tp2" style="--y0:248px;--y1:62px;--y2:310px"><span class="ix">8</span><span>Mocha</span><span class="pb"><i style="--w:208px"></i>85</span></div>
+        <div class="rw tp1 tp2" style="--y0:310px;--y1:248px;--y2:124px"><span class="ix">16</span><span>Thai Tea</span><span class="pb"><i style="--w:159px"></i>65</span></div>
+        <div class="rw tp1 tp2" style="--y0:372px;--y1:124px;--y2:248px"><span class="ix">25</span><span>Latte</span><span class="pb"><i style="--w:183px"></i>75</span></div>
+      </div>
+      <p class="s" style="margin-top:10px">ตัวอย่าง: หยิบเมนูละ 1 แถวมาเรียงให้ดู</p>
+    </div>
+  </div>
+  <div class="callout" data-s="3"><span class="ico">💡</span><span>สังเกตเลข index ซ้ายสุด — <b>ติดแถวไปด้วยเสมอ</b> เลยรู้ว่าแต่ละแถวมาจากไหน</span></div>
+</section>
+
+<!-- S23 -->
+<section class="scene" data-bg="low" data-role="filter" data-title="สองเงื่อนไข &amp;">
+  <i class="ds-f st f1" data-s="1"></i><i class="ds-f st f2" data-s="2"></i><i class="ds-f st f3" data-s="3"></i>
+  <h2 class="title a">สองเงื่อนไข: เมนูเย็น และราคาไม่เกิน 80 บาท</h2>
+  <div class="body" style="gap:40px">
+    <div class="win a" data-label="cell 10"><pre class="code" data-lang="py" style="font-size:32px;padding:30px 40px">df[(<span class="hl hc st" data-s="1">df["ประเภท"] == "เย็น"</span>) &amp; (<span class="hl hk st" data-s="2">df["ราคา"] &lt;= 80</span>)]</pre></div>
+    <div class="ds-tiles">
+      <div class="a fx-pop"><div class="ds-tile dim1"><b>Latte</b><span class="ds-tt h">ร้อน</span><span class="p">75</span></div></div>
+      <div class="a fx-pop"><div class="ds-tile dim1"><b>Mocha</b><span class="ds-tt h">ร้อน</span><span class="p">85</span></div></div>
+      <div class="a fx-pop"><div class="ds-tile dim1"><b>Espresso</b><span class="ds-tt h">ร้อน</span><span class="p">60</span></div></div>
+      <div class="a fx-pop"><div class="ds-tile dim2"><b>Matcha</b><span class="ds-tt c">เย็น</span><span class="p">90</span></div></div>
+      <div class="a fx-pop"><div class="ds-tile dim1"><b>Americano</b><span class="ds-tt h">ร้อน</span><span class="p">55</span></div></div>
+      <div class="a fx-pop"><div class="ds-tile ok3"><b>Thai Tea</b><span class="ds-tt c">เย็น</span><span class="p">65</span></div></div>
+      <div class="a fx-pop"><div class="ds-tile ok3"><b>Cocoa</b><span class="ds-tt c">เย็น</span><span class="p">70</span></div></div>
+    </div>
+    <div class="ds-result" data-s="3"><span class="big">→ <span data-to="60" data-s="3" data-d=".2">0</span> แถว</span><span>จาก 200 แถว — เหลือแค่ <b>Thai Tea</b> กับ <b>Cocoa</b></span></div>
+  </div>
+  <div class="callout blue" data-s="4"><span class="ico">🧩</span><span>แต่ละเงื่อนไข<b>ต้องมีวงเล็บ ( ) ของตัวเอง</b> แล้วเชื่อมด้วย <span class="mono">&amp;</span> (และ)</span></div>
+</section>
+
+<!-- S24 -->
+<section class="scene" data-bg="bl" data-role="filter" data-title="GroupBy">
+  <i class="ds-f st f2" data-s="2"></i><i class="ds-f st f3" data-s="3"></i>
+  <h2 class="title a">GroupBy: จัดกลุ่มก่อน แล้วค่อยคำนวณ</h2>
+  <div class="ds-pat a" style="margin-top:30px">
+    <div class="tp">df.groupby("คอลัมน์ที่จัดกลุ่ม")["คอลัมน์ที่คำนวณ"].ฟังก์ชัน()</div>
+    <div class="cc" style="margin-top:44px">df.groupby(<span class="hl hk ht st" data-s="1">"ประเภท"<span class="pop" style="background:var(--orange)">จัดกลุ่มตามประเภท</span></span>)[<span class="hl hc ht st" data-s="1" data-d=".4">"ราคา"<span class="pop" style="background:var(--blue)">ดูคอลัมน์ราคา</span></span>].<span class="hl hm ht st" data-s="1" data-d=".8">mean()<span class="pop" style="background:var(--purple)">หาค่าเฉลี่ย</span></span></div>
+  </div>
+  <div class="grow" style="display:grid;grid-template-columns:960px 1fr;gap:40px;align-items:center;margin-top:24px">
+    <div class="ds-gb a fx-fade">
+      <span class="gh fx-pop" data-s="2" style="left:0;color:#9b4a00">🔥 ร้อน</span>
+      <span class="gh fx-pop" data-s="2" style="left:490px;color:var(--blue-d)">🧊 เย็น</span>
+      <div class="pc c mv2 mv3 out3" style="--x0:0px;--y0:0px;--x2:490px;--y2:56px;--x3:490px;--y3:76px"><span>0</span><span>Cocoa</span><span>เย็น</span><span class="p">70</span></div>
+      <div class="pc c mv2 mv3 out3" style="--x0:0px;--y0:46px;--x2:490px;--y2:102px;--x3:490px;--y3:76px"><span>1</span><span>Matcha</span><span>เย็น</span><span class="p">90</span></div>
+      <div class="pc mv2 mv3 out3" style="--x0:0px;--y0:92px;--x2:0px;--y2:56px;--x3:0px;--y3:76px"><span>2</span><span>Americano</span><span>ร้อน</span><span class="p">55</span></div>
+      <div class="pc c mv2 mv3 out3" style="--x0:0px;--y0:138px;--x2:490px;--y2:148px;--x3:490px;--y3:76px"><span>3</span><span>Cocoa</span><span>เย็น</span><span class="p">70</span></div>
+      <div class="pc mv2 mv3 out3" style="--x0:0px;--y0:184px;--x2:0px;--y2:102px;--x3:0px;--y3:76px"><span>4</span><span>Espresso</span><span>ร้อน</span><span class="p">60</span></div>
+      <div class="pc mv2 mv3 out3" style="--x0:0px;--y0:230px;--x2:0px;--y2:148px;--x3:0px;--y3:76px"><span>5</span><span>Americano</span><span>ร้อน</span><span class="p">55</span></div>
+      <div class="pc mv2 mv3 out3" style="--x0:0px;--y0:276px;--x2:0px;--y2:194px;--x3:0px;--y3:76px"><span>6</span><span>Americano</span><span>ร้อน</span><span class="p">55</span></div>
+      <div class="pc c mv2 mv3 out3" style="--x0:0px;--y0:322px;--x2:490px;--y2:194px;--x3:490px;--y3:76px"><span>7</span><span>Cocoa</span><span>เย็น</span><span class="p">70</span></div>
+      <div class="res h fx-pop" data-s="3" data-d=".6" style="left:0">กลุ่มร้อน → <code>mean()</code> = 1 ค่า</div>
+      <div class="res c fx-pop" data-s="3" data-d=".7" style="left:490px">กลุ่มเย็น → <code>mean()</code> = 1 ค่า</div>
+    </div>
+    <div class="win fx-right" data-s="3" data-d="1" data-label="OUT · ทั้ง 200 แถว"><pre class="code c26">ประเภท
+ร้อน    <span class="tk-n">68.396226</span>
+เย็น    <span class="tk-n">76.010638</span>
+<span class="tk-c">Name: ราคา, dtype: float64</span></pre></div>
+  </div>
+  <div class="callout" data-s="4"><span class="ico">🎓</span><span>เหมือนนับว่าห้องนี้มีสาขา IT / CS / DS กี่คน — <b>บรรทัดเดียว ไม่ต้องไล่อ่านทีละคน</b></span></div>
+</section>
+
+<!-- S25 -->
+<section class="scene" data-bg="br" data-role="filter" data-title="COLAB · เมนูไหนขายดีสุด">
+  <i class="ds-f st f3" data-s="3"></i>
+  <div class="eyebrow a">🟢 COLAB DEMO · GROUPBY + SORT</div>
+  <h2 class="title a">เมนูไหนขายดีสุด? บรรทัดเดียวรู้เลย</h2>
+  <div class="win a" data-label="cell 11"><pre class="code" data-lang="py" style="font-size:23px;line-height:1.55;padding:22px 32px"><span class="l"># เมนูไหนขายดีสุด? → groupby เมนู แล้ว sum จำนวน แล้ว sort จากมากไปน้อย</span>
+<span class="l">result = df.groupby("<span class="ds-bl"><span class="hide3">เมนู</span><span class="a2 show3">วันที่</span></span>")["จำนวน"].sum().sort_values(ascending=False)</span>
+<span class="l">print(result)</span></pre></div>
+  <div class="grow" style="display:grid;grid-template-columns:900px 1fr;gap:50px;align-items:center;margin-top:26px">
+    <div class="ds-hbs">
+      <div class="lst">
+        <div class="ds-hb out3" data-s="1"><span class="lb">Americano</span><span class="tr"><i class="br b fx-grow" data-s="1" data-d=".1" style="--w:560px"></i></span><span class="v">120.0</span></div>
+        <div class="ds-hb out3" data-s="1"><span class="lb">Cocoa</span><span class="tr"><i class="br fx-grow" data-s="1" data-d=".2" style="--w:481px"></i></span><span class="v">103.0</span></div>
+        <div class="ds-hb out3" data-s="1"><span class="lb">Matcha</span><span class="tr"><i class="br fx-grow" data-s="1" data-d=".3" style="--w:471px"></i></span><span class="v">101.0</span></div>
+        <div class="ds-hb out3" data-s="1"><span class="lb">Mocha</span><span class="tr"><i class="br fx-grow" data-s="1" data-d=".4" style="--w:471px"></i></span><span class="v">101.0</span></div>
+        <div class="ds-hb out3" data-s="1"><span class="lb">Latte</span><span class="tr"><i class="br fx-grow" data-s="1" data-d=".5" style="--w:443px"></i></span><span class="v">95.0</span></div>
+        <div class="ds-hb out3" data-s="1"><span class="lb">Thai Tea</span><span class="tr"><i class="br fx-grow" data-s="1" data-d=".6" style="--w:415px"></i></span><span class="v">89.0</span></div>
+        <div class="ds-hb out3" data-s="1"><span class="lb">Espresso</span><span class="tr"><i class="br fx-grow" data-s="1" data-d=".7" style="--w:411px"></i></span><span class="v">88.0</span></div>
+      </div>
+      <div class="lst">
+        <div class="ds-hb" data-s="3" data-d=".4"><span class="lb">อาทิตย์</span><span class="tr"><i class="br b fx-grow" data-s="3" data-d=".5" style="--w:504px"></i></span><span class="v">108.0</span></div>
+        <div class="ds-hb" data-s="3" data-d=".45"><span class="lb">จันทร์</span><span class="tr"><i class="br fx-grow" data-s="3" data-d=".6" style="--w:485px"></i></span><span class="v">104.0</span></div>
+        <div class="ds-hb" data-s="3" data-d=".5"><span class="lb">ศุกร์</span><span class="tr"><i class="br fx-grow" data-s="3" data-d=".7" style="--w:481px"></i></span><span class="v">103.0</span></div>
+        <div class="ds-hb" data-s="3" data-d=".55"><span class="lb">พุธ</span><span class="tr"><i class="br fx-grow" data-s="3" data-d=".8" style="--w:476px"></i></span><span class="v">102.0</span></div>
+        <div class="ds-hb" data-s="3" data-d=".6"><span class="lb">อังคาร</span><span class="tr"><i class="br fx-grow" data-s="3" data-d=".9" style="--w:467px"></i></span><span class="v">100.0</span></div>
+        <div class="ds-hb" data-s="3" data-d=".65"><span class="lb">เสาร์</span><span class="tr"><i class="br fx-grow" data-s="3" data-d="1" style="--w:457px"></i></span><span class="v">98.0</span></div>
+        <div class="ds-hb" data-s="3" data-d=".7"><span class="lb">พฤหัส</span><span class="tr"><i class="br fx-grow" data-s="3" data-d="1.1" style="--w:383px"></i></span><span class="v">82.0</span></div>
+      </div>
+    </div>
+    <div class="col" style="gap:22px">
+      <p class="t" data-s="1" data-d=".9">ถ้านับเองต้องไล่ <b>200 แถว</b> ทีละแถว</p>
+      <span class="qtag fx-pop" data-s="2" style="align-self:flex-start">? อยากรู้ยอดขายรายวัน ต้องเปลี่ยนอะไร</span>
+      <div class="ds-res2 good" data-s="3">เปลี่ยน <b>"เมนู"</b> เป็น <b>"วันที่"</b> — จบ!</div>
+      <p class="s" data-s="3" data-d=".6">ตอนนี้ยังไม่ clean · <span class="mono">sum()</span> ข้ามช่อง NaN ไปเฉย ๆ</p>
+    </div>
+  </div>
+</section>
+
+<!-- ========================================================= 05 · DATA CLEANING -->
+
+<!-- S26 -->
+<section class="scene divider" data-chapter="05 · Data Cleaning" data-title="Part 5 · Data Cleaning">
+  <div class="num a">PART 05 · HANDS-ON</div>
+  <h1><span class="mask a"><span>Data Cleaning</span></span></h1>
+  <p class="lead a">ทำความสะอาดข้อมูลก่อนวิเคราะห์ — ข้อมูลพัง ผลลัพธ์ก็พังตาม</p>
+  <div class="a mt2"><span class="chip sm" style="background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.45);color:#fff">☕ พัก 10 นาทีก่อนเริ่ม Part นี้</span></div>
+  <div class="bignum a fx-zoom">05</div>
+</section>
+
+<!-- S27 -->
+<section class="scene" data-bg="tr" data-role="clean" data-title="ทำไมต้อง clean">
+  <h2 class="title a">Data Cleaning — ทำไมถึงสำคัญ?</h2>
+  <p class="lead a">ฟอร์มที่ลูกค้ากรอกเอง: บางคนลืมกรอก บางคนกรอกเลขเป็น text บางวันบันทึกซ้ำ</p>
+  <div class="body" style="gap:40px">
+    <div class="ds-stat" data-s="1">
+      <div class="n"><span data-to="60" data-s="1" data-dur="1.2">0</span>–<span data-to="80" data-s="1" data-dur="1.4">0</span>%</div>
+      <div><p class="t">ของเวลาทำงาน Data Scientist <b>หมดไปกับการ clean ข้อมูล</b></p><div class="ds-rng"><i></i></div></div>
+    </div>
+    <div class="g3 ds-prob">
+      <div class="card fx-pop" data-s="2"><h3>❗ ข้อมูลหาย (NaN)</h3><span class="s">ลืมกรอกจำนวน</span>
+        <span class="lb">เช็ค</span><code>df.isnull().sum()</code><span class="lb">แก้</span><code>fillna()  dropna()</code></div>
+      <div class="card fx-pop" data-s="3"><h3>❗ Data type ผิด</h3><span class="s">เช่น ราคาเป็น text</span>
+        <span class="lb">เช็ค</span><code>df["ราคา"].dtype</code><span class="lb">แก้</span><code>df["ราคา"].astype(float)</code></div>
+      <div class="card fx-pop" data-s="4"><h3>❗ ข้อมูลซ้ำ</h3><span class="s">duplicate · บันทึกซ้ำ</span>
+        <span class="lb">เช็ค</span><code>df.duplicated().sum()</code><span class="lb">แก้</span><code>df.drop_duplicates()</code></div>
+    </div>
+  </div>
+</section>
+
+<!-- S28 -->
+<section class="scene" data-bg="br" data-role="clean" data-title="COLAB · ข้อมูลสกปรก">
+  <i class="ds-f st f1" data-s="1"></i><i class="ds-f st f2" data-s="2"></i><i class="ds-f st f3" data-s="3"></i><i class="ds-f st f4" data-s="4"></i>
+  <div class="eyebrow a ds-th">🟢 COLAB DEMO · ข้อมูลสกปรก</div>
+  <h2 class="title a">เจอช่องว่าง → นับ → เติม</h2>
+  <div class="grow" style="display:grid;grid-template-columns:1fr 590px;gap:50px;align-items:center">
+    <div class="win a" data-label="cell 12"><pre class="code c22" data-lang="py" style="font-size:21px;line-height:1.45;padding:18px 28px"><span class="l x1">import numpy as np</span>
+<span class="l x1">dirty = pd.DataFrame({</span>
+<span class="l x1">    "ชื่อ": ["ไอซ์", "มิ้น", None, "แพร", "บีม"],</span>
+<span class="l x1">    "คะแนน": [85, None, 78, 95, None],</span>
+<span class="l x1">    "สาขา": ["CS", "IT", "CS", None, "DS"]</span>
+<span class="l x1">})</span>
+<span class="l x1">print(dirty)</span>
+<span class="l x2">print("---")</span>
+<span class="l x2">print(dirty.isnull().sum())</span>
+<span class="l x3"># เติมค่าเฉลี่ยแทน NaN</span>
+<span class="l x3">avg = dirty["คะแนน"].mean()</span>
+<span class="l x4">dirty["คะแนน"] = dirty["คะแนน"].fillna(avg)</span>
+<span class="l x4">print(dirty)</span></pre></div>
+    <div class="col" style="gap:4px;align-items:flex-start">
+      <div class="ds-box fx-right" data-s="1">
+        <div class="ds-out"><b>OUT</b> dirty</div>
+        <table class="ds-df sm ds-tight" style="font-size:27px">
+          <tr><th class="ix"></th><th class="lf">ชื่อ</th><th>คะแนน</th><th class="lf">สาขา</th></tr>
+          <tr><td class="ix">0</td><td class="lf">ไอซ์</td><td>85.0</td><td class="lf">CS</td></tr>
+          <tr><td class="ix">1</td><td class="lf">มิ้น</td><td class="nan bad2 ok4"><span class="hide4">NaN</span><span class="show4">86.0</span></td><td class="lf">IT</td></tr>
+          <tr><td class="ix">2</td><td class="lf nan bad2">None</td><td>78.0</td><td class="lf">CS</td></tr>
+          <tr><td class="ix">3</td><td class="lf">แพร</td><td>95.0</td><td class="lf nan bad2">None</td></tr>
+          <tr><td class="ix">4</td><td class="lf">บีม</td><td class="nan bad2 ok4"><span class="hide4">NaN</span><span class="show4">86.0</span></td><td class="lf">DS</td></tr>
+        </table>
+      </div>
+      <div class="ds-chips2">
+        <span class="ds-pill r fx-pop" data-s="2" data-d=".3">isnull().sum() → ชื่อ 1 · คะแนน 2 · สาขา 1</span>
+        <span class="ds-pill b fx-pop" data-s="3">avg = (85 + 78 + 95) / 3 = <b>86.0</b><span class="show4" style="color:var(--green)">&nbsp;→ fillna ✓</span></span>
+      </div>
+    </div>
+  </div>
+  <div class="callout orange" data-s="5"><span class="ico">⚠️</span><span><span class="mono">None</span> ก็นับเป็นช่องว่าง · fillna รอบนี้เติม<b>แค่คะแนน</b> ชื่อ/สาขาที่หายยังว่างอยู่</span></div>
+</section>
+
+<!-- S29 -->
+<section class="scene" data-bg="tl" data-role="clean" data-title="COLAB · NaN ในร้านกาแฟ">
+  <i class="ds-f st f1" data-s="1"></i><i class="ds-f st f2" data-s="2"></i><i class="ds-f st f3" data-s="3"></i><i class="ds-f st f4" data-s="4"></i>
+  <div class="eyebrow a ds-th">🟢 COLAB DEMO · ข้อมูลร้านกาแฟ</div>
+  <h2 class="title a">ข้อมูลร้านกาแฟ หายไปกี่ช่อง?</h2>
+  <div class="grow" style="display:grid;grid-template-columns:1fr 600px;gap:40px;align-items:center">
+    <div class="win a" data-label="cell 13"><pre class="code c22" data-lang="py"><span class="l x1"># ดูก่อนว่ามี NaN ตรงไหนบ้าง</span>
+<span class="l x1">print(df.isnull().sum())</span>
+<span class="l x2" data-s="2"># ทางเลือก 1: ลบแถวที่มีค่าว่างออก</span>
+<span class="l x2" data-s="2"># df_clean = df.dropna()</span>
+<span class="l x3" data-s="3"># ทางเลือก 2: เติมค่าเฉลี่ยแทน (นิยมกว่า เพราะไม่เสียข้อมูล)</span>
+<span class="l x3" data-s="3">avg_qty = df["จำนวน"].mean()</span>
+<span class="l x3" data-s="3">print("ค่าเฉลี่ยจำนวน:", round(avg_qty, 1))</span>
+<span class="l x3" data-s="3">df["จำนวน"] = df["จำนวน"].fillna(avg_qty)</span>
+<span class="l x4" data-s="4"># ตรวจสอบผล</span>
+<span class="l x4" data-s="4">print("NaN หลังแก้ไข:", df.isnull().sum()["จำนวน"])</span></pre></div>
+    <div class="col" style="gap:0">
+      <div class="ds-box fx-right" data-s="1">
+        <div class="ds-out"><b>OUT</b> df.isnull().sum()<span class="show4 ds-pill g" style="font-family:var(--sans);font-size:22px;padding:4px 14px;letter-spacing:0;margin-left:auto;white-space:nowrap">✓ NaN หลังแก้ไข: 0</span></div>
+        <table class="ds-df sm ds-tight" style="width:100%;font-size:25px">
+          <tr><td class="lf">วันที่</td><td>0</td></tr>
+          <tr><td class="lf">เมนู</td><td>0</td></tr>
+          <tr><td class="lf bad1 ok4">จำนวน</td><td class="bad1 ok4"><span class="hide4">14</span><span class="show4">0</span></td></tr>
+          <tr><td class="lf">ประเภท</td><td>0</td></tr>
+          <tr><td class="lf" style="border:0">ราคา</td><td style="border:0">0</td></tr>
+        </table>
+      </div>
+      <div class="ds-res2 bad" data-s="2"><b>dropna()</b> → ลบ 14 แถว เหลือ <b>186</b> แถว</div>
+      <div class="ds-res2 good" data-s="3">ค่าเฉลี่ยจำนวน: <b>3.7</b> → เติม 14 ช่อง ครบ <b>200</b> แถว</div>
+    </div>
+  </div>
+  <div class="callout" data-s="5"><span class="ico">⚖️</span><span>ลบแถว = เสียวันที่ เมนู ราคาของแถวนั้นไปด้วย · เติมค่าเฉลี่ย = <b>ข้อมูลยังครบ ค่าไม่แปลกเกินไป</b></span></div>
+</section>
+
+<!-- S30 -->
+<section class="scene" data-bg="center" data-role="clean" data-t="zoom" data-title="clean แล้ว แชมป์เปลี่ยน!">
+  <i class="ds-f st f2" data-s="2"></i>
+  <style>
+    .f2.on~* .ds-twist .lose{background:var(--blue-line)!important}
+    .f2.on~* .ds-twist .win2{background:var(--blue)!important}
+    .ds-twist .bar.lose{background:var(--blue)}
+  </style>
+  <h2 class="title a">clean แล้ว… แชมป์เปลี่ยน!</h2>
+  <p class="lead a">ยอดขายรวม (แก้ว) ต่อเมนู — ก่อน vs หลัง <span class="mono">fillna(ค่าเฉลี่ย)</span></p>
+  <div class="body" style="padding-bottom:96px">
+    <div class="ds-vc ds-twist" style="--ch:340px;margin:0 60px">
+      <div class="ref fx-fade" data-s="1" data-d="1" style="--b:326.6px"><span>120 · Americano</span></div>
+      <div class="bw"><span class="crown out2 fx-pop" data-s="1" data-d=".9">🏆</span><span class="v fx-fade" data-s="1" data-d=".5">120</span><div class="bar lose hv2 fx-growy" data-s="1" style="--h:326.4px;--h2:326.4px"></div><span class="x">Americano</span><span class="nn tag fx-pop" data-s="3">NaN 0</span></div>
+      <div class="bw"><span class="crown show2">🏆</span><span class="v fx-fade" data-s="1" data-d=".55"><span class="hide2">103</span><span class="show2">121.7</span></span><div class="bar win2 hv2 fx-growy" data-s="1" data-d=".05" style="--h:280.1px;--h2:331.1px"></div><span class="x">Cocoa</span><span class="nn tag red fx-pop" data-s="3" data-d=".1">NaN 5</span></div>
+      <div class="bw"><span class="v fx-fade" data-s="1" data-d=".6"><span class="hide2">101</span><span class="show2">116.0</span></span><div class="bar hv2 fx-growy" data-s="1" data-d=".1" style="--h:274.7px;--h2:315.5px"></div><span class="x">Matcha</span><span class="nn tag red fx-pop" data-s="3" data-d=".2">NaN 4</span></div>
+      <div class="bw"><span class="v fx-fade" data-s="1" data-d=".65"><span class="hide2">101</span><span class="show2">112.2</span></span><div class="bar hv2 fx-growy" data-s="1" data-d=".15" style="--h:274.7px;--h2:305.3px"></div><span class="x">Mocha</span><span class="nn tag red fx-pop" data-s="3" data-d=".3">NaN 3</span></div>
+      <div class="bw"><span class="v fx-fade" data-s="1" data-d=".7">95</span><div class="bar hv2 fx-growy" data-s="1" data-d=".2" style="--h:258.4px;--h2:258.4px"></div><span class="x">Latte</span><span class="nn tag fx-pop" data-s="3" data-d=".4">NaN 0</span></div>
+      <div class="bw"><span class="v fx-fade" data-s="1" data-d=".75"><span class="hide2">89</span><span class="show2">92.7</span></span><div class="bar hv2 fx-growy" data-s="1" data-d=".25" style="--h:242.1px;--h2:252.3px"></div><span class="x">Thai Tea</span><span class="nn tag red fx-pop" data-s="3" data-d=".5">NaN 1</span></div>
+      <div class="bw"><span class="v fx-fade" data-s="1" data-d=".8"><span class="hide2">88</span><span class="show2">91.7</span></span><div class="bar hv2 fx-growy" data-s="1" data-d=".3" style="--h:239.3px;--h2:249.5px"></div><span class="x">Espresso</span><span class="nn tag red fx-pop" data-s="3" data-d=".6">NaN 1</span></div>
+    </div>
+  </div>
+  <div class="callout orange" data-s="4"><span class="ico">🧹</span><span>วิธีจัดการช่องว่าง<b>เปลี่ยนคำตอบได้</b> — clean ก่อนวิเคราะห์เสมอ และบอกคนอื่นด้วยว่าเรา clean ยังไง</span></div>
+</section>
+
+<!-- ========================================================= 06 · VISUALIZATION -->
+
+<!-- S31 -->
+<section class="scene divider" data-chapter="06 · Visualization" data-title="Part 6 · Visualization">
+  <div class="num a">PART 06 · VISUAL</div>
+  <h1><span class="mask a"><span>Visualization</span></span></h1>
+  <p class="lead a">เปลี่ยนตัวเลขให้เป็นภาพ — ส่วนที่สนุกที่สุดของวันนี้</p>
+  <div class="bignum a fx-zoom">06</div>
+</section>
+
+<!-- S32 -->
+<section class="scene" data-bg="low" data-role="viz" data-title="เลือกกราฟให้ถูกประเภท">
+  <h2 class="title a">เลือกกราฟให้ถูกประเภท</h2>
+  <p class="lead a">แต่ละแบบเหมาะกับข้อมูลคนละแบบ — เลือกผิด คนอ่านจะงง</p>
+  <div class="body">
+    <div class="g4 ds-types">
+      <div class="card fx-pop" data-s="1">
+        <svg class="ds-ico" viewBox="0 0 200 130"><line class="ax" x1="10" y1="122" x2="190" y2="122"/><rect class="fx-growy" data-s="1" data-d=".2" x="24" y="62" width="30" height="60"/><rect class="fx-growy" data-s="1" data-d=".3" x="66" y="30" width="30" height="92"/><rect class="b fx-growy" data-s="1" data-d=".4" x="108" y="8" width="30" height="114"/><rect class="fx-growy" data-s="1" data-d=".5" x="150" y="48" width="30" height="74"/></svg>
+        <h3>📊 Bar Chart</h3><p class="t">เปรียบเทียบจำนวน<br>ระหว่างกลุ่ม</p><span class="ex">เมนูไหนขายดีสุด?</span><code>plt.bar(x, y)</code></div>
+      <div class="card fx-pop" data-s="2">
+        <svg class="ds-ico" viewBox="0 0 200 130"><line class="ax" x1="10" y1="122" x2="190" y2="122"/><path class="ln draw" data-s="2" data-d=".2" pathLength="1" d="M16 100 L52 78 L88 88 L124 46 L160 56 L188 16"/></svg>
+        <h3>📈 Line Chart</h3><p class="t">ดูแนวโน้ม<br>ตามเวลา</p><span class="ex">ยอดขายรายวัน</span><code>plt.plot(x, y)</code></div>
+      <div class="card fx-pop" data-s="3">
+        <svg class="ds-ico" viewBox="0 0 200 130"><line class="ax" x1="10" y1="122" x2="190" y2="122"/><circle class="dt fx-pop" data-s="3" data-d=".2" cx="30" cy="30" r="9"/><circle class="dt fx-pop" data-s="3" data-d=".28" cx="58" cy="44" r="9"/><circle class="dt fx-pop" data-s="3" data-d=".36" cx="80" cy="40" r="9"/><circle class="dt fx-pop" data-s="3" data-d=".44" cx="104" cy="70" r="9"/><circle class="dt fx-pop" data-s="3" data-d=".52" cx="128" cy="64" r="9"/><circle class="dt fx-pop" data-s="3" data-d=".6" cx="150" cy="92" r="9"/><circle class="dt fx-pop" data-s="3" data-d=".68" cx="176" cy="100" r="9"/></svg>
+        <h3>🔵 Scatter Plot</h3><p class="t">ความสัมพันธ์<br>2 ตัวแปร</p><span class="ex">ราคา vs ยอดขาย</span><code>plt.scatter(x, y)</code></div>
+      <div class="card fx-pop" data-s="4">
+        <svg class="ds-ico" viewBox="0 0 200 130"><g transform="translate(40 5)"><path class="pie draw" data-s="4" data-d=".2" pathLength="1" style="stroke:var(--blue)" d="M60.0 20.0 A40 40 0 0 1 72.4 98.0"/><path class="pie draw" data-s="4" data-d=".7" pathLength="1" style="stroke:var(--blue-line)" d="M72.4 98.0 A40 40 0 0 1 20.0 60.0"/><path class="pie draw" data-s="4" data-d="1.1" pathLength="1" style="stroke:var(--orange)" d="M20.0 60.0 A40 40 0 0 1 59.7 20.0"/></g></svg>
+        <h3>🥧 Pie Chart</h3><p class="t">สัดส่วน<br>เปอร์เซ็นต์</p><span class="ex">สัดส่วนยอดขายแต่ละเมนู</span><code>plt.pie(values)</code></div>
+    </div>
+  </div>
+  <div class="callout blue" data-s="5"><span class="ico">🖼️</span><span>ทุกแบบปิดท้ายด้วย <span class="mono">plt.show()</span> เพื่อแสดงผล</span></div>
+</section>
+
+<!-- S33 -->
+<section class="scene" data-bg="r" data-role="viz" data-title="COLAB · กราฟแรก">
+  <i class="ds-f st f1" data-s="1"></i><i class="ds-f st f2" data-s="2"></i><i class="ds-f st f3" data-s="3"></i><i class="ds-f st f4" data-s="4"></i>
+  <div class="eyebrow a ds-th">🟢 COLAB DEMO · กราฟแรก</div>
+  <h2 class="title a">กราฟแรก: ไม่กี่บรรทัดก็ได้ภาพ</h2>
+  <div class="grow" style="display:grid;grid-template-columns:850px 1fr;gap:44px;align-items:center">
+    <div class="win a" data-label="cell 14"><pre class="code" data-lang="py" style="font-size:21px;line-height:1.55;padding:22px 30px"><span class="l">import matplotlib.pyplot as plt</span>
+<span class="l"> </span>
+<span class="l x1">menu = ["Latte", "Mocha", "Espresso", "Matcha"]</span>
+<span class="l x1">sales = [150, 120, 90, 180]</span>
+<span class="l"> </span>
+<span class="l x2">plt.bar(menu, sales,</span>
+<span class="l x2">        color=["#2EAADC", "#4DAB9A", "#F2994A", "#9B59B6"])</span>
+<span class="l x3">plt.title("ยอดขายแต่ละเมนู")</span>
+<span class="l x3">plt.ylabel("จำนวนแก้ว")</span>
+<span class="l x4">plt.show()</span></pre></div>
+    <div class="ds-fig a fx-zoom">
+      <div class="ft"><span class="show3">ยอดขายแต่ละเมนู</span></div>
+      <div class="yl" style="top:150px"><span class="show3"><span>จำนวนแก้ว</span></span></div>
+      <div class="plot" style="padding-bottom:50px">
+        <div class="ds-vc" style="--ch:330px;border-left:2px solid var(--ink);gap:24px">
+          <div class="bw"><span class="v fx-fade" data-s="2" data-d=".6">150</span><div class="bar fx-growy" data-s="2" data-d=".1" style="--h:275px;background:#2EAADC"></div><span class="x fx-fade" data-s="1">Latte</span></div>
+          <div class="bw"><span class="v fx-fade" data-s="2" data-d=".7">120</span><div class="bar fx-growy" data-s="2" data-d=".2" style="--h:220px;background:#4DAB9A"></div><span class="x fx-fade" data-s="1">Mocha</span></div>
+          <div class="bw"><span class="v fx-fade" data-s="2" data-d=".8">90</span><div class="bar fx-growy" data-s="2" data-d=".3" style="--h:165px;background:#F2994A"></div><span class="x fx-fade" data-s="1">Espresso</span></div>
+          <div class="bw"><span class="v fx-fade" data-s="2" data-d=".9">180</span><div class="bar fx-growy" data-s="2" data-d=".4" style="--h:330px;background:#9B59B6"></div><span class="x fx-fade" data-s="1">Matcha</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="callout blue" data-s="4"><span class="ico">📊</span><span>อ่านทีละบรรทัด: <span class="mono">plt.bar(แกน X, แกน Y)</span> → หัวเรื่อง → ป้ายแกน Y → <span class="mono">plt.show()</span></span></div>
+</section>
+
+<!-- S34 -->
+<section class="scene" data-bg="tr" data-role="viz" data-title="โค้ด 4 กราฟ">
+  <h2 class="title a">4 กราฟ โครงเดียวกัน แค่เปลี่ยนชื่อฟังก์ชัน</h2>
+  <div class="grow" style="display:grid;grid-template-columns:1fr 1fr;gap:26px 34px;align-content:center">
+    <div class="win a" data-label="📊 BAR CHART"><pre class="code c24" data-lang="py"><span class="l">x = df['เมนู']</span>
+<span class="l">y = df['จำนวน']</span>
+<span class="l st mark" data-s="1">plt.bar(x, y, color='steelblue')</span>
+<span class="l">plt.show()</span></pre></div>
+    <div class="win a" data-label="📈 LINE CHART"><pre class="code c24" data-lang="py"><span class="l">x = df['วันที่']</span>
+<span class="l">y = df['จำนวน']</span>
+<span class="l st mark" data-s="1" data-d=".2">plt.plot(x, y, marker='o')</span>
+<span class="l">plt.show()</span></pre></div>
+    <div class="win a" data-label="🔵 SCATTER PLOT"><pre class="code c24" data-lang="py"><span class="l">x = df['ราคา']</span>
+<span class="l">y = df['จำนวน']</span>
+<span class="l st mark" data-s="1" data-d=".4">plt.scatter(x, y, color='tomato')</span>
+<span class="l">plt.show()</span></pre></div>
+    <div class="win a" data-label="🥧 PIE CHART"><pre class="code c24" data-lang="py"><span class="l">data = df.groupby('เมนู')['จำนวน'].sum()</span>
+<span class="l st mark" data-s="1" data-d=".6">plt.pie(data,</span>
+<span class="l st mark" data-s="1" data-d=".6">        labels=data.index,</span>
+<span class="l st mark" data-s="1" data-d=".6">        autopct='%1.1f%%')</span>
+<span class="l">plt.show()</span></pre></div>
+  </div>
+  <div class="callout green" data-s="2"><span class="ico">🔁</span><span>🟢 รัน Bar ก่อน แล้วเปลี่ยนเป็น Line → รัน → สังเกตความต่าง · เรียน bar ได้ ที่เหลือ<b>แค่เปลี่ยนชื่อ</b></span></div>
+</section>
+
+<!-- S35 -->
+<section class="scene" data-bg="bl" data-role="viz" data-title="ตกแต่งกราฟด้วย Attributes">
+  <i class="ds-f st f1" data-s="1"></i><i class="ds-f st f2" data-s="2"></i><i class="ds-f st f3" data-s="3"></i><i class="ds-f st f4" data-s="4"></i><i class="ds-f st f5" data-s="5"></i><i class="ds-f st f6" data-s="6"></i>
+  <h2 class="title a">ตกแต่งกราฟด้วย Attributes</h2>
+  <div class="grow" style="display:grid;grid-template-columns:1fr 720px;gap:30px;align-items:center">
+    <div class="ds-attr">
+      <div class="ar a"><code>plt.bar(x, y)</code><span>กราฟเปล่า ๆ แบบเบสิก</span></div>
+      <div class="ar x1" data-s="1"><code>plt.figure(figsize=(8,4))</code><span>กำหนดขนาดรูป (กว้าง×สูง นิ้ว)</span></div>
+      <div class="ar x2" data-s="2"><code>color='steelblue'</code><span>เลือกสีกราฟ</span></div>
+      <div class="ar x3" data-s="3"><code>plt.title('ยอดขายตามเมนู')</code><span>ใส่หัวเรื่อง</span></div>
+      <div class="ar x4" data-s="4"><code>plt.xlabel('เมนู')<br>plt.ylabel('จำนวน')</code><span>ป้ายแกนนอน / แกนตั้ง</span></div>
+      <div class="ar x5" data-s="5"><code>plt.xticks(rotation=45)</code><span>หมุน label แกน X (ชื่อยาว)</span></div>
+      <div class="ar x6" data-s="6"><code>plt.tight_layout()</code><span>จัดขอบ ไม่ให้ label ถูกตัด</span></div>
+      <div class="ar a" style="border:0"><code>plt.show()</code><span>แสดงผล</span></div>
+    </div>
+    <div class="ds-mock a fx-zoom">
+      <div class="ds-fb">
+        <div class="ft"><span class="show3">ยอดขายตามเมนู</span></div>
+        <div class="yl"><span class="show4"><span>จำนวน</span></span></div>
+        <div class="pa">
+          <i style="--h:96%"></i><i style="--h:97%"></i><i style="--h:73%"></i><i style="--h:76%"></i><i style="--h:93%"></i><i style="--h:90%"></i><i style="--h:74%"></i>
+          <div class="xt"><span><em>Americano</em></span><span><em>Cocoa</em></span><span><em>Espresso</em></span><span><em>Latte</em></span><span><em>Matcha</em></span><span><em>Mocha</em></span><span><em>Thai Tea</em></span></div>
+        </div>
+        <div class="xl"><span class="show4">เมนู</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- S36 -->
+<section class="scene" data-bg="r" data-role="viz" data-title="COLAB · กราฟจากข้อมูลจริง">
+  <i class="ds-f st f1" data-s="1"></i><i class="ds-f st f2" data-s="2"></i><i class="ds-f st f3" data-s="3"></i><i class="ds-f st f4" data-s="4"></i>
+  <style>
+    .ds-real .x{transform-origin:right top;right:50%;transition:transform .9s var(--ease-io)}
+    .f3.on~* .ds-real .x{transform:rotate(-30deg)}
+  </style>
+  <div class="eyebrow a ds-th">🟢 COLAB DEMO · ข้อมูลจริง (df ที่ fillna แล้ว)</div>
+  <h2 class="title a">กราฟจากข้อมูลจริง</h2>
+  <div class="grow" style="display:grid;grid-template-columns:1fr 660px;gap:40px;align-items:center">
+    <div class="win a" data-label="cell 15"><pre class="code" data-lang="py" style="font-size:22px;line-height:1.55;padding:22px 30px"><span class="l x1"># รวมยอดขายแต่ละเมนูจาก DataFrame จริง</span>
+<span class="l x1">ยอดรวม = df.groupby("เมนู")["จำนวน"].sum()</span>
+<span class="l"> </span>
+<span class="l x2">plt.figure(figsize=(8, 4))   # กำหนดขนาดกราฟ</span>
+<span class="l x2">plt.bar(ยอดรวม.index, ยอดรวม.values)</span>
+<span class="l x3">plt.title("ยอดขายแต่ละเมนู (ข้อมูลจริง 200 แถว)")</span>
+<span class="l x3">plt.ylabel("จำนวนแก้วรวม")</span>
+<span class="l x3">plt.xticks(rotation=30)      # หมุนตัวหนังสือแกน X เพราะชื่อยาว</span>
+<span class="l x4">plt.show()</span></pre></div>
+    <div class="ds-fig a fx-zoom" style="padding-bottom:26px">
+      <div class="ft" style="font-size:26px"><span class="show3">ยอดขายแต่ละเมนู (ข้อมูลจริง 200 แถว)</span></div>
+      <div class="yl" style="top:140px"><span class="show3"><span>จำนวนแก้วรวม</span></span></div>
+      <div class="plot" style="padding-bottom:104px">
+        <div class="ds-vc ds-real" style="--ch:270px;border-left:2px solid var(--ink);gap:14px;padding:0 10px">
+          <div class="bw"><span class="v fx-fade" data-s="2" data-d=".6" style="font-size:22px">120.0</span><div class="bar fx-growy" data-s="2" data-d=".1" style="--h:218.9px;background:var(--blue)"></div><span class="x fx-fade" data-s="1">Americano</span></div>
+          <div class="bw"><span class="v fx-fade" data-s="2" data-d=".65" style="font-size:22px">121.7</span><div class="bar fx-growy" data-s="2" data-d=".15" style="--h:222.0px;background:var(--blue)"></div><span class="x fx-fade" data-s="1">Cocoa</span></div>
+          <div class="bw"><span class="v fx-fade" data-s="2" data-d=".7" style="font-size:22px">91.7</span><div class="bar fx-growy" data-s="2" data-d=".2" style="--h:167.3px;background:var(--blue)"></div><span class="x fx-fade" data-s="1">Espresso</span></div>
+          <div class="bw"><span class="v fx-fade" data-s="2" data-d=".75" style="font-size:22px">95.0</span><div class="bar fx-growy" data-s="2" data-d=".25" style="--h:173.3px;background:var(--blue)"></div><span class="x fx-fade" data-s="1">Latte</span></div>
+          <div class="bw"><span class="v fx-fade" data-s="2" data-d=".8" style="font-size:22px">116.0</span><div class="bar fx-growy" data-s="2" data-d=".3" style="--h:211.6px;background:var(--blue)"></div><span class="x fx-fade" data-s="1">Matcha</span></div>
+          <div class="bw"><span class="v fx-fade" data-s="2" data-d=".85" style="font-size:22px">112.2</span><div class="bar fx-growy" data-s="2" data-d=".35" style="--h:204.7px;background:var(--blue)"></div><span class="x fx-fade" data-s="1">Mocha</span></div>
+          <div class="bw"><span class="v fx-fade" data-s="2" data-d=".9" style="font-size:22px">92.7</span><div class="bar fx-growy" data-s="2" data-d=".4" style="--h:169.1px;background:var(--blue)"></div><span class="x fx-fade" data-s="1">Thai Tea</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="callout blue" data-s="4"><span class="ico">✨</span><span>จาก 200 แถว → ไม่กี่บรรทัด ก็<b>เห็นทันทีว่าเมนูไหนขายดี</b> · groupby เรียงชื่อ A→Z ให้อัตโนมัติ</span></div>
+</section>
+
+<!-- S37 -->
+<section class="scene" data-bg="br" data-role="viz" data-title="✏️ Interactive 2 · จับคู่กราฟ">
+  <i class="ds-f st f1" data-s="1"></i><i class="ds-f st f2" data-s="2"></i><i class="ds-f st f3" data-s="3"></i><i class="ds-f st f4" data-s="4"></i>
+  <div class="eyebrow a ds-th">✏️ INTERACTIVE 2 · จับคู่กราฟ 2 นาที</div>
+  <h2 class="title a">ข้อมูลแบบนี้ ใช้กราฟอะไร?</h2>
+  <div class="ds-opts a"><span class="s">ตัวเลือก:</span><span class="chip sm">📊 Bar</span><span class="chip sm">📈 Line</span><span class="chip sm">🥧 Pie</span><span class="chip sm">🔵 Scatter</span></div>
+  <div class="body">
+    <div class="ds-mt">
+      <div class="card a"><span class="n">01</span><span class="t">ยอดขายรายวัน 30 วัน</span><span class="slot"><span class="hide1">?</span><span class="show1">📈 Line</span></span><span class="rs"><span class="show1">ดูแนวโน้มตามเวลา</span></span></div>
+      <div class="card a"><span class="n">02</span><span class="t">สัดส่วนเมนูขายดี top 5</span><span class="slot"><span class="hide2">?</span><span class="show2">🥧 Pie</span></span><span class="rs"><span class="show2">ดูสัดส่วน / เปอร์เซ็นต์</span></span></div>
+      <div class="card a"><span class="n">03</span><span class="t">เปรียบเทียบยอดขาย 4 สาขา</span><span class="slot"><span class="hide3">?</span><span class="show3">📊 Bar</span></span><span class="rs"><span class="show3">เทียบจำนวนระหว่างกลุ่ม</span></span></div>
+      <div class="card a"><span class="n">04</span><span class="t">ความสัมพันธ์ ราคา vs ยอดขาย</span><span class="slot"><span class="hide4">?</span><span class="show4">🔵 Scatter</span></span><span class="rs"><span class="show4">ความสัมพันธ์ 2 ตัวแปร</span></span></div>
+    </div>
+  </div>
+  <div class="callout orange" data-s="5"><span class="ico">☕</span><span>พัก 10 นาที — กลับมาเจอ <b>Mini Project</b> วิเคราะห์ร้านกาแฟด้วยตัวเอง</span></div>
+</section>
+
+<!-- ========================================================= 07 · MINI PROJECT -->
+
+<!-- S38 -->
+<section class="scene divider" data-chapter="07 · Mini Project ☕" data-title="Part 7 · Mini Project ☕">
+  <div class="num a">PART 07 · PROJECT</div>
+  <h1><span class="mask a"><span>Mini Project ☕</span></span></h1>
+  <p class="lead a">วิเคราะห์ข้อมูลร้านกาแฟ — เอาทุกอย่างที่เรียนมาใช้จริง</p>
+  <div class="pipe">
+    <span class="pn fx-pop a">LOAD</span><span class="pa fx-grow a"></span>
+    <span class="pn fx-pop a">EXPLORE</span><span class="pa fx-grow a"></span>
+    <span class="pn fx-pop a">FILTER</span><span class="pa fx-grow a"></span>
+    <span class="pn fx-pop a">CLEAN</span><span class="pa fx-grow a"></span>
+    <span class="pn fx-pop a" style="background:#fff;color:var(--blue)">VIZ</span>
+  </div>
+  <div class="bignum a fx-zoom">07</div>
+</section>
+
+<!-- S39 -->
+<section class="scene" data-bg="tr" data-title="Mini Project · โจทย์">
+  <h2 class="title a">Mini Project: Coffee Shop Analysis</h2>
+  <div class="row a" style="gap:14px;flex-wrap:wrap"><span class="chip sm">👤 ลองเองก่อน → เทียบคำตอบกับกลุ่ม 2–3 คน</span><span class="chip sm">⏱ 15 นาที</span><span class="chip sm">📁 ใช้ df ที่โหลดไว้ตั้งแต่ต้นคาบ</span></div>
+  <div class="body ds-q3">
+    <div class="nlist">
+      <div class="nrow" data-s="1"><span class="n">01</span><span class="t">เมนูไหนขายดีที่สุด? <span class="s">(วัดจากจำนวนแก้วรวม)</span></span><span class="tag blue">hint: groupby + sum + sort</span></div>
+      <div class="nrow" data-s="2"><span class="n">02</span><span class="t">วันไหนในสัปดาห์ มีคนมาซื้อเยอะสุด?</span><span class="tag blue">hint: groupby + sum</span></div>
+      <div class="nrow" data-s="3" style="border:0"><span class="n">03</span><span class="t">ถ้าเป็นเจ้าของร้าน จะปรับกลยุทธ์ยังไง?</span><span class="tag orange ds-th">hint: คิดเอง ไม่มีเฉลย</span></div>
+    </div>
+  </div>
+  <div class="callout orange" data-s="4"><span class="ico">⭐</span><span>ทำเสร็จเร็ว? ลองข้อ 4 เอง: <b>เมนูประเภทร้อน หรือ เย็น ขายดีกว่ากัน?</b></span></div>
+</section>
+
+<!-- S40 -->
+<section class="scene" data-bg="bl" data-role="explore" data-title="Mini Project · Step 1–2">
+  <i class="ds-f st f2" data-s="2"></i>
+  <div class="eyebrow a">✏️ INTERACTIVE 3 · STEP 1–2</div>
+  <h2 class="title a">เริ่มจากสำรวจ แล้วเช็กช่องว่าง</h2>
+  <div class="grow" style="display:grid;grid-template-columns:1fr 520px;gap:50px;align-items:center">
+    <div class="win a" data-label="mini_project.ipynb"><pre class="code" data-lang="py" style="font-size:25px;line-height:1.55"><span class="l"># ===== Mini Project: Coffee Shop Analysis =====</span>
+<span class="l"># ใช้ข้อมูลร้านกาแฟที่โหลดมาตั้งแต่ต้นคาบ</span>
+<span class="l"> </span>
+<span class="l"># Step 1: สำรวจข้อมูล</span>
+<span class="l">print("จำนวนข้อมูล:", df.<span class="ds-bl"><span class="fill hide2">_____</span><span class="a2 show2">shape</span></span>)</span>
+<span class="l">print(df.<span class="ds-bl"><span class="fill hide2">_____</span><span class="a2 show2">describe</span></span>())</span>
+<span class="l"> </span>
+<span class="l"># Step 2: ข้อมูลหายกี่ช่อง?</span>
+<span class="l">print(df.<span class="ds-bl"><span class="fill hide2">_____</span><span class="a2 show2">isnull</span></span>().sum())</span></pre></div>
+    <div class="col" style="gap:20px">
+      <div class="card soft" data-s="1"><span class="k">คำใบ้</span><div class="ds-pills" style="margin-top:4px"><span class="ds-pill b"><code>shape</code></span><span class="ds-pill b"><code>describe</code> / <code>head</code></span><span class="ds-pill b"><code>isnull</code></span></div></div>
+      <div class="ds-res2 good" data-s="3">จำนวนข้อมูล: <b class="mono">(200, 5)</b></div>
+      <div class="ds-res2 bad" data-s="3" data-d=".2">โหลดไฟล์ใหม่ → จำนวนหาย <b>14</b> ช่อง</div>
+      <div class="ds-res2 good" data-s="3" data-d=".4">ถ้า fillna ไปแล้วใน Part 5 → <b>0</b> ช่อง</div>
+    </div>
+  </div>
+</section>
+
+<!-- S41 -->
+<section class="scene" data-bg="tr" data-role="viz" data-title="Mini Project · Step 3–5">
+  <i class="ds-f st f1" data-s="1"></i><i class="ds-f st f2" data-s="2"></i><i class="ds-f st f3" data-s="3"></i>
+  <div class="eyebrow a">✏️ INTERACTIVE 3 · STEP 3–5</div>
+  <h2 class="title a">จัดกลุ่ม เรียง แล้ววาดกราฟ</h2>
+  <div class="body">
+    <div class="win a" data-label="mini_project.ipynb"><pre class="code" data-lang="py" style="font-size:24px;line-height:1.52;padding:24px 36px"><span class="l x1"># Step 3: เมนูไหนขายดีที่สุด?</span>
+<span class="l x1">top = df.groupby("เมนู")["จำนวน"].<span class="ds-bl"><span class="fill hide1">_____</span><span class="a2 show1">sum</span></span>()</span>
+<span class="l x1">top_sorted = top.sort_values(ascending=<span class="ds-bl"><span class="fill hide1">_____</span><span class="a2 show1">False</span></span>)</span>
+<span class="l x1">print(top_sorted)</span>
+<span class="l"> </span>
+<span class="l x2"># Step 4: สร้าง Bar Chart เมนูขายดี Top 5</span>
+<span class="l x2">plt.bar(top_sorted.head(5).index, top_sorted.head(5).values)</span>
+<span class="l x2">plt.title("<span class="ds-bl"><span class="fill hide2">_____</span><span class="a2 show2">เมนูขายดี Top 5</span></span>")</span>
+<span class="l x2">plt.show()</span>
+<span class="l"> </span>
+<span class="l x3"># Step 5: ถ้าเป็นเจ้าของร้าน จะปรับกลยุทธ์ยังไง?</span>
+<span class="l x3"># → คิดกับกลุ่มแล้วเล่าให้ห้องฟัง!</span></pre></div>
+  </div>
+  <div class="callout blue" data-s="4"><span class="ico">🚶</span><span>ผู้สอนเดินดูทีละคน ติดตรงไหนถามได้เลย — <b>ไม่ต้องรอให้ทุกคนเสร็จพร้อมกัน</b></span></div>
+</section>
+
+<!-- S42 -->
+<section class="scene" data-bg="br" data-role="viz" data-title="Mini Project · เฉลย">
+  <i class="ds-f st f1" data-s="1"></i><i class="ds-f st f2" data-s="2"></i><i class="ds-f st f3" data-s="3"></i>
+  <div class="eyebrow a ds-th">✏️ เฉลย · หลังครบ 15 นาที</div>
+  <h2 class="title a">เฉลยข้อ 1–3</h2>
+  <div class="body">
+    <div class="win a" data-label="เฉลย.ipynb"><pre class="code" data-lang="py" style="font-size:22px;line-height:1.5;padding:22px 36px"><span class="l x1"># ข้อ 1</span>
+<span class="l x1">result1 = df.groupby("เมนู")["จำนวน"].sum().sort_values(ascending=False)</span>
+<span class="l x1">print(result1)</span>
+<span class="l"> </span>
+<span class="l x2" data-s="2"># ข้อ 2</span>
+<span class="l x2" data-s="2">result2 = df.groupby("วันที่")["จำนวน"].sum()</span>
+<span class="l x2" data-s="2">print(result2.sort_values(ascending=False))</span>
+<span class="l"> </span>
+<span class="l x3" data-s="3"># ข้อ 3</span>
+<span class="l x3" data-s="3">plt.bar(result1.index, result1.values)</span>
+<span class="l x3" data-s="3">plt.title("ยอดขายแต่ละเมนู")</span>
+<span class="l x3" data-s="3">plt.ylabel("จำนวนแก้ว")</span>
+<span class="l x3" data-s="3">plt.xticks(rotation=30)</span>
+<span class="l x3" data-s="3">plt.show()</span></pre></div>
+  </div>
+</section>
+
+<!-- S43 -->
+<section class="scene" data-bg="center" data-role="done" data-t="zoom" data-title="ผลของแต่ละคน เหมือนกันไหม?">
+  <h2 class="title a">ผลของแต่ละคน เหมือนกันไหม?</h2>
+  <p class="lead a">ขึ้นอยู่กับว่า df ของเรา <b>fillna ไปแล้วหรือยัง</b> — ตัวเลขจริงจาก coffee_shop.csv</p>
+  <div class="body">
+    <div class="g2 ds-cmp" style="gap:40px">
+      <div class="card fx-left" data-s="1"><span class="k">A · โหลดไฟล์ใหม่ (ยังมี NaN 14 ช่อง)</span>
+        <p class="s">ข้อ 1 · เมนูขายดี Top 3</p>
+        <div class="ds-hb"><span class="lb">Americano</span><span class="tr"><i class="br b fx-grow" data-s="1" data-d=".3" style="--w:96%"></i></span><span class="v">120</span></div>
+        <div class="ds-hb"><span class="lb">Cocoa</span><span class="tr"><i class="br fx-grow" data-s="1" data-d=".4" style="--w:82%"></i></span><span class="v">103</span></div>
+        <div class="ds-hb"><span class="lb">Matcha</span><span class="tr"><i class="br fx-grow" data-s="1" data-d=".5" style="--w:81%"></i></span><span class="v">101</span></div>
+        <div class="sec"><p class="s">ข้อ 2 · วันขายดี / วันเงียบ</p><div class="ln2"><span class="ds-pill b">📅 อาทิตย์ 108</span><span class="ds-pill o">พฤหัส 82</span></div></div>
+        <div class="sec"><p class="s">ข้อ 4 · ร้อน vs เย็น</p><div class="ln2"><span class="ds-pill o">🔥 ร้อน 404</span><span class="ds-pill b">🧊 เย็น 293</span></div></div></div>
+      <div class="card blue fx-right" data-s="2"><span class="k" style="color:var(--blue)">B · หลัง fillna(ค่าเฉลี่ย) ใน Part 5</span>
+        <p class="s">ข้อ 1 · เมนูขายดี Top 3</p>
+        <div class="ds-hb"><span class="lb">Cocoa</span><span class="tr"><i class="br b fx-grow" data-s="2" data-d=".3" style="--w:97%"></i></span><span class="v">121.7</span></div>
+        <div class="ds-hb"><span class="lb">Americano</span><span class="tr"><i class="br fx-grow" data-s="2" data-d=".4" style="--w:96%"></i></span><span class="v">120.0</span></div>
+        <div class="ds-hb"><span class="lb">Matcha</span><span class="tr"><i class="br fx-grow" data-s="2" data-d=".5" style="--w:93%"></i></span><span class="v">116.0</span></div>
+        <div class="sec"><p class="s">ข้อ 2 · วันขายดี / วันเงียบ</p><div class="ln2"><span class="ds-pill b">📅 จันทร์ 111.5</span><span class="ds-pill o">พฤหัส 100.7</span></div></div>
+        <div class="sec"><p class="s">ข้อ 4 · ร้อน vs เย็น</p><div class="ln2"><span class="ds-pill o">🔥 ร้อน 419.0</span><span class="ds-pill b">🧊 เย็น 330.5</span></div></div></div>
+    </div>
+  </div>
+  <div class="callout green" data-s="3"><span class="ico">🤝</span><span>ไม่มีใครผิด — แต่ต้อง<b>บอกได้ว่า clean ข้อมูลยังไง</b> ก่อนสรุปผลให้คนอื่นฟัง</span></div>
+</section>
+
+<!-- S44 -->
+<section class="scene" data-bg="tl" data-role="done" data-title="Step 5 · ถ้าเป็นเจ้าของร้าน">
+  <div class="eyebrow a ds-th">✏️ STEP 5 · ไม่มีเฉลย</div>
+  <h2 class="title a">ถ้าเป็นเจ้าของร้าน จะปรับกลยุทธ์ยังไง?</h2>
+  <p class="lead a">ข้อมูลบอกว่า… แล้วเราจะทำอะไรต่อ?</p>
+  <div class="body">
+    <div class="g3 ds-strat">
+      <div class="card fx-pop" data-s="1"><span class="e">☕</span><p class="t"><b>Cocoa กับ Americano</b> ขายดีสุด ราว 120 แก้ว</p><span class="qtag">ควรสต็อกอะไรให้พอ?</span></div>
+      <div class="card fx-pop" data-s="2"><span class="e">📅</span><p class="t"><b>พฤหัส</b> เงียบสุด ทั้งแบบ A และ B</p><span class="qtag">ทำโปรวันพฤหัสดีไหม?</span></div>
+      <div class="card fx-pop" data-s="3"><span class="e">🔥</span><p class="t"><b>ร้อน</b>ขายได้มากกว่า<b>เย็น</b> (404 vs 293 แก้ว)</p><span class="qtag">แต่ร้อนมี 4 เมนู เย็นมี 3 — เทียบแฟร์ไหม?</span></div>
+    </div>
+  </div>
+  <div class="callout blue" data-s="4"><span class="ico">💬</span><span>คิดกับกลุ่ม แล้วเล่าให้ห้องฟัง — <b>ใช้ตัวเลขจากข้อมูล</b>ประกอบทุกครั้ง</span></div>
+</section>
+
+<!-- ========================================================= 08 · สรุป -->
+
+<!-- S45 -->
+<section class="scene" data-bg="hero" data-chapter="08 · สรุป" data-role="done" data-title="สรุปสิ่งที่เรียนวันนี้">
+  <h2 class="title a">สรุปสิ่งที่เรียนวันนี้</h2>
+  <div class="body ds-sum">
+    <div class="nlist">
+      <div class="tick" data-s="1"><span class="chk"></span><span class="t"><code>pd.read_csv()</code><span>โหลดข้อมูล CSV</span></span></div>
+      <div class="tick" data-s="1"><span class="chk"></span><span class="t"><code>.head()  .shape  .describe()</code><span>สำรวจข้อมูลก่อนเสมอ</span></span></div>
+      <div class="tick" data-s="1"><span class="chk"></span><span class="t"><code>df[df["col"] &gt; x]</code><span>Filter ข้อมูล</span></span></div>
+      <div class="tick" data-s="1"><span class="chk"></span><span class="t"><code>.groupby("col").mean()</code><span>จัดกลุ่มแล้วคำนวณ</span></span></div>
+      <div class="tick" data-s="1"><span class="chk"></span><span class="t"><code>.isnull()  .fillna()  .dropna()</code><span>ทำความสะอาดข้อมูล</span></span></div>
+      <div class="tick" data-s="1" style="border:0"><span class="chk"></span><span class="t"><code>plt.bar()  plt.plot()  plt.show()</code><span>สร้างกราฟ</span></span></div>
+    </div>
+    <p class="s mt" data-s="2" data-d=".3">🧰 ก่อนคาบหน้า รันติดตั้งไว้ก่อน 5–10 นาที (โหลดนาน): <span class="mono" style="color:var(--blue-d)">!pip install transformers torch pillow -q</span></p>
+  </div>
+  <div class="callout blue" data-s="2"><span class="ico">🤖</span><span>คาบหน้า → <b>AI &amp; Machine Learning</b>: จาก “วิเคราะห์ข้อมูล” เป็น “ให้คอมเรียนรู้จากข้อมูล” · มีคำถามถามได้เลย</span></div>
+</section>
+
+  <div id="hud">
+    <div id="hud-ch"><span></span></div>
+    <div id="roles"></div>
+    <div id="beats"></div>
+    <div id="hud-n"></div>
+    <div id="prog"></div>
+  </div>
+</div>
+
+<div id="ov" class="ovl"><div class="top"><b>ภาพรวมทุกฉาก</b><small>คลิกเพื่อไป · Esc เพื่อปิด</small></div><div id="ov-list"></div></div>
+<div id="help" class="ovl"><div class="box"><h4>ปุ่มลัด</h4><table>
+<tr><td>→ · Space · PgDn · คลิก</td><td>จังหวะถัดไป</td></tr>
+<tr><td>← · PgUp</td><td>ย้อนหนึ่งจังหวะ</td></tr>
+<tr><td>↓ / ↑</td><td>ข้ามทั้งฉาก ไปถัดไป / ก่อนหน้า</td></tr>
+<tr><td>Home / End</td><td>ฉากแรก / ฉากสุดท้าย</td></tr>
+<tr><td>O · Esc</td><td>ภาพรวมทุกฉาก</td></tr>
+<tr><td>ตัวเลข + Enter</td><td>ไปฉากนั้น</td></tr>
+<tr><td>F</td><td>เต็มจอ</td></tr>
+<tr><td>B</td><td>พักจอ (ขาว)</td></tr>
+<tr><td>P</td><td>พิมพ์ / บันทึก PDF</td></tr>
+<tr><td>?</td><td>เปิด/ปิดหน้านี้</td></tr>
+</table></div></div>
+<div id="blank"></div>
+<div id="toast">กด <kbd>→</kbd> เพื่อไปต่อ · <kbd>O</kbd> ภาพรวม · <kbd>?</kbd> ปุ่มลัด</div>
+
+<script>window.DECK={"tracker": [["load", "LOAD", "read_csv"], ["explore", "EXPLORE", "head · info"], ["filter", "FILTER", "filter · groupby"], ["clean", "CLEAN", "NaN"], ["viz", "VIZ", "chart"]]}</script>
+<script>
+(()=>{
+const stage=document.getElementById('stage');
+const bg=document.getElementById('bg');
+const scenes=[...stage.querySelectorAll('.scene')];
+const $=id=>document.getElementById(id);
+const hudCh=$('hud-ch'),beatsEl=$('beats'),hudN=$('hud-n'),prog=$('prog'),roles=$('roles');
+const ICON_FILE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>';
+const ICON_DIR='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>';
+const ICON_CHK='<svg viewBox="0 0 24 24"><path pathLength="1" d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+/* tracker: window.DECK = {tracker:[['ba','BA','requirements'],...]} ; scenes use data-role="<key>" or "done" */
+const TR=((window.DECK||{}).tracker)||[];
+roles.innerHTML=TR.map((t,k)=>(k?'<div class="ln"></div>':'')+`<div class="r" data-r="${t[0]}"><i></i><b>${t[1]}</b><small>${t[2]||''}</small></div>`).join('');
+const seg=(window.Intl&&Intl.Segmenter)?new Intl.Segmenter('th',{granularity:'grapheme'}):null;
+
+/* background presets: orb x,y,scale · ring x,y,scale · dot x,y,scale */
+const P={
+  hero:[1560,430,1.0, 1560,430,1.28, 1090,170,1],
+  tr:[1790,70,.52, 1790,70,.76, 1540,200,.6],
+  br:[1810,1010,.58, 1810,1010,.84, 1500,1010,.55],
+  bl:[70,1050,.5, 70,1050,.74, 390,1010,.55],
+  tl:[90,40,.36, 90,40,.56, 330,90,.45],
+  r:[1720,560,.82, 1720,560,1.04, 1230,250,.7],
+  center:[960,640,.62, 960,640,.84, 960,300,0],
+  low:[960,1560,1.25, 960,1560,1.45, 960,880,.6],
+  flood:[960,540,2.6, 960,540,3.3, 960,540,0]
+};
+const CYCLE=['tr','br','bl','tr','low','br','tl'];
+
+
+/* ---------- tiny syntax highlighter: <pre class="code" data-lang="py|sh|yaml|docker|js|txt"> and .shell .cmd ---------- */
+const LANG={
+  py:[[/#.*$/,'c'],[/(f|r|b)?("""[\s\S]*?"""|'[^'\n]*'|"[^"\n]*")/,'s'],[/\b(def|return|if|elif|else|for|while|in|not|and|or|import|from|as|class|True|False|None|try|except|with|lambda|break|continue|pass|is|del|global|yield|raise)\b/,'k'],[/\b(print|input|int|float|str|bool|len|range|list|dict|set|tuple|type|round|sum|min|max|sorted|enumerate|zip|open)\b(?=\()/,'b'],[/\b[A-Za-z_]\w*(?=\()/,'f'],[/\b\d+(\.\d+)?\b/,'n']],
+  sh:[[/#.*$/,'c'],[/("[^"\n]*"|'[^'\n]*')/,'s'],[/(^|\s)(--?[\w-]+)(=\S+)?/,'flag'],[/\b(docker|kubectl|compose|helm|curl|cd|ls|cat|grep|sudo|echo|git|python3?|pip)\b/,'k'],[/\b\d+(\.\d+)*\b/,'n']],
+  yaml:[[/#.*$/,'c'],[/^(\s*-?\s*)([\w.\-\/]+)(?=:)/,'key'],[/("[^"\n]*"|'[^'\n]*')/,'s'],[/\b(true|false|null)\b/,'k'],[/\b\d+(\.\d+)?[a-zA-Z]*\b/,'n']],
+  docker:[[/#.*$/,'c'],[/^(\s*)(FROM|RUN|COPY|ADD|WORKDIR|ENV|EXPOSE|CMD|ENTRYPOINT|ARG|USER|VOLUME|LABEL|HEALTHCHECK)\b/,'kw2'],[/("[^"\n]*"|'[^'\n]*')/,'s'],[/\b\d+(\.\d+)*\b/,'n']],
+  js:[[/\/\/.*$/,'c'],[/("[^"\n]*"|'[^'\n]*'|`[^`]*`)/,'s'],[/\b(const|let|var|function|return|if|else|for|while|new|true|false|null|await|async|import|from|export)\b/,'k'],[/\b[A-Za-z_]\w*(?=\()/,'f'],[/\b\d+(\.\d+)?\b/,'n']]
+};
+function hlText(text,rules){
+  // tokenize one line at a time
+  return text.split('\n').map(line=>{
+    let out='',rest=line,guard=0;
+    while(rest.length&&guard++<400){
+      let best=null;
+      rules.forEach(([re,cls])=>{const m=new RegExp(re.source,re.flags.replace('g','')+'m').exec(rest);if(m&&(best===null||m.index<best.m.index))best={m,cls}});
+      if(!best){out+=esc(rest);break}
+      const {m,cls}=best; let pre=rest.slice(0,m.index), tok=m[0], lead='';
+      // rules with a leading group (flags, yaml keys, docker instr): keep group1 unstyled
+      if((cls==='flag'||cls==='key'||cls==='kw2')&&m[1]!==undefined&&m[2]!==undefined){lead=m[1];tok=m[2];const tail=m[0].slice(m[1].length+m[2].length);out+=esc(pre)+esc(lead)+`<span class="tk-${cls}">${esc(tok)}</span>`+esc(tail);rest=rest.slice(m.index+m[0].length);continue}
+      if(!tok.length){out+=esc(rest[0]);rest=rest.slice(1);continue}
+      out+=esc(pre)+`<span class="tk-${cls}">${esc(tok)}</span>`; rest=rest.slice(m.index+tok.length);
+    }
+    return out;
+  }).join('\n');
+}
+function esc(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function highlight(el,lang){
+  const rules=LANG[lang]; if(!rules)return;
+  const walk=n=>{[...n.childNodes].forEach(c=>{
+    if(c.nodeType===3){ if(!c.textContent.trim())return; const w=document.createElement('span'); w.innerHTML=hlText(c.textContent,rules); c.replaceWith(...w.childNodes); }
+    else if(c.nodeType===1&&!/^tk-/.test(c.className)) walk(c);
+  })};
+  walk(el);
+}
+// drop whitespace-only text nodes between block lines (.l / .cmd / .out)
+stage.querySelectorAll('pre.code,.shell .sbody').forEach(p=>{ if(p.querySelector(':scope>.l,:scope>.cmd,:scope>.out')) [...p.childNodes].forEach(n=>{ if(n.nodeType===3&&!n.textContent.trim()) n.remove(); }); });
+stage.querySelectorAll('pre.code[data-lang]').forEach(p=>highlight(p,p.dataset.lang));
+stage.querySelectorAll('.shell .cmd').forEach(c=>highlight(c,'sh'));
+stage.querySelectorAll('.shell').forEach(w=>{ if(!w.querySelector('.sbar')) w.insertAdjacentHTML('afterbegin',`<div class="sbar"><i></i><i></i><i></i><span>${w.dataset.label||'TERMINAL'}</span></div>`); });
+
+/* ---------- init ---------- */
+let chapter='';
+scenes.forEach((sc,i)=>{
+  if(sc.dataset.chapter) chapter=sc.dataset.chapter;
+  sc._ch=chapter;
+  sc.querySelectorAll('.file').forEach(f=>{ if(!f.querySelector('svg')) f.insertAdjacentHTML('afterbegin', f.classList.contains('dir')?ICON_DIR:ICON_FILE); });
+  sc.querySelectorAll('.chk').forEach(c=>{ if(!c.innerHTML.trim()) c.innerHTML=ICON_CHK; });
+  sc.querySelectorAll('.win').forEach(w=>{
+    if(!w.querySelector('.wbar')){ const isCode=!!w.querySelector('pre.code'); w.insertAdjacentHTML('afterbegin',`<div class="wbar"><i></i><i></i><i></i><span>${w.dataset.label||(isCode?'code':'CLAUDE COWORK')}</span><span style="flex:1"></span>${isCode?'':'<span class="send">↑</span>'}</div>`);}
+  });
+  sc.querySelectorAll('.type').forEach(prepType);
+  sc._els=[...sc.querySelectorAll('.a,[data-s],.mask')];
+  sc._els.forEach(el=>{el._s=+(el.dataset.s||0)});
+  sc._max=Math.max(0,...sc._els.map(e=>e._s));
+  sc._bg=sc.dataset.bg||(sc.classList.contains('divider')?'flood':CYCLE[i%CYCLE.length]);
+});
+
+function prepType(el){
+  const walk=node=>{
+    [...node.childNodes].forEach(n=>{
+      if(n.nodeType===3){
+        const frag=document.createDocumentFragment();
+        const parts=seg?[...seg.segment(n.textContent)].map(x=>x.segment):[...n.textContent];
+        parts.forEach(ch=>{const s=document.createElement('span');s.className='ch';s.textContent=ch;frag.appendChild(s)});
+        n.replaceWith(frag);
+      } else if(n.nodeType===1) walk(n);
+    });
+  };
+  walk(el);
+  el._chars=[...el.querySelectorAll('.ch')];
+}
+
+/* ---------- typing & counters ---------- */
+function typeStart(el,delay,instant){
+  typeStop(el);
+  const chars=el._chars, win=el.closest('.win');
+  if(instant){chars.forEach(c=>c.classList.add('v'));markCur(el,chars.length);win&&win.classList.add('sent');return}
+  chars.forEach(c=>c.classList.remove('v','cur'));win&&win.classList.remove('sent');
+  const per=Math.max(12,Math.min(38,2000/chars.length));
+  const t0=performance.now()+delay*1000+120;
+  el._typing=true;
+  const tick=now=>{
+    const n=Math.max(0,Math.min(chars.length,Math.floor((now-t0)/per)));
+    for(let k=0;k<n;k++) chars[k].classList.add('v');
+    markCur(el,n);
+    if(n<chars.length){el._raf=requestAnimationFrame(tick)} else {el._typing=false;win&&win.classList.add('sent')}
+  };
+  el._raf=requestAnimationFrame(tick);
+}
+function markCur(el,n){ el._chars.forEach(c=>c.classList.remove('cur')); const c=el._chars[Math.max(0,n-1)]; if(c&&n>0)c.classList.add('cur'); }
+function typeStop(el){ cancelAnimationFrame(el._raf); el._typing=false; }
+function typeReset(el){ typeStop(el); el._chars.forEach(c=>c.classList.remove('v','cur')); const w=el.closest('.win'); w&&w.classList.remove('sent'); }
+function typeFinish(el){ typeStart(el,0,true); }
+
+function countStart(el,delay,instant){
+  cancelAnimationFrame(el._raf);
+  const to=+el.dataset.to, from=+(el.dataset.from||0), suf=el.dataset.suffix||'', dur=+(el.dataset.dur||1.6)*1000;
+  if(instant){el.textContent=to+suf;return}
+  const t0=performance.now()+delay*1000;
+  const tick=now=>{const p=Math.max(0,Math.min(1,(now-t0)/dur)),e=1-Math.pow(1-p,3);el.textContent=Math.round(from+(to-from)*e)+suf;if(p<1)el._raf=requestAnimationFrame(tick)};
+  el._raf=requestAnimationFrame(tick);
+}
+
+/* ---------- step rendering ---------- */
+function setStep(sc,s,{animate=true,entering=false}={}){
+  const groups={};
+  sc._els.forEach(el=>{
+    const want=el._s<=s, has=el.classList.contains('on');
+    if(want&&!has){
+      const gi=groups[el._s]=(groups[el._s]||0); groups[el._s]++;
+      const d=animate?((entering?.3:0)+gi*.075+(+el.dataset.d||0)):0;
+      el.style.setProperty('--delay',d.toFixed(3)+'s');
+      el.classList.add('on');
+      if(el._chars) typeStart(el,d,!animate);
+      if(el.dataset.to!==undefined) countStart(el,d,!animate);
+    } else if(!want&&has){
+      el.style.setProperty('--delay','0s');
+      el.classList.remove('on');
+      if(el._chars) typeReset(el);
+      if(el.dataset.to!==undefined){cancelAnimationFrame(el._raf);el.textContent=(el.dataset.from||0)+(el.dataset.suffix||'')}
+    }
+  });
+  sc.dataset.step=s;
+}
+function resetScene(sc){
+  sc.classList.add('snap');
+  sc._els.forEach(el=>{el.classList.remove('on');if(el._chars)typeReset(el);if(el.dataset.to!==undefined){cancelAnimationFrame(el._raf);el.textContent=(el.dataset.from||0)+(el.dataset.suffix||'')}});
+  sc.dataset.step=-1; void sc.offsetWidth; sc.classList.remove('snap');
+}
+
+/* ---------- navigation ---------- */
+let cur=-1, step=0;
+function go(i,s,dir){
+  i=Math.max(0,Math.min(scenes.length-1,i));
+  const nx=scenes[i];
+  if(i!==cur){
+    const pv=scenes[cur];
+    if(pv){
+      pv.style.setProperty('--dir',dir);
+      pv.classList.remove('active'); pv.classList.add('leaving');
+      clearTimeout(pv._t);
+      pv._t=setTimeout(()=>{pv.classList.remove('leaving'); if(!pv.classList.contains('active')) resetScene(pv)},700);
+    }
+    clearTimeout(nx._t); nx.classList.remove('leaving');
+    resetScene(nx);
+    nx.style.setProperty('--dir',dir);
+    nx.classList.add('snap','enter','active'); void nx.offsetWidth; nx.classList.remove('snap','enter');
+    cur=i; step=s;
+    setStep(nx,s,{animate:true,entering:!!pv||true});
+    applyScene(nx,i);
+  } else { step=s; setStep(nx,s,{animate:true}); }
+  hud();
+}
+function busyType(){ const sc=scenes[cur]; return sc._els.filter(e=>e._chars&&e._typing); }
+function next(){
+  const t=busyType(); if(t.length){t.forEach(typeFinish);return}
+  const sc=scenes[cur];
+  if(step<sc._max){step++;setStep(sc,step);hud()}
+  else if(cur<scenes.length-1) go(cur+1,0,1);
+}
+function prev(){
+  const sc=scenes[cur];
+  if(step>0){step--;setStep(sc,step,{animate:false});hud()}
+  else if(cur>0) go(cur-1,scenes[cur-1]._max,-1);
+}
+
+function applyScene(sc,i){
+  const p=P[sc._bg]||P.tr, v=['ox','oy','os','rx','ry','rs','dx','dy','ds'];
+  v.forEach((k,j)=>bg.style.setProperty('--'+k, j%3===2?p[j]:p[j]+'px'));
+  bg.style.setProperty('--gx',(-(i*26)%520)+'px');
+  const dark=sc.classList.contains('divider');
+  bg.classList.toggle('flood',dark); stage.classList.toggle('dark',dark);
+  // chapter label
+  const txt=sc._ch;
+  if(hudCh._txt!==txt){
+    const old=hudCh.querySelector('span:not(.out)');
+    const n=document.createElement('span'); n.textContent=txt; n.className='in'; hudCh.appendChild(n);
+    if(old){old.classList.add('out');setTimeout(()=>old.remove(),700)}
+    requestAnimationFrame(()=>requestAnimationFrame(()=>n.classList.remove('in')));
+    hudCh._txt=txt;
+  }
+  // role tracker
+  const r=sc.dataset.role, order=TR.map(t=>t[0]);
+  roles.classList.toggle('show',!!r);
+  if(r){
+    const ix=r==='done'?order.length:order.indexOf(r);
+    roles.querySelectorAll('.r').forEach((el,k)=>{el.classList.toggle('done',k<ix);el.classList.toggle('cur',k===ix)});
+    roles.querySelectorAll('.ln').forEach((el,k)=>el.classList.toggle('done',k<ix));
+  }
+}
+function hud(){
+  const sc=scenes[cur];
+  hudN.textContent=String(cur+1).padStart(2,'0')+' / '+scenes.length;
+  prog.style.width=((cur+ (sc._max?step/sc._max:1)*.999)/scenes.length*100)+'%';
+  let h='';for(let k=1;k<=sc._max;k++)h+=`<i class="${k<=step?'on':''}${k===step?' now':''}"></i>`;
+  beatsEl.innerHTML=h;
+  try{history.replaceState(null,'','#'+(cur+1)+(step?'.'+step:''))}catch(e){}
+  if(ov.classList.contains('show')) buildOv();
+}
+
+/* ---------- scaling ---------- */
+function fit(){stage.style.setProperty('--k',Math.min(innerWidth/1920,innerHeight/1080))}
+addEventListener('resize',fit);fit();
+
+/* ---------- overlays ---------- */
+const ov=$('ov'),help=$('help'),blank=$('blank');
+function titleOf(sc){return sc.dataset.title||(sc.querySelector('.title,h1')||{}).textContent||''}
+function buildOv(){
+  let html='',ch=null;
+  scenes.forEach((sc,i)=>{
+    if(sc._ch!==ch){ if(ch!==null)html+='</div>'; ch=sc._ch; html+=`<h4>${ch}</h4><div class="grid">`; }
+    html+=`<button data-i="${i}" class="${i===cur?'cur':''}"><span>${String(i+1).padStart(2,'0')}</span>${titleOf(sc).replace(/\s+/g,' ').trim()}</button>`;
+  });
+  $('ov-list').innerHTML=html+'</div>';
+}
+$('ov-list').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const i=+b.dataset.i;ov.classList.remove('show');go(i,0,i>=cur?1:-1)});
+function toggle(el,force){const on=force!==undefined?force:!el.classList.contains('show');el.classList.toggle('show',on);if(el===ov&&on){buildOv();const c=ov.querySelector('.cur');c&&c.scrollIntoView({block:'center'})}}
+
+/* ---------- input ---------- */
+let num='';
+addEventListener('keydown',e=>{
+  if(e.metaKey||e.ctrlKey||e.altKey)return;
+  const k=e.key;
+  if(ov.classList.contains('show')||help.classList.contains('show')){ if(k==='Escape'||k==='o'||k==='O'||k==='?'){toggle(ov,false);toggle(help,false);e.preventDefault()} return; }
+  if(/^[0-9]$/.test(k)){num+=k;return}
+  if(k==='Enter'&&num){const n=+num;num='';go(n-1,0,n-1>=cur?1:-1);e.preventDefault();return}
+  num='';
+  switch(k){
+    case 'ArrowRight':case ' ':case 'PageDown':case 'Enter':e.preventDefault();next();break;
+    case 'ArrowLeft':case 'PageUp':case 'Backspace':e.preventDefault();prev();break;
+    case 'ArrowDown':e.preventDefault();if(cur<scenes.length-1)go(cur+1,0,1);break;
+    case 'ArrowUp':e.preventDefault();if(cur>0)go(cur-1,scenes[cur-1]._max,-1);break;
+    case 'Home':go(0,0,-1);break;
+    case 'End':go(scenes.length-1,0,1);break;
+    case 'o':case 'O':case 'Escape':toggle(ov);break;
+    case '?':case '/':toggle(help);break;
+    case 'f':case 'F':document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();break;
+    case 'b':case 'B':blank.classList.toggle('show');break;
+    case 'p':case 'P':window.print();break;
+  }
+});
+stage.addEventListener('click',e=>{ if(getSelection().toString())return; const r=stage.getBoundingClientRect(); (e.clientX-r.left)<r.width*.2?prev():next(); });
+blank.addEventListener('click',()=>blank.classList.remove('show'));
+let tx=null;
+addEventListener('touchstart',e=>{tx=e.touches[0].clientX},{passive:true});
+addEventListener('touchend',e=>{if(tx===null)return;const dx=e.changedTouches[0].clientX-tx;if(Math.abs(dx)>50)(dx<0?next:prev)();tx=null});
+
+/* print: show everything fully built */
+addEventListener('beforeprint',()=>scenes.forEach(sc=>{sc.classList.add('snap');setStep(sc,sc._max,{animate:false})}));
+addEventListener('afterprint',()=>scenes.forEach((sc,i)=>{sc.classList.remove('snap');if(i!==cur)resetScene(sc);else setStep(sc,step,{animate:false})}));
+
+/* ---------- start ---------- */
+const m=location.hash.match(/^#(\d+)(?:\.(\d+))?/);
+const si=m?Math.min(scenes.length,+m[1])-1:0, ss=m&&m[2]?Math.min(+m[2],scenes[si]._max):0;
+go(si,0,1); if(ss){step=ss;setStep(scenes[si],ss,{animate:false});hud()}
+const toast=$('toast');setTimeout(()=>toast.classList.add('show'),900);setTimeout(()=>toast.classList.remove('show'),5200);
+window.__deck={go,next,prev,scenes,get cur(){return cur},get step(){return step}};
+})();
+</script>
+</body>
+</html>

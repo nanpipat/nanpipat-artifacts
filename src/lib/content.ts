@@ -222,7 +222,8 @@ function scanDecks(slug: string): Deck[] {
       const raw = fs.readFileSync(path.join(dir, file), 'utf8')
       const titleMatch = raw.match(/<title>([^<]*)<\/title>/i)
       const title = titleMatch ? decodeEntities(titleMatch[1].trim()) : file.replace(/\.html$/, '')
-      const slides = (raw.match(/<section class="slide[^"]*"/g) ?? []).length
+      // plain decks use <section class="slide">, motion decks use <section class="scene">
+      const slides = (raw.match(/<section class="(scene|slide)[^"]*"/g) ?? []).length
       return {
         id: file.replace(/\.html$/, ''),
         file,
