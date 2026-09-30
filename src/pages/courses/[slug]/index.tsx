@@ -18,6 +18,10 @@ import DeckPreview from "@/components/deck-preview";
 import Cover from "@/components/cover";
 import { proseCss } from "@/lib/prose";
 import { getAllArticles, getAllCourseSlugs, getAllCourses, getCourse } from "@/lib/content";
+import ShareButtons from "@/components/share-buttons";
+import Head from "next/head";
+
+const SITE_URL = "https://artifacts.nanpipat.top";
 
 function SectionPill({
   href,
@@ -52,6 +56,7 @@ function SectionPill({
 interface CoursePageProps {
   slug: string;
   title: string;
+  summary: string;
   level: string | null;
   tags: string[];
   updated: string | null;
@@ -80,6 +85,7 @@ interface CoursePageProps {
 export default function CoursePage({
   slug,
   title,
+  summary,
   level,
   tags,
   updated,
@@ -96,6 +102,26 @@ export default function CoursePage({
 
   return (
     <Main width="768px" title={`${title} - Artifacts`}>
+      <Head>
+        <meta name="description" content={summary} />
+        <link rel="canonical" href={`${SITE_URL}/courses/${slug}`} />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="Artifacts" />
+        <meta property="og:title" content={title} />
+        <meta property="og:description" content={summary} />
+        <meta property="og:url" content={`${SITE_URL}/courses/${slug}`} />
+        <meta
+          property="og:image"
+          content={`${SITE_URL}/api/og?title=${encodeURIComponent(title)}&tag=course`}
+        />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={title} />
+        <meta name="twitter:description" content={summary} />
+        <meta
+          name="twitter:image"
+          content={`${SITE_URL}/api/og?title=${encodeURIComponent(title)}&tag=course`}
+        />
+      </Head>
       <Button asChild variant="ghost" colorPalette="teal" size="sm" mb={6}>
         <Link href="/courses">
           <IoChevronBack />
@@ -119,9 +145,16 @@ export default function CoursePage({
           </Badge>
         ))}
       </HStack>
-      <Heading as="h1" size="xl" mb={6}>
+      <Heading as="h1" size="xl" mb={4}>
         {title}
       </Heading>
+
+      <HStack justify="space-between" mb={2} flexWrap="wrap" gap={3}>
+        <Text fontSize="xs" color={muted}>
+          แชร์คอร์สนี้
+        </Text>
+        <ShareButtons path={`/courses/${slug}`} />
+      </HStack>
 
       {hasNav && (
         <HStack
@@ -285,6 +318,7 @@ export const getStaticProps: GetStaticProps<CoursePageProps> = async ({
     props: {
       slug: course.slug,
       title: course.title,
+      summary: course.summary,
       level: course.level ?? null,
       tags: course.tags,
       updated: course.updated ?? null,
